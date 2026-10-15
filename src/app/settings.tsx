@@ -42,13 +42,13 @@ export default function SettingsScreen() {
             <ThemedText type="label" themeColor="textTertiary">
               Plan
             </ThemedText>
-            <ThemedText type="serifTitle">{PLAN_LABEL[plan]}</ThemedText>
+            <ThemedText type="title">{PLAN_LABEL[plan]}</ThemedText>
           </View>
           <View style={styles.planRight}>
             <ThemedText type="label" themeColor="textTertiary">
               Photos left
             </ThemedText>
-            <ThemedText type="serifTitle">{credits}</ThemedText>
+            <ThemedText type="title">{credits}</ThemedText>
           </View>
         </View>
         <ThemedText type="small" themeColor="textSecondary">

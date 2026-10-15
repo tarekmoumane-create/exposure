@@ -161,7 +161,7 @@ export default function ProcessScreen() {
             <Wordmark size={24} />
           </View>
           <View style={styles.statusRow}>
-            <ThemedText type="serifItalic">{error ? "Didn't go through" : `Applying ${look.name}…`}</ThemedText>
+            <ThemedText type="body">{error ? "Didn't go through" : `Applying ${look.name}…`}</ThemedText>
             <ThemedText type="mono" themeColor="textSecondary">
               {error ? '' : `${shown}%`}
             </ThemedText>

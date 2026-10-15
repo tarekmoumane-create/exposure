@@ -13,7 +13,7 @@ type Props = {
 export function EmptyState({ title, message, action }: Props) {
   return (
     <View style={styles.root}>
-      <ThemedText type="serifTitle" style={styles.center}>
+      <ThemedText type="title" style={styles.center}>
         {title}
       </ThemedText>
       <ThemedText themeColor="textSecondary" style={styles.center}>

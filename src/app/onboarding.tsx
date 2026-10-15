@@ -18,9 +18,9 @@ import { useAppStore } from '@/store/app-store';
 
 const SLIDES = [
   { lookId: 'golden-hour', title: 'One photo.\nEvery light.', line: 'Pick a look and the light changes. Not you.' },
-  { lookId: 'after-dark', title: 'The flash you\nwish you had.', line: 'Digicam, night flash, red flash. In seconds.' },
+  { lookId: 'night-flash', title: 'The flash you\nwish you had.', line: 'Digicam, night flash, red flash. In seconds.' },
   { lookId: 'booth-strip', title: 'Same face.\nSame outfit.', line: 'Every look keeps your photo exactly as it is. Only the light and the camera change.' },
-  { lookId: 'film-35', title: 'Try it on\nyour photo.', line: 'Pick any photo. Your first one is on us.' },
+  { lookId: 'gold-200', title: 'Try it on\nyour photo.', line: 'Pick any photo. Your first one is on us.' },
 ];
 
 export default function OnboardingScreen() {
@@ -88,10 +88,10 @@ export default function OnboardingScreen() {
               </View>
             </View>
             <View style={styles.copy}>
-              <ThemedText type="serifTitle" style={styles.center}>
+              <ThemedText type="title" style={styles.center}>
                 {slide.title}
               </ThemedText>
-              <ThemedText type="serifItalic" themeColor="textSecondary" style={styles.center}>
+              <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
                 {slide.line}
               </ThemedText>
             </View>

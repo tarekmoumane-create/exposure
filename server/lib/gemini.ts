@@ -16,6 +16,8 @@ export type GenerateInput = {
   /** Tried in order when the primary model is overloaded (503) or rate limited (429). */
   fallbackModels?: string[];
   image: { mimeType: string; data: string };
+  /** Extra images appended after the photo (style references). */
+  references?: { mimeType: string; data: string }[];
   prompt: string;
   imageSize?: ImageSize;
   thinkingLevel?: ThinkingLevel;
@@ -44,7 +46,7 @@ function supportsImageConfig(model: string): boolean {
 
 async function callModel(
   model: string,
-  { apiKey, image, prompt, imageSize, thinkingLevel, aspectRatio, freeFraming, deadline }: GenerateInput
+  { apiKey, image, references, prompt, imageSize, thinkingLevel, aspectRatio, freeFraming, deadline }: GenerateInput
 ): Promise<GenerateOutput> {
   const generationConfig: Record<string, unknown> = { responseModalities: ['IMAGE'] };
   if (supportsImageConfig(model)) {
@@ -61,6 +63,7 @@ async function callModel(
         parts: [
           { text: prompt },
           { inlineData: { mimeType: image.mimeType, data: image.data } },
+          ...(references ?? []).map((ref) => ({ inlineData: { mimeType: ref.mimeType, data: ref.data } })),
         ],
       },
     ],

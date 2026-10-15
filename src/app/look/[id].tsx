@@ -81,8 +81,8 @@ export default function LookScreen() {
         <ThemedText type="label" style={{ color: theme.accent }}>
           {groupLabel}
         </ThemedText>
-        <ThemedText type="serifTitle">{look.name}</ThemedText>
-        <ThemedText type="serifItalic" themeColor="textSecondary">
+        <ThemedText type="title">{look.name}</ThemedText>
+        <ThemedText type="body" themeColor="textSecondary">
           {look.tagline}
         </ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.description}>

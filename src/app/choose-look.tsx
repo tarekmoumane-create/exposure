@@ -23,7 +23,7 @@ export default function ChooseLookScreen() {
         <Image source={{ uri }} style={[styles.thumb, { backgroundColor: theme.surfaceRaised }]} contentFit="cover" />
         <View style={styles.previewText}>
           <ThemedText type="subtitle">Your photo</ThemedText>
-          <ThemedText type="serifItalic" themeColor="textSecondary">
+          <ThemedText type="body" themeColor="textSecondary">
             Now pick the look it becomes.
           </ThemedText>
         </View>

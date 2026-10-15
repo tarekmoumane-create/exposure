@@ -196,7 +196,7 @@ export default function StudioScreen() {
         {flash ? <View style={[StyleSheet.absoluteFill, { backgroundColor: '#FFF' }]} pointerEvents="none" /> : null}
         {countdown !== null ? (
           <Animated.View key={countdown} entering={FadeIn.duration(120)} exiting={FadeOut.duration(120)} style={styles.countdown} pointerEvents="none">
-            <ThemedText type="serifTitle" style={styles.countdownText}>
+            <ThemedText type="title" style={styles.countdownText}>
               {countdown}
             </ThemedText>
           </Animated.View>

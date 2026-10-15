@@ -1,46 +1,51 @@
 /**
- * The look registry. Each look is a relighting change (done by the model, verified, then
- * detail-locked to the original pixels) and a camera rendering (done in code). Pure rendering
- * looks never call the model.
+ * The look registry. Every look is rendered in full by the model from its prompt, verified
+ * against the input, and anchored to the original's edges. The deterministic recipe is only the
+ * fallback when the model's result fails verification or the model is unavailable.
  */
 import * as R from './render/recipes.js';
 import type { Recipe } from './render/recipes.js';
-import { RELIGHT_PROMPTS } from './relight.js';
+import { LOOK_PROMPTS } from './relight.js';
 
 export type LookSpec = {
   name: string;
-  /** Present when the look changes the light source; the key into RELIGHT_PROMPTS. */
-  relight?: string;
-  render: Recipe;
-  /** Detail lock after relighting: radius as a fraction of the long edge, amount 0..1. */
-  lock: { radius: number; amount: number };
-  /** Acceptance thresholds for a relit image: frame alignment at least `aligned`, new structure at most `added`. */
+  /** Identity anchor: radius as a fraction of the long edge; amount at strong edges and in flat areas. */
+  anchor: { radius: number; edgeAmount: number; flatAmount: number };
+  /** Acceptance thresholds: frame alignment at least `aligned`, new structure at most `added`. */
   verify: { aligned: number; added: number };
-  /** Relight approximation used when the model's result fails verification. */
   fallback: Recipe;
+  /** Texture the model will not add in edit mode (film grain, CCD noise, webcam compression), applied after the anchor. */
+  finish?: Recipe;
+  /** File in lib/refs sent as image 2 so the model matches a real rendering of the look. */
+  reference?: string;
   /** 'free' looks change the format (the booth strip). */
   framing?: 'locked' | 'free';
 };
 
-const FLASH_LOCK = { radius: 0.012, amount: 0.9 };
-const SOFT_LOCK = { radius: 0.012, amount: 0.85 };
+/** Faces and edges follow the original; flat areas keep the model's texture (grain, flash gloss). */
+const ANCHOR = { radius: 0.008, edgeAmount: 0.85, flatAmount: 0.2 };
+/** Film and webcam looks change texture everywhere; anchor edges a little less so grain survives. */
+const ANCHOR_TEXTURE = { radius: 0.008, edgeAmount: 0.75, flatAmount: 0.1 };
 const VERIFY = { aligned: 0.6, added: 0.4 };
 
 export const LOOKS: Record<string, LookSpec> = {
-  'point-and-shoot': { name: 'Point & Shoot', relight: 'point-and-shoot', render: R.pointAndShoot, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackFlash },
-  'after-dark': { name: 'After Dark', relight: 'after-dark', render: R.afterDark, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackNightFlash },
-  rouge: { name: 'Rouge', relight: 'rouge', render: R.rouge, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackRedFlash },
-  paparazzi: { name: 'Paparazzi', relight: 'paparazzi', render: R.paparazzi, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackNightFlash },
-  'golden-hour': { name: 'Golden Hour', relight: 'golden-hour', render: R.goldenHour, lock: SOFT_LOCK, verify: VERIFY, fallback: R.fallbackGolden },
-  'blue-hour': { name: 'Blue Hour', relight: 'blue-hour', render: R.blueHour, lock: SOFT_LOCK, verify: VERIFY, fallback: R.fallbackBlue },
-  'window-light': { name: 'Window Light', relight: 'window-light', render: R.windowLight, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackWindow },
-  haze: { name: 'Haze', render: R.hazeLook, lock: SOFT_LOCK, verify: VERIFY, fallback: R.identity },
-  'y2k-compact': { name: 'Y2K Compact', relight: 'y2k-compact', render: R.y2kCompact, lock: FLASH_LOCK, verify: VERIFY, fallback: R.fallbackFlash },
-  'film-35': { name: '35mm Film', render: R.film35, lock: SOFT_LOCK, verify: VERIFY, fallback: R.identity },
-  'bedroom-webcam': { name: 'Bedroom Webcam', relight: 'bedroom-webcam', render: R.bedroomWebcam, lock: { radius: 0.015, amount: 0.8 }, verify: VERIFY, fallback: R.fallbackWebcam },
-  'booth-strip': { name: 'Booth Strip', render: R.boothStrip, lock: SOFT_LOCK, verify: VERIFY, fallback: R.identity, framing: 'free' },
+  'day-flash': { name: 'Day Flash', anchor: ANCHOR, verify: VERIFY, fallback: R.dayFlashFallback },
+  'night-flash': { name: 'Night Flash', anchor: ANCHOR, verify: VERIFY, fallback: R.nightFlashFallback },
+  'red-flash': { name: 'Red Flash', anchor: ANCHOR, verify: VERIFY, fallback: R.redFlashFallback },
+  paparazzi: { name: 'Paparazzi', anchor: ANCHOR, verify: VERIFY, fallback: R.paparazziFallback },
+  digicam: { name: 'Digicam', anchor: ANCHOR, verify: VERIFY, fallback: R.digicamFallback },
+  'y2k-digicam': { name: 'Y2K Digicam', anchor: ANCHOR_TEXTURE, verify: VERIFY, fallback: R.y2kFallback, finish: R.y2kFinish },
+  'gold-200': { name: 'Gold 200', anchor: ANCHOR_TEXTURE, verify: VERIFY, fallback: R.goldFallback, finish: R.filmFinish200, reference: 'gold-200.jpg' },
+  'superia-400': { name: 'Superia 400', anchor: ANCHOR_TEXTURE, verify: VERIFY, fallback: R.superiaFallback, finish: R.filmFinish400, reference: 'superia-400.jpg' },
+  'film-35': { name: '35mm', anchor: ANCHOR_TEXTURE, verify: VERIFY, fallback: R.film35Fallback, finish: R.filmFinishExpired },
+  'golden-hour': { name: 'Golden Hour', anchor: ANCHOR, verify: VERIFY, fallback: R.goldenFallback },
+  'blue-hour': { name: 'Blue Hour', anchor: ANCHOR, verify: VERIFY, fallback: R.blueFallback },
+  'window-light': { name: 'Window Light', anchor: ANCHOR, verify: VERIFY, fallback: R.windowFallback },
+  glow: { name: 'Glow', anchor: ANCHOR, verify: VERIFY, fallback: R.glowFallback },
+  webcam: { name: 'Webcam', anchor: ANCHOR_TEXTURE, verify: VERIFY, fallback: R.webcamFallback, finish: R.webcamFinish, reference: 'webcam.jpg' },
+  'booth-strip': { name: 'Photobooth', anchor: ANCHOR, verify: VERIFY, fallback: R.boothFallback, framing: 'free' },
 };
 
-for (const [id, look] of Object.entries(LOOKS)) {
-  if (look.relight && !RELIGHT_PROMPTS[look.relight]) throw new Error(`look ${id} references a missing relight prompt`);
+for (const id of Object.keys(LOOKS)) {
+  if (!LOOK_PROMPTS[id]) throw new Error(`look ${id} has no prompt`);
 }

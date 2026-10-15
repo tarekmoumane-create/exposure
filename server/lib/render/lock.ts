@@ -166,3 +166,53 @@ export function detailLock(relit: Img, original: Img, { radius, amount }: LockPa
 
 /** Upscales a low-res plane to image size; exported for callers that build masks at reduced scale. */
 export const upscalePlane = resizePlane;
+
+export type AnchorParams = {
+  /** Blur sigma as a fraction of the long edge that separates structure from texture. */
+  radius: number;
+  /** How completely the original's fine structure replaces the model's at strong edges (faces, outlines, text). */
+  edgeAmount: number;
+  /** The same in flat areas (skin, sky, walls), where the model's grain and gloss should survive. */
+  flatAmount: number;
+};
+
+/**
+ * Identity anchor: the ratio detail transfer of `detailLock`, weighted by an edge mask of the
+ * original. Faces, outlines and lettering follow the original pixel for pixel; flat areas keep
+ * the model's rendering (grain, flash gloss, bloom), so the result still looks like the camera.
+ */
+export function anchor(relit: Img, original: Img, { radius, edgeAmount, flatAmount }: AnchorParams): Img {
+  if (relit.width !== original.width || relit.height !== original.height) throw new Error('anchor: size mismatch');
+  const { width: w, height: h } = original;
+  const sigma = radius * longEdge(original);
+  const lowO = blurBuffer(original.data, w, h, 3, sigma);
+  const lowR = blurBuffer(relit.data, w, h, 3, sigma);
+  // Edge mask from the original: Sobel on a lightly blurred luma, normalised to its 95th percentile,
+  // then spread so the whole width of a feature is covered.
+  const l = blurBuffer(lumaPlane(original), w, h, 1, 1.0);
+  const mag = new Float32Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const gx = -l[i - w - 1] - 2 * l[i - 1] - l[i + w - 1] + l[i - w + 1] + 2 * l[i + 1] + l[i + w + 1];
+      const gy = -l[i - w - 1] - 2 * l[i - w] - l[i - w + 1] + l[i + w - 1] + 2 * l[i + w] + l[i + w + 1];
+      mag[i] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  const sorted = Float32Array.from(mag).sort();
+  const ref = Math.max(0.05, sorted[Math.floor(0.95 * (sorted.length - 1))]);
+  for (let i = 0; i < mag.length; i++) mag[i] = Math.min(1, mag[i] / ref);
+  const mask = blurBuffer(mag, w, h, 1, Math.max(1, sigma * 0.75));
+  const out = new Float32Array(relit.data.length);
+  const o = original.data, r = relit.data;
+  const eps = 0.02;
+  for (let p = 0, i = 0; p < mask.length; p++, i += 3) {
+    const amount = flatAmount + (edgeAmount - flatAmount) * Math.min(1, mask[p] * 1.5);
+    for (let c = 0; c < 3; c++) {
+      const ratio = Math.min(4, (o[i + c] + eps) / (lowO[i + c] + eps));
+      const locked = (lowR[i + c] + eps) * ratio - eps;
+      out[i + c] = r[i + c] + amount * (locked - r[i + c]);
+    }
+  }
+  return { width: w, height: h, data: out };
+}

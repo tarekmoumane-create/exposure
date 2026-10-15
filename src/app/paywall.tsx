@@ -105,10 +105,10 @@ export default function PaywallScreen() {
       )}
 
       <View style={styles.copy}>
-        <ThemedText type="serifTitle" style={styles.center}>
+        <ThemedText type="title" style={styles.center}>
           {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Your photo is ready.' : intro ? 'Your first photo is on us.' : 'Every look, every day.'}
         </ThemedText>
-        <ThemedText type="serifItalic" themeColor="textSecondary" style={styles.center}>
+        <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
             ? 'Ten photos a day, every look, banking for three days. Manage the plan in Settings.'
             : plan === 'weekly'

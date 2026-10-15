@@ -271,3 +271,108 @@ export const fallbackWebcam: Recipe = async (img) => {
 };
 
 export const identity: Recipe = async (img) => img;
+
+// ---------------------------------------------------------------------------------------------
+// Look fallbacks: a restrained deterministic version of each look, used only when the model's
+// result failed verification or the model is unavailable. Nothing here invents content.
+
+const soft = (recipe: Recipe, pre?: Recipe): Recipe => async (img, seed) => {
+  if (pre) img = await pre(img, seed);
+  return recipe(img, seed);
+};
+
+export const dayFlashFallback: Recipe = soft(pointAndShoot, fallbackFlash);
+export const nightFlashFallback: Recipe = soft(afterDark, fallbackNightFlash);
+export const redFlashFallback: Recipe = soft(rouge, fallbackRedFlash);
+export const paparazziFallback: Recipe = soft(paparazzi, fallbackNightFlash);
+export const digicamFallback: Recipe = soft(pointAndShoot, fallbackFlash);
+export const y2kFallback: Recipe = soft(y2kCompact, fallbackFlash);
+export const goldFallback: Recipe = async (img, seed) => {
+  // Gentler than the first engine: half the grain, lighter halation.
+  tone(img, { black: 0.04, white: 0.97, contrast: 1.02, pivot: 0.45, shoulder: 0.75 });
+  hueAdjust(img, [{ hue: 110, width: 50, shift: -12, sat: 0.86 }, { hue: 215, width: 40, shift: -8, sat: 0.92 }, { hue: 25, width: 26, sat: 1.06 }]);
+  channelGain(img, 1.03, 1.0, 0.95);
+  splitTone(img, [-0.01, 0.006, 0.004], [0.025, 0.01, -0.015]);
+  glow(img, { threshold: 0.85, radius: 0.01, amount: 0.15, color: [1, 0.4, 0.15] });
+  grain(img, { amount: 0.028, size: 1.6, highlightProtect: 0.7, chroma: 0.25, seed });
+  vignette(img, { amount: 0.1, radius: 0.6, softness: 0.7 });
+  clip(img);
+  return img;
+};
+export const superiaFallback: Recipe = async (img, seed) => {
+  tone(img, { black: 0.03, white: 0.975, contrast: 1.06, pivot: 0.45, shoulder: 0.78 });
+  hueAdjust(img, [{ hue: 110, width: 45, shift: 4, sat: 1.15 }, { hue: 215, width: 40, shift: -6, sat: 1.05 }, { hue: 25, width: 24, shift: -6, sat: 1.04 }]);
+  channelGain(img, 0.985, 1.01, 1.0);
+  splitTone(img, [-0.015, 0.012, 0.005], [0.0, 0.004, 0.01]);
+  saturation(img, 1.08);
+  grain(img, { amount: 0.034, size: 1.7, highlightProtect: 0.65, chroma: 0.3, seed });
+  vignette(img, { amount: 0.1, radius: 0.6, softness: 0.7 });
+  clip(img);
+  return img;
+};
+export const film35Fallback: Recipe = async (img, seed) => {
+  tone(img, { black: 0.09, white: 0.94, contrast: 0.9, pivot: 0.5, shoulder: 0.7 });
+  channelGain(img, 1.05, 0.99, 0.92);
+  splitTone(img, [0.02, 0.008, -0.01], [0.03, 0.012, -0.02]);
+  saturation(img, 0.8);
+  soften(img, px(img, 0.0005), 0.4);
+  glow(img, { threshold: 0.85, radius: 0.012, amount: 0.15, color: [1, 0.55, 0.25] });
+  grain(img, { amount: 0.03, size: 1.8, highlightProtect: 0.6, chroma: 0.2, seed });
+  vignette(img, { amount: 0.14, radius: 0.55, softness: 0.75 });
+  clip(img);
+  return img;
+};
+export const goldenFallback: Recipe = soft(goldenHour, fallbackGolden);
+export const blueFallback: Recipe = soft(blueHour, fallbackBlue);
+export const windowFallback: Recipe = soft(windowLight, fallbackWindow);
+export const glowFallback: Recipe = hazeLook;
+export const webcamFallback: Recipe = soft(bedroomWebcam, fallbackWebcam);
+export const boothFallback: Recipe = boothStrip;
+
+// ---------------------------------------------------------------------------------------------
+// Finishing passes: texture the model will not add in edit mode. Applied after the identity
+// anchor, kept modest so the result reads as the camera, not as a filter.
+
+/** 200-speed negative: fine organic grain, faint red-orange halation. */
+export const filmFinish200: Recipe = async (img, seed) => {
+  glow(img, { threshold: 0.86, radius: 0.01, amount: 0.16, color: [1, 0.42, 0.15] });
+  grain(img, { amount: 0.03, size: 1.4, highlightProtect: 0.55, chroma: 0.12, seed });
+  clip(img);
+  return img;
+};
+
+/** 400-speed negative: coarser grain, a touch more in the shadows. */
+export const filmFinish400: Recipe = async (img, seed) => {
+  glow(img, { threshold: 0.88, radius: 0.01, amount: 0.12, color: [1, 0.5, 0.25] });
+  grain(img, { amount: 0.038, size: 1.6, highlightProtect: 0.5, chroma: 0.15, seed });
+  clip(img);
+  return img;
+};
+
+/** Expired film: soft grain, slight softness, warm halation. */
+export const filmFinishExpired: Recipe = async (img, seed) => {
+  soften(img, px(img, 0.0004), 0.35);
+  glow(img, { threshold: 0.85, radius: 0.012, amount: 0.16, color: [1, 0.55, 0.25] });
+  grain(img, { amount: 0.032, size: 1.8, highlightProtect: 0.5, chroma: 0.12, seed });
+  clip(img);
+  return img;
+};
+
+/** Early-2000s CCD: real resolution loss and compression, sharpening halos, shadow noise. Lighter than the first engine. */
+export const y2kFinish: Recipe = async (img, seed) => {
+  grain(img, { amount: 0.03, size: 1.0, highlightProtect: 0.8, shadowBoost: 1.2, chroma: 0.45, seed });
+  img = await jpegRoundTrip(img, { scale: 0.55, quality: 74 });
+  unsharp(img, px(img, 0.0008), 0.9);
+  chromaticAberration(img, 0.0018);
+  clip(img);
+  return img;
+};
+
+/** iSight: 640-class resolution, heavy compression, video noise. */
+export const webcamFinish: Recipe = async (img, seed) => {
+  grain(img, { amount: 0.05, size: 1.0, highlightProtect: 0.7, shadowBoost: 1.3, chroma: 0.5, seed });
+  img = await jpegRoundTrip(img, { scale: 0.45, quality: 64 });
+  soften(img, px(img, 0.0006), 0.4);
+  clip(img);
+  return img;
+};

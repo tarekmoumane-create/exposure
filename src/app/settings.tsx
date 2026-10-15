@@ -85,17 +85,17 @@ export default function SettingsScreen() {
           no tracking, no face data kept.
         </ThemedText>
         <View style={styles.links}>
-          <ExternalLink href="https://exposure.app/privacy">
+          <ExternalLink href="https://exposure-api.vercel.app/privacy">
             <ThemedText type="small" style={{ color: theme.accentDeep }}>
               Privacy policy
             </ThemedText>
           </ExternalLink>
-          <ExternalLink href="https://exposure.app/terms">
+          <ExternalLink href="https://exposure-api.vercel.app/terms">
             <ThemedText type="small" style={{ color: theme.accentDeep }}>
               Terms of service
             </ThemedText>
           </ExternalLink>
-          <ExternalLink href="mailto:hello@exposure.app">
+          <ExternalLink href="mailto:tarekmoumane@gmail.com">
             <ThemedText type="small" style={{ color: theme.accentDeep }}>
               Contact
             </ThemedText>

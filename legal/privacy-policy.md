@@ -1,8 +1,8 @@
 # Exposure — Privacy Policy
 
-Last updated: 13 October 2026
+Last updated: 15 October 2026
 
-Legal entity / controller: [ENTITY NAME], [ADDRESS] ("Exposure", "we", "us"). Contact: hello@exposure.app
+Legal entity / controller: Tarek Moumane, an individual developer ("Exposure", "we", "us"). Contact: tarekmoumane@gmail.com
 
 Exposure is a mobile app that restyles your photos. It has two kinds of features:
 
@@ -49,7 +49,7 @@ Our infrastructure operates primarily in the United States. For EU/UK users we r
 
 ## Your rights
 
-Depending on your region you may request access, correction, deletion, restriction, objection or portability by emailing hello@exposure.app. Because there are no accounts, we may verify requests via your original transaction ID or anonymous app identifier. You may also complain to your local data protection authority. We do not sell or share your information for cross-context behavioural advertising, do not use advertising SDKs, and do not request App Tracking Transparency permission because we do not track you across apps.
+Depending on your region you may request access, correction, deletion, restriction, objection or portability by emailing tarekmoumane@gmail.com. Because there are no accounts, we may verify requests via your original transaction ID or anonymous app identifier. You may also complain to your local data protection authority. We do not sell or share your information for cross-context behavioural advertising, do not use advertising SDKs, and do not request App Tracking Transparency permission because we do not track you across apps.
 
 ## Changes
 

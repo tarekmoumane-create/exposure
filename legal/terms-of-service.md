@@ -1,8 +1,8 @@
 # Exposure — Terms of Service
 
-Last updated: 13 October 2026
+Last updated: 15 October 2026
 
-These Terms govern your use of Exposure, a mobile app that restyles your photos. "We/us" means [ENTITY NAME], [JURISDICTION]. Contact: hello@exposure.app. By using Exposure you agree to these Terms.
+These Terms govern your use of Exposure, a mobile app that restyles your photos. "We/us" means Tarek Moumane, an individual developer. Contact: tarekmoumane@gmail.com. By using Exposure you agree to these Terms.
 
 ## 1. Eligibility
 
@@ -49,7 +49,7 @@ We own Exposure, including software, looks, templates and branding. You receive 
 
 ## 10. Copyright complaints
 
-Email hello@exposure.app with your signature, identification of the work, the allegedly infringing content, your contact information, a good-faith statement and a statement under penalty of perjury that your notice is accurate.
+Email tarekmoumane@gmail.com with your signature, identification of the work, the allegedly infringing content, your contact information, a good-faith statement and a statement under penalty of perjury that your notice is accurate.
 
 ## 11. Disclaimers and liability
 
@@ -57,4 +57,4 @@ AI can be inaccurate and outputs may not meet expectations. Exposure is provided
 
 ## 12. Termination, governing law, changes
 
-You may stop using Exposure at any time. We may suspend or terminate access for violations. These Terms are governed by the laws of [JURISDICTION]; consumers keep their mandatory local rights. We may update these Terms and will notify you of material changes in the app or store listing.
+You may stop using Exposure at any time. We may suspend or terminate access for violations. These Terms are governed by the laws of the developer's country of residence; consumers keep their mandatory local rights. We may update these Terms and will notify you of material changes in the app or store listing.

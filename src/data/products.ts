@@ -44,7 +44,7 @@ export function packForProduct(productId: string | undefined): PackId | null {
 
 /** Public legal pages. These must be live before App Store review and match the App Store Connect URLs. */
 export const LEGAL_URLS = {
-  terms: 'https://exposure.app/terms',
-  privacy: 'https://exposure.app/privacy',
-  support: 'mailto:hello@exposure.app',
+  terms: 'https://exposure-api.vercel.app/terms',
+  privacy: 'https://exposure-api.vercel.app/privacy',
+  support: 'mailto:tarekmoumane@gmail.com',
 } as const;

@@ -1,73 +1,52 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+export type TextType =
+  | 'wordmark'
+  | 'serifTitle'
+  | 'serifItalic'
+  | 'title'
+  | 'subtitle'
+  | 'body'
+  | 'bodyStrong'
+  | 'small'
+  | 'caption'
+  | 'label'
+  | 'photoLabel'
+  | 'mono';
+
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: TextType;
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
-
-  return (
-    <Text
-      style={[
-        { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
-        type === 'title' && styles.title,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
-        type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
-        type === 'code' && styles.code,
-        style,
-      ]}
-      {...rest}
-    />
-  );
+  return <Text maxFontSizeMultiplier={1.3} style={[{ color: theme[themeColor ?? 'text'] }, styles[type], style]} {...rest} />;
 }
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
-  },
-  code: {
-    fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
+  wordmark: { fontFamily: Fonts.serifItalic, fontSize: 26, lineHeight: 32, letterSpacing: -0.3 },
+  serifTitle: { fontFamily: Fonts.serif, fontSize: 30, lineHeight: 36, letterSpacing: -0.4 },
+  serifItalic: { fontFamily: Fonts.serifItalicLight, fontSize: 17, lineHeight: 24 },
+  title: { fontFamily: Fonts.sansExtra, fontSize: 24, lineHeight: 30, letterSpacing: -0.4 },
+  subtitle: { fontFamily: Fonts.sansBold, fontSize: 18, lineHeight: 24, letterSpacing: -0.2 },
+  body: { fontFamily: Fonts.sans, fontSize: 15, lineHeight: 22 },
+  bodyStrong: { fontFamily: Fonts.sansBold, fontSize: 15, lineHeight: 22 },
+  small: { fontFamily: Fonts.sans, fontSize: 13, lineHeight: 18 },
+  caption: { fontFamily: Fonts.sansSemi, fontSize: 12, lineHeight: 16 },
+  label: { fontFamily: Fonts.sansBold, fontSize: 11, lineHeight: 14, letterSpacing: 1.2, textTransform: 'uppercase' },
+  photoLabel: {
+    fontFamily: Fonts.sansBold,
     fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
+  mono: { fontFamily: Fonts.mono, fontSize: 12, lineHeight: 16 },
 });

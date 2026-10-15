@@ -1,0 +1,141 @@
+import * as Application from 'expo-application';
+import Constants from 'expo-constants';
+import { router, Stack } from 'expo-router';
+import { useState } from 'react';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+
+import { Button } from '@/components/button';
+import { ExternalLink } from '@/components/external-link';
+import { Screen } from '@/components/screen';
+import { ThemedText } from '@/components/themed-text';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { DAILY_ALLOWANCE, useAppStore } from '@/store/app-store';
+
+const PLAN_LABEL = { free: 'Free', weekly: 'Weekly', yearly: 'Yearly' } as const;
+
+export default function SettingsScreen() {
+  const theme = useTheme();
+  const { plan, credits, dailyCredits, packCredits, shots, strips, restore } = useAppStore();
+  const [restoring, setRestoring] = useState(false);
+  // Toasts render under native modals on iOS, so status is shown inline here.
+  const [status, setStatus] = useState<string | null>(null);
+
+  const onRestore = async () => {
+    setRestoring(true);
+    const result = await restore();
+    setRestoring(false);
+    setStatus(result.message);
+  };
+  const version = `${Constants.expoConfig?.version ?? '0.0.0'} (${Application.nativeBuildVersion ?? 'web'})`;
+  const allowance = DAILY_ALLOWANCE[plan];
+  const refreshLabel = refreshCopy();
+  const manageSubscription = () =>
+    Linking.openURL(Platform.OS === 'android' ? 'https://play.google.com/store/account/subscriptions' : 'https://apps.apple.com/account/subscriptions');
+
+  return (
+    <Screen edges={['bottom', 'left', 'right']}>
+      <Stack.Screen options={{ headerRight: () => <Button title="Done" variant="ghost" size="md" onPress={() => router.back()} /> }} />
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
+        <View style={styles.planRow}>
+          <View>
+            <ThemedText type="label" themeColor="textTertiary">
+              Plan
+            </ThemedText>
+            <ThemedText type="serifTitle">{PLAN_LABEL[plan]}</ThemedText>
+          </View>
+          <View style={styles.planRight}>
+            <ThemedText type="label" themeColor="textTertiary">
+              Photos left
+            </ThemedText>
+            <ThemedText type="serifTitle">{credits}</ThemedText>
+          </View>
+        </View>
+        <ThemedText type="small" themeColor="textSecondary">
+          {plan === 'free'
+            ? 'Your first photo is free. Plans add photos every day.'
+            : `${allowance} new photos ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''}`}
+        </ThemedText>
+        {plan === 'free' ? <Button title="See plans" size="md" onPress={() => router.push('/paywall')} /> : null}
+        {plan !== 'free' ? (
+          <>
+            <ThemedText type="caption" themeColor="textTertiary">
+              {dailyCredits} from your plan today
+            </ThemedText>
+            <View style={styles.inlineButtons}>
+              {plan === 'weekly' ? <Button title="Switch to Yearly" size="md" onPress={() => router.push('/paywall')} /> : null}
+              <Button title="Manage subscription" variant="secondary" size="md" onPress={manageSubscription} />
+            </View>
+          </>
+        ) : null}
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
+        <Row label="In your gallery" value={`${shots.length + strips.length}`} />
+        <Row label="Stored" value="On this phone only" />
+        <Row label="Account" value="None needed" />
+      </View>
+
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
+        <ThemedText type="label" themeColor="textTertiary">
+          Privacy
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Photos leave your phone only to make the look you asked for, and are never stored on our servers. No ads,
+          no tracking, no face data kept.
+        </ThemedText>
+        <View style={styles.links}>
+          <ExternalLink href="https://exposure.app/privacy">
+            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+              Privacy policy
+            </ThemedText>
+          </ExternalLink>
+          <ExternalLink href="https://exposure.app/terms">
+            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+              Terms of service
+            </ThemedText>
+          </ExternalLink>
+          <ExternalLink href="mailto:hello@exposure.app">
+            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+              Contact
+            </ThemedText>
+          </ExternalLink>
+        </View>
+      </View>
+
+      <Button title="Restore purchases" variant="ghost" size="md" onPress={onRestore} loading={restoring} />
+      {status ? (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.version}>
+          {status}
+        </ThemedText>
+      ) : null}
+      <ThemedText type="caption" themeColor="textTertiary" style={styles.version}>
+        Exposure {version}
+      </ThemedText>
+    </Screen>
+  );
+}
+
+/** "tonight at midnight" before 6pm, "at midnight" after: the refresh is always local midnight. */
+export function refreshCopy(): string {
+  return new Date().getHours() < 18 ? 'tonight at midnight' : 'at midnight';
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.row}>
+      <ThemedText themeColor="textSecondary">{label}</ThemedText>
+      <ThemedText type="bodyStrong">{value}</ThemedText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.lg, marginTop: Spacing.three },
+  planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  planRight: { alignItems: 'flex-end' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  links: { gap: Spacing.two },
+  inlineButtons: { gap: Spacing.two },
+  version: { textAlign: 'center', paddingTop: Spacing.three },
+});

@@ -29,7 +29,7 @@ Looks require photos (credits), available through auto-renewing subscriptions an
 - **Yearly**: US$59.99 per year (or local equivalent), 10 photos per day.
 - **Packs**: one-time purchases of 10, 30 or 80 photos that never expire and are available to everyone.
 
-Daily photos refresh at local midnight. Unused daily photos bank up to three days' worth and then stop accumulating. Pack photos are kept in a separate balance and are used after daily photos. New installs can make one preview of a look; viewing, saving or sharing it requires an active plan or a photo pack. Prices may vary by region; the store shows the exact price before purchase. Billing, renewal, cancellation and refunds are handled by Apple or Google under their policies; manage or cancel in your device settings. If you cancel, access continues until the end of the current period.
+Daily photos refresh at local midnight. Unused daily photos bank up to three days' worth and then stop accumulating. Pack photos are kept in a separate balance and are used after daily photos. AI looks require an active plan or a photo pack; the app shows plans before any photo is processed. Prices may vary by region; the store shows the exact price before purchase. Billing, renewal, cancellation and refunds are handled by Apple or Google under their policies; manage or cancel in your device settings. If you cancel, access continues until the end of the current period.
 
 ## 6. Entitlement checks
 

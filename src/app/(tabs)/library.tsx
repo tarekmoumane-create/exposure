@@ -61,16 +61,19 @@ export default function GalleryScreen() {
             style={({ pressed }) => [styles.cell, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.9 : 1 }]}>
             {item.kind === 'strip' ? (
               <Image source={{ uri: item.thumbUri ?? item.resultUri }} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition="top" transition={200} />
-            ) : item.locked && !unlocked ? (
-              // Not paid yet: the gallery never shows the finished photo either.
-              <Image source={{ uri: item.thumbUri ?? item.resultUri }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={30} />
+            ) : item.pending ? (
+              // Waiting to be developed after a purchase: only a blurred, tinted preview.
+              <View style={StyleSheet.absoluteFill}>
+                <Image source={{ uri: item.resultUri }} style={[StyleSheet.absoluteFill, { transform: [{ scale: 1.25 }] }]} contentFit="cover" blurRadius={30} />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: getLook(item.lookId)?.colors[0] ?? '#000', opacity: 0.35 }]} />
+              </View>
             ) : (
               <Cell uri={item.thumbUri ?? item.resultUri} configKey={item.id} />
             )}
             <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.45)']} style={styles.scrim} pointerEvents="none" />
             <View style={styles.tag}>
               <ThemedText type="photoLabel" themeColor="onPhoto">
-                {item.kind === 'strip' ? 'Strip' : item.locked && !unlocked ? 'Tap to unlock' : getLook(item.lookId)?.name ?? 'Photo'}
+                {item.kind === 'strip' ? 'Strip' : item.pending ? (unlocked ? 'Tap to develop' : 'Tap to unlock') : getLook(item.lookId)?.name ?? 'Photo'}
               </ThemedText>
             </View>
           </Pressable>

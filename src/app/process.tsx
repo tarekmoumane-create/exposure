@@ -29,6 +29,9 @@ import { localDay, useAppStore } from '@/store/app-store';
  * very first upload the user is asked to agree to the photo going to Google Gemini.
  */
 
+/** How long the preview setup step runs before the paywall. Nothing is generated in it. */
+const PREVIEW_MS = 2_800;
+
 /** A typical render; the bar reaches ~90% here and creeps toward 95% after. */
 const EXPECTED_MS = 26_000;
 
@@ -49,9 +52,15 @@ const REASSURANCE = [
 
 export default function ProcessScreen() {
   const theme = useTheme();
-  const { lookId, uri } = useLocalSearchParams<{ lookId: string; uri: string }>();
+  const { lookId, uri, shotId } = useLocalSearchParams<{ lookId: string; uri: string; shotId?: string }>();
   const look = getLook(lookId);
-  const { addShot, spendCredit, syncCredits, aiConsent, setAiConsent, unlocked, credits, hydrated } = useAppStore();
+  const { addShot, updateShot, spendCredit, syncCredits, aiConsent, setAiConsent, unlocked, credits, hydrated } = useAppStore();
+  /**
+   * Decided once: 'preview' when the user has not paid, so no AI call is made and the photo waits
+   * behind the paywall as a pending shot; 'develop' runs the real generation.
+   */
+  const [mode, setMode] = useState<'preview' | 'develop' | null>(() => (hydrated ? (unlocked ? 'develop' : 'preview') : null));
+  if (mode === null && hydrated) setMode(unlocked ? 'develop' : 'preview');
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<GenerateStage>('preparing');
   const [error, setError] = useState<string | null>(null);
@@ -59,16 +68,28 @@ export default function ProcessScreen() {
   const [line, setLine] = useState(0);
   const stageRef = useRef<GenerateStage>('preparing');
   const startedAt = useRef(0);
-  const unlockedRef = useRef(unlocked);
-  useEffect(() => {
-    unlockedRef.current = unlocked;
-  }, [unlocked]);
+  const outOfCredits = mode === 'develop' && credits <= 0;
+  const developing = mode === 'develop' && aiConsent;
 
-  const outOfCredits = hydrated && credits <= 0;
+  // Preview: a short, honest setup step, then the pending photo goes behind the paywall.
+  useEffect(() => {
+    if (mode !== 'preview' || !look || !uri) return;
+    const started = Date.now();
+    const timer = setInterval(() => {
+      const t = Math.min(1, (Date.now() - started) / PREVIEW_MS);
+      setProgress(Math.round((1 - Math.pow(1 - t, 2)) * 100));
+      if (t >= 1) {
+        clearInterval(timer);
+        const shot = addShot({ lookId: look.id, sourceUri: uri, resultUri: uri, edit: { ...DEFAULT_CONFIG, intensity: 1 }, pending: true });
+        router.replace({ pathname: '/edit', params: { shotId: shot.id, reveal: '1' } });
+      }
+    }, 60);
+    return () => clearInterval(timer);
+  }, [mode, look, uri, addShot]);
 
   // Time-based progress: fast at first, easing toward 95% as the render runs long.
   useEffect(() => {
-    if (error || !aiConsent) return;
+    if (error || !developing) return;
     startedAt.current = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startedAt.current;
@@ -79,17 +100,17 @@ export default function ProcessScreen() {
       setProgress((prev) => Math.max(prev, floor, Math.min(95, eased * 100)));
     }, 100);
     return () => clearInterval(timer);
-  }, [error, attempt, aiConsent]);
+  }, [error, attempt, developing]);
 
   // Rotate the reassurance line while the model works.
   useEffect(() => {
-    if (error || !aiConsent) return;
+    if (error || !developing) return;
     const timer = setInterval(() => setLine((n) => (n + 1) % REASSURANCE.length), 5500);
     return () => clearInterval(timer);
-  }, [error, attempt, aiConsent]);
+  }, [error, attempt, developing]);
 
   useEffect(() => {
-    if (!look || !uri || outOfCredits || !aiConsent) return;
+    if (!look || !uri || outOfCredits || !developing) return;
     const controller = new AbortController();
     const { signal } = controller;
     generateLook({
@@ -105,20 +126,15 @@ export default function ProcessScreen() {
       .then((result) => {
         if (signal.aborted) return;
         setProgress(100);
-        const shot = addShot({
-          lookId: look.id,
-          sourceUri: result.sourceUri,
-          resultUri: result.resultUri,
-          thumbUri: result.thumbUri,
-          edit: { ...DEFAULT_CONFIG, intensity: 1 },
-          locked: !unlockedRef.current,
-        });
+        const developed = { sourceUri: result.sourceUri, resultUri: result.resultUri, thumbUri: result.thumbUri, edit: { ...DEFAULT_CONFIG, intensity: 1 } };
+        // A pending photo from before the purchase is developed in place; otherwise it is a new shot.
+        let id = shotId;
+        if (id) updateShot(id, { ...developed, pending: false });
+        else id = addShot({ lookId: look.id, ...developed }).id;
         if (result.credits) syncCredits(result.credits);
         else spendCredit();
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Not paid yet: the editor opens the plan sheet over the blurred result (hard paywall).
-        const reveal = unlockedRef.current ? {} : { reveal: '1' };
-        router.replace({ pathname: '/edit', params: { shotId: shot.id, fresh: '1', ...reveal } });
+        router.replace({ pathname: '/edit', params: { shotId: id, fresh: '1' } });
       })
       .catch((caught: unknown) => {
         if (signal.aborted || (caught as Error).name === 'AbortError') return;
@@ -132,7 +148,7 @@ export default function ProcessScreen() {
         setError(caught instanceof GenerateError ? caught.message : 'Something went wrong.');
       });
     return () => controller.abort();
-  }, [addShot, spendCredit, syncCredits, look, uri, attempt, outOfCredits, aiConsent]);
+  }, [addShot, updateShot, spendCredit, syncCredits, look, uri, shotId, attempt, outOfCredits, developing]);
 
   const retry = () => {
     stageRef.current = 'preparing';
@@ -162,7 +178,7 @@ export default function ProcessScreen() {
     );
   }
 
-  if (hydrated && !aiConsent) {
+  if (mode === 'develop' && !aiConsent) {
     return <AiConsent uri={uri} onAgree={() => setAiConsent(true)} onDecline={() => dismiss()} />;
   }
 
@@ -176,7 +192,7 @@ export default function ProcessScreen() {
             <Wordmark size={24} />
           </View>
           <View style={styles.statusRow}>
-            <ThemedText type="body">{error ? "Didn't go through" : `Applying ${look.name}…`}</ThemedText>
+            <ThemedText type="body">{error ? "Didn't go through" : mode === 'preview' ? `Setting up ${look.name}…` : `Applying ${look.name}…`}</ThemedText>
             <ThemedText type="mono" themeColor="textSecondary">
               {error ? '' : `${shown}%`}
             </ThemedText>
@@ -218,10 +234,10 @@ export default function ProcessScreen() {
           ) : (
             <View style={styles.waitBlock}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-                {STAGE_HINT[stage]}
+                {mode === 'preview' ? 'Getting your photo ready.' : STAGE_HINT[stage]}
               </ThemedText>
               <ThemedText type="caption" themeColor="textTertiary" style={styles.hint}>
-                {REASSURANCE[line]}
+                {mode === 'preview' ? 'Next, pick a plan and Exposure develops it in this look.' : REASSURANCE[line]}
               </ThemedText>
               <Button title="Cancel" variant="ghost" size="md" onPress={() => dismiss()} />
             </View>

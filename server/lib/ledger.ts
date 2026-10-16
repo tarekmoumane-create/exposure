@@ -4,8 +4,8 @@
  * Identity is the RevenueCat app user id the app sends in `x-exposure-user`. The plan and pack
  * purchases come from RevenueCat (read with the public SDK key, the same call the SDK makes), and the
  * balance lives in Upstash Redis. The rules mirror src/store/app-store.tsx exactly:
- *   - free: 1 preview per new user, shown locked in the app until they pay (hard paywall); capped
- *     per IP per day so reinstalling is not a free tap
+ *   - free: nothing. The app shows its paywall before any generation (hard paywall), so a user
+ *     with no plan and no pack is always refused here
  *   - weekly 5/day, yearly 10/day, unused daily photos bank up to 3 days of allowance
  *   - each pack transaction adds its photos once
  * A photo is reserved before the model runs and refunded if it fails, so failures never charge.
@@ -18,9 +18,6 @@ type Plan = 'free' | 'weekly' | 'yearly';
 
 const DAILY_ALLOWANCE: Record<Plan, number> = { free: 0, weekly: 5, yearly: 10 };
 const ROLLOVER_DAYS = 3;
-const WELCOME_CREDITS = 1;
-/** New users per IP per day that get the welcome photo. Covers a household, not a reinstall loop. */
-const WELCOME_PER_IP_PER_DAY = 3;
 const ENTITLEMENT_ID = 'pro';
 const PLAN_PRODUCTS: Record<string, Plan> = { 'app.exposure.weekly': 'weekly', 'app.exposure.yearly': 'yearly' };
 const PACK_CREDITS: Record<string, number> = { 'app.exposure.credits10': 10, 'app.exposure.credits30': 30, 'app.exposure.credits80': 80 };
@@ -145,7 +142,7 @@ const USER_ID = /^[A-Za-z0-9$:._-]{8,128}$/;
  * `release(true)` keeps the charge, `release(false)` refunds it. Infrastructure errors fail open so
  * an outage of Redis or RevenueCat never blocks paying users.
  */
-export async function reserve(userId: unknown, clientDay: unknown, ip: string): Promise<Reservation> {
+export async function reserve(userId: unknown, clientDay: unknown): Promise<Reservation> {
   if (!isLedgerEnabled()) return { ok: true, enforced: false };
   if (typeof userId !== 'string' || !USER_ID.test(userId)) {
     return { ok: false, status: 426, code: 'update', message: 'Update Exposure to keep making photos.' };
@@ -166,15 +163,7 @@ export async function reserve(userId: unknown, clientDay: unknown, ip: string): 
 
   try {
     const [raw, customer] = await Promise.all([redis<string | null>('GET', ledgerKey), fetchCustomer(userId)]);
-    let ledger: Ledger;
-    if (raw) {
-      ledger = JSON.parse(raw) as Ledger;
-    } else {
-      const ipKey = `welcome:${ip}:${utcDay()}`;
-      const seen = await redis<number>('INCR', ipKey);
-      if (seen === 1) await redis('EXPIRE', ipKey, 2 * 86_400);
-      ledger = { day: today, daily: 0, pack: seen <= WELCOME_PER_IP_PER_DAY ? WELCOME_CREDITS : 0, plan: 'free', granted: [] };
-    }
+    let ledger: Ledger = raw ? (JSON.parse(raw) as Ledger) : { day: today, daily: 0, pack: 0, plan: 'free', granted: [] };
     // RevenueCat unreachable: keep the last known plan rather than downgrading a paying user.
     if (customer) ledger = applyPacks(applyPlan(ledger, customer.plan, today), customer.packs);
     ledger = applyRefresh(ledger, today);

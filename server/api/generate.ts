@@ -75,9 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const strength = typeof body?.strength === 'number' ? Math.min(1, Math.max(0, body.strength)) : undefined;
 
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim() || 'unknown';
-  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day'], ip);
+  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day']);
   if (!reservation.ok) {
     return res.status(reservation.status).json({ error: { code: reservation.code, message: reservation.message }, credits: reservation.balance });
   }

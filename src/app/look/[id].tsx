@@ -20,7 +20,7 @@ export default function LookScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const look = getLook(id);
-  const { credits } = useAppStore();
+  const { credits, unlocked } = useAppStore();
   const [showBefore, setShowBefore] = useState(false);
 
   if (!look) {
@@ -34,7 +34,8 @@ export default function LookScreen() {
   const groupLabel = LOOK_GROUPS.find((group) => group.id === look.group)?.label ?? '';
 
   const startWith = (uri: string) => {
-    if (credits <= 0) {
+    // Unpaid users go straight to the preview (nothing is generated before the paywall).
+          if (unlocked && credits <= 0) {
       router.push('/out-of-credits');
       return;
     }

@@ -51,8 +51,8 @@ export default function EditScreen() {
   const [comparing, setComparing] = useState(false);
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
   const [saved, setSaved] = useState(false);
-  /** Hard paywall: a photo made before any purchase stays blurred until the user subscribes or buys a pack. */
-  const gated = Boolean(shot?.locked) && !unlocked;
+  /** Hard paywall: a photo picked before any purchase is not generated until the user subscribes or buys a pack. */
+  const gated = Boolean(shot?.pending);
   const sheetOpened = useRef(false);
   const openPaywall = useCallback(() => {
     if (shotId) router.push({ pathname: '/paywall', params: { intro: '1', shotId } });
@@ -83,14 +83,20 @@ export default function EditScreen() {
     configRef.current = config;
   }, [config]);
 
-  // Straight after a locked generation, the plan sheet opens over the blurred result once.
+  // A pending photo: once the user has paid, develop it for real; until then the plan sheet opens
+  // over the blurred preview once, straight after the setup step.
   useFocusEffect(
     useCallback(() => {
-      if (!reveal || !gated || sheetOpened.current) return;
+      if (!gated || !shot || !look) return;
+      if (unlocked) {
+        router.replace({ pathname: '/process', params: { lookId: look.id, uri: shot.sourceUri, shotId: shot.id } });
+        return;
+      }
+      if (!reveal || sheetOpened.current) return;
       sheetOpened.current = true;
       const timer = setTimeout(openPaywall, 300);
       return () => clearTimeout(timer);
-    }, [reveal, gated, openPaywall])
+    }, [gated, shot, look, unlocked, reveal, openPaywall])
   );
 
   if (!source) {
@@ -189,9 +195,10 @@ export default function EditScreen() {
           {gated ? (
             <Animated.View exiting={FadeOut.duration(700)} style={StyleSheet.absoluteFill}>
               <Image source={{ uri: source }} style={styles.lockedImage} contentFit="cover" blurRadius={40} />
+              {look ? <View style={[StyleSheet.absoluteFill, { backgroundColor: look.colors[0], opacity: 0.35 }]} /> : null}
               <View style={styles.lockOverlay}>
                 <View style={[styles.lockPill, { backgroundColor: theme.surface }]}>
-                  <ThemedText type="label">Your photo is ready</ThemedText>
+                  <ThemedText type="label">{look?.name ?? 'Your look'}</ThemedText>
                 </View>
               </View>
             </Animated.View>
@@ -208,10 +215,10 @@ export default function EditScreen() {
         {gated ? (
           <View style={styles.lockedCopy}>
             <ThemedText type="subtitle" style={styles.center}>
-              Unlock to see your photo
+              Unlock to develop your photo
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-              Join a plan to reveal it, save it and keep making new ones every day.
+              Join a plan and Exposure develops it in this look in about 30 seconds, then keep making new ones every day.
             </ThemedText>
           </View>
         ) : (
@@ -266,7 +273,16 @@ export default function EditScreen() {
 
       {gated ? (
         <View style={styles.actions}>
-          <Button title="Unlock my photo" variant="accent" onPress={openPaywall} style={styles.grow} />
+          <Button
+            title={unlocked ? 'Develop my photo' : 'Unlock and develop'}
+            variant="accent"
+            onPress={() =>
+              unlocked && shot && look
+                ? router.replace({ pathname: '/process', params: { lookId: look.id, uri: shot.sourceUri, shotId: shot.id } })
+                : openPaywall()
+            }
+            style={styles.grow}
+          />
         </View>
       ) : (
       <View style={styles.actions}>

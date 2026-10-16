@@ -39,10 +39,10 @@ export type Plan = 'free' | 'weekly' | 'yearly';
 export const DAILY_ALLOWANCE: Record<Plan, number> = { free: 0, weekly: 5, yearly: 10 };
 export const ROLLOVER_DAYS = 3;
 /**
- * One generation on install, so onboarding can show the user their own photo. It stays locked
- * (blurred, no save or share) until they subscribe or buy a pack: there is no free photo.
+ * No free photos. Before a purchase the app makes no AI call at all: the picked photo waits as a
+ * pending shot behind the paywall and is developed only once the user subscribes or buys a pack.
  */
-export const WELCOME_CREDITS = 1;
+export const WELCOME_CREDITS = 0;
 
 export type Shot = {
   id: string;
@@ -54,8 +54,11 @@ export type Shot = {
   thumbUri?: string;
   edit: FilterConfig;
   createdAt: number;
-  /** Made before any purchase: shown blurred until the user is entitled. */
-  locked?: boolean;
+  /**
+   * Picked before any purchase: nothing has been generated yet (resultUri is the original). Shown
+   * blurred behind the paywall, then developed once the user is entitled.
+   */
+  pending?: boolean;
 };
 
 export type Strip = {
@@ -87,7 +90,7 @@ type State = {
   grantedTransactions: string[];
   /** The user agreed to their photos being sent to Google Gemini for processing. */
   aiConsent: boolean;
-  /** Ever bought a pack (a plan is tracked by `plan`). Unlocks preview photos for good. */
+  /** Ever bought a pack (a plan is tracked by `plan`). */
   hasPurchased: boolean;
 };
 
@@ -236,14 +239,14 @@ export type PurchaseFeedback = { ok: boolean; message: string };
 
 type AppStore = State & {
   credits: number;
-  /** Subscribed now, or bought a pack at some point: locked previews are revealed. */
+  /** Subscribed now, or bought a pack at some point: pending photos can be developed. */
   unlocked: boolean;
   /** True when a store (RevenueCat) is configured and purchases are real. */
   purchasesLive: boolean;
   /** False in a release build with no store configured: buying is hidden rather than mocked. */
   canBuy: boolean;
   setOnboarded: () => void;
-  addShot: (shot: Pick<Shot, 'lookId' | 'sourceUri' | 'resultUri'> & { edit?: FilterConfig; thumbUri?: string; locked?: boolean }) => Shot;
+  addShot: (shot: Pick<Shot, 'lookId' | 'sourceUri' | 'resultUri'> & { edit?: FilterConfig; thumbUri?: string; pending?: boolean }) => Shot;
   updateShot: (id: string, patch: Partial<Shot>) => void;
   removeShot: (id: string) => void;
   addStrip: (strip: Omit<Strip, 'id' | 'kind' | 'createdAt'>) => Strip;

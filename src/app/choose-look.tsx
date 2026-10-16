@@ -14,7 +14,7 @@ import { useAppStore } from '@/store/app-store';
 export default function ChooseLookScreen() {
   const theme = useTheme();
   const { uri, first } = useLocalSearchParams<{ uri: string; first?: string }>();
-  const { credits } = useAppStore();
+  const { credits, unlocked } = useAppStore();
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
@@ -30,7 +30,8 @@ export default function ChooseLookScreen() {
       </View>
       <LookGrid
         onPressLook={(look) => {
-          if (credits <= 0) {
+          // Unpaid users go straight to the preview (nothing is generated before the paywall).
+          if (unlocked && credits <= 0) {
             router.push('/out-of-credits');
             return;
           }

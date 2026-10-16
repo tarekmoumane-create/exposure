@@ -51,8 +51,8 @@ No account or sign-in is needed.
 HOW TO TEST THE AI LOOKS
 1. Swipe through the four intro slides and tap "Choose a photo". Pick any photo with a person in it.
 2. Pick a look. Night Flash or Golden Hour show the effect most clearly.
-3. Before the first upload, the app asks permission to send the photo to Google Gemini. Tap "Agree and continue".
-4. The result arrives in about 30 seconds and appears blurred behind the plan sheet. Exposure uses a hard paywall: a plan or a photo pack unlocks it. Subscribe with a sandbox account to reveal, save and share it.
+4. Exposure uses a hard paywall. After a short setup step the plan sheet appears over a blurred preview; no AI processing happens before a purchase. Subscribe with a sandbox account and the photo is developed in about 30 seconds.
+5. The app asks permission to send the photo to Google Gemini right before the first upload. Tap "Agree and continue".
 
 PURCHASES
 Plans (Weekly, Yearly) and photo packs (10, 30, 80) can be bought with a sandbox account from the plan sheet or when photos run out. Restore Purchases is in Settings, the gear icon on the Looks tab.

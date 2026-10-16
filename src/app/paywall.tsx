@@ -37,7 +37,9 @@ export default function PaywallScreen() {
   const theme = useTheme();
   const { buyPlan, restore, shots, plan, canBuy, purchasesLive } = useAppStore();
   const { shotId } = useLocalSearchParams<{ intro?: string; shotId?: string }>();
-  const teaser = shots.find((shot) => shot.id === shotId)?.thumbUri ?? shots.find((shot) => shot.id === shotId)?.resultUri;
+  const teaserShot = shots.find((shot) => shot.id === shotId);
+  const teaser = teaserShot ? teaserShot.thumbUri ?? teaserShot.resultUri : undefined;
+  const teaserLook = getLook(teaserShot?.lookId);
   const [selected, setSelected] = useState<Tier>(TIERS[0]);
   const [prices, setPrices] = useState<Record<string, string>>(FALLBACK_PRICES);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
@@ -83,9 +85,10 @@ export default function PaywallScreen() {
       {teaser ? (
         <View style={styles.teaserWrap}>
           <View style={[styles.teaser, { backgroundColor: theme.surfaceRaised }]}>
-            <Image source={{ uri: teaser }} style={StyleSheet.absoluteFill} contentFit="cover" blurRadius={28} />
+            <Image source={{ uri: teaser }} style={[StyleSheet.absoluteFill, { transform: [{ scale: 1.25 }] }]} contentFit="cover" blurRadius={28} />
+            {teaserLook ? <View style={[StyleSheet.absoluteFill, { backgroundColor: teaserLook.colors[0], opacity: 0.35 }]} /> : null}
             <View style={[styles.teaserBadge, { backgroundColor: theme.surface }]}>
-              <ThemedText type="label">Ready</ThemedText>
+              <ThemedText type="label">{teaserLook?.name ?? 'Your look'}</ThemedText>
             </View>
           </View>
         </View>
@@ -106,7 +109,7 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Your photo is ready.' : 'Every look, every day.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Unlock to develop your photo.' : 'Every look, every day.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
@@ -114,7 +117,7 @@ export default function PaywallScreen() {
             : plan === 'weekly'
               ? 'Yearly gives you ten a day instead of five, for about a fifth of the price per photo.'
               : teaser
-                ? 'Join a plan to reveal it and save it, then keep making new photos every day.'
+                ? 'Join a plan and Exposure develops it in this look in about 30 seconds. Then keep making new photos every day.'
                 : 'Photos every day. Unused ones bank for three days. Your photo stays exactly as it is.'}
         </ThemedText>
       </View>

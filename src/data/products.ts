@@ -46,5 +46,5 @@ export function packForProduct(productId: string | undefined): PackId | null {
 export const LEGAL_URLS = {
   terms: 'https://exposure-api.vercel.app/terms',
   privacy: 'https://exposure-api.vercel.app/privacy',
-  support: 'mailto:tarekmoumane@gmail.com',
+  support: 'https://exposure-api.vercel.app/support',
 } as const;

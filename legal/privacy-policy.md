@@ -22,7 +22,7 @@ Exposure is a mobile app that restyles your photos. It has two kinds of features
 
 1. **Content you choose to provide.** Photos you select for a Look are transmitted securely to our backend only to call the AI model and return the result. They are processed transiently and not retained. Google LLC (Gemini API) may retain inputs and outputs for a limited period under its own terms, for example for abuse monitoring.
 2. **Subscription and credit signals.** Signed transaction data and the original transaction ID from Apple or Google, an anonymous app-generated user identifier used by RevenueCat, and your daily credit and pack balances, to operate paid features and daily limits. These are not used to identify you personally.
-3. **Device and network metadata (minimal).** Standard request data (IP address, user agent, timestamps) processed temporarily by our hosting provider for security and abuse prevention, and an application token that confirms requests come from the Exposure app.
+3. **Device and network metadata (minimal).** Standard request data (IP address, user agent, timestamps) processed temporarily by our hosting provider for security and abuse prevention, including a daily count of new installs per IP address, kept for two days, so the free welcome photo cannot be claimed repeatedly, and an application token that confirms requests come from the Exposure app.
 4. **Analytics and diagnostics.** Exposure does not run third-party analytics or crash reporting. Apple and Google may provide us aggregated, anonymous install and crash statistics through their developer tools under their own policies. We never receive your photos through these channels.
 
 We do not collect your name, email, contacts, precise location or payment card details. If you email us, we receive your email address and message.
@@ -37,7 +37,7 @@ To provide the service, manage subscriptions and credits, prevent abuse, fix bug
 
 ## Third-party processors
 
-Google LLC (Gemini API) (AI image generation), Vercel, Inc. (backend hosting), RevenueCat, Inc. (subscriptions and entitlements), Apple (StoreKit) and Google (Play Billing). We do not sell or rent your personal information.
+Google LLC (Gemini API) (AI image generation), Vercel, Inc. (backend hosting), Upstash, Inc. (storage of anonymous photo balances), RevenueCat, Inc. (subscriptions and entitlements), Apple (StoreKit) and Google (Play Billing). We do not sell or rent your personal information.
 
 ## Children
 

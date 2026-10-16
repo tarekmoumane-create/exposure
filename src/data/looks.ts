@@ -47,7 +47,7 @@ export const LOOKS: Look[] = [
     name: 'Day Flash',
     group: 'flash',
     tagline: 'Daylight with the flash forced on.',
-    description: 'The G7X daytime look: fill flash on the subject, punchy colour, crisp detail, background a touch darker.',
+    description: 'The compact camera daytime look: fill flash on the subject, punchy colour, crisp detail, background a touch darker.',
     colors: ['#F7D9A8', '#8A5A2B'],
     before: require('@/assets/images/looks/day-flash-before.jpg'),
     after: require('@/assets/images/looks/day-flash-after.jpg'),
@@ -94,7 +94,7 @@ export const LOOKS: Look[] = [
   },
   {
     id: 'gold-200',
-    name: 'Gold 200',
+    name: 'Sunny 200',
     group: 'film',
     tagline: 'Warm consumer negative, lab scanned.',
     description: 'The warm yellow-leaning 35mm stock: peach skin, olive greens, creamy highlights, soft organic grain.',
@@ -104,7 +104,7 @@ export const LOOKS: Look[] = [
   },
   {
     id: 'superia-400',
-    name: 'Superia 400',
+    name: 'Vibrant 400',
     group: 'film',
     tagline: 'Cooler, greener, punchier 35mm.',
     description: 'The drugstore 400 roll: vivid greens, deep cyan blues, pink skin, coarser grain, lifted green shadows.',

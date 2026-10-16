@@ -31,9 +31,9 @@ export type Preset = {
 export const PRESETS: Preset[] = [
   { id: 'original', name: 'Original', group: 'film', matrix: IDENTITY, vignette: 0, grain: 0 },
   { id: 'gold', name: 'Gold', group: 'film', matrix: compose(temperature(0.55), saturation(1.18), contrast(1.06), tint(0.02, 0.01, -0.02)), vignette: 0.15, grain: 0.18 },
-  { id: 'fuji', name: 'Fuji', group: 'film', matrix: compose(temperature(-0.25), tint(-0.01, 0.025, 0.02), saturation(1.08), contrast(1.04)), vignette: 0.1, grain: 0.18 },
+  { id: 'fuji', name: 'Crisp', group: 'film', matrix: compose(temperature(-0.25), tint(-0.01, 0.025, 0.02), saturation(1.08), contrast(1.04)), vignette: 0.1, grain: 0.18 },
   { id: 'film35', name: '35mm', group: 'film', matrix: compose(temperature(0.3), saturation(0.92), contrast(0.96), fade(0.9)), vignette: 0.25, grain: 0.5 },
-  { id: 'portra', name: 'Portra', group: 'film', matrix: compose(temperature(0.25), saturation(0.95), contrast(0.98), tint(0.03, 0.015, 0.0), fade(0.4)), vignette: 0.08, grain: 0.25 },
+  { id: 'portra', name: 'Soft', group: 'film', matrix: compose(temperature(0.25), saturation(0.95), contrast(0.98), tint(0.03, 0.015, 0.0), fade(0.4)), vignette: 0.08, grain: 0.25 },
   { id: 'flash', name: 'Flash', group: 'flash', matrix: compose(contrast(1.25), brightness(0.07), saturation(1.22)), vignette: 0.28, grain: 0.12 },
   { id: 'nightflash', name: 'Night', group: 'flash', matrix: compose(contrast(1.32), brightness(0.06), temperature(-0.15), tint(-0.01, 0.01, 0.02)), vignette: 0.62, grain: 0.35 },
   { id: 'rouge', name: 'Rouge', group: 'flash', matrix: compose(contrast(1.12), channelScale(1.18, 0.82, 0.86), tint(0.14, -0.02, 0.0)), vignette: 0.4, grain: 0.2 },

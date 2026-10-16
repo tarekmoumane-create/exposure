@@ -54,7 +54,7 @@ export default function OutOfCreditsScreen() {
       </View>
 
       <View style={styles.copy}>
-        <ThemedText type="title">{plan === 'free' ? 'You’ve used your free photo.' : 'That’s all for today.'}</ThemedText>
+        <ThemedText type="title">{plan === 'free' ? 'Unlock Exposure.' : 'That’s all for today.'}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
           {plan === 'free'
             ? 'Join a plan for photos every day, or add a few and keep going.'

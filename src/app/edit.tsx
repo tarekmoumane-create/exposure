@@ -36,7 +36,7 @@ export default function EditScreen() {
   const theme = useTheme();
   const toast = useToast();
   const { shotId, uri, reveal, fresh } = useLocalSearchParams<{ shotId?: string; uri?: string; reveal?: string; fresh?: string }>();
-  const { shots, updateShot, removeShot } = useAppStore();
+  const { shots, updateShot, removeShot, unlocked } = useAppStore();
   const shot = shots.find((item) => item.id === shotId);
   const look = getLook(shot?.lookId);
   const source = shot?.resultUri ?? uri ?? '';
@@ -51,9 +51,12 @@ export default function EditScreen() {
   const [comparing, setComparing] = useState(false);
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
   const [saved, setSaved] = useState(false);
-  /** First photo: the result stays blurred under the plan sheet until it closes. */
-  const [gated, setGated] = useState(Boolean(reveal));
+  /** Hard paywall: a photo made before any purchase stays blurred until the user subscribes or buys a pack. */
+  const gated = Boolean(shot?.locked) && !unlocked;
   const sheetOpened = useRef(false);
+  const openPaywall = useCallback(() => {
+    if (shotId) router.push({ pathname: '/paywall', params: { intro: '1', shotId } });
+  }, [shotId]);
   /** The reveal: a fresh AI result fades in from the original over ~0.9 s. */
   const revealProgress = useSharedValue(shot && fresh && !reveal ? 0 : 1);
   const ratio = useImageRatio(source, 0.8);
@@ -80,16 +83,14 @@ export default function EditScreen() {
     configRef.current = config;
   }, [config]);
 
+  // Straight after a locked generation, the plan sheet opens over the blurred result once.
   useFocusEffect(
     useCallback(() => {
-      if (!reveal || !shotId) return;
-      if (!sheetOpened.current) {
-        sheetOpened.current = true;
-        const timer = setTimeout(() => router.push({ pathname: '/paywall', params: { intro: '1', shotId } }), 300);
-        return () => clearTimeout(timer);
-      }
-      setGated(false);
-    }, [reveal, shotId])
+      if (!reveal || !gated || sheetOpened.current) return;
+      sheetOpened.current = true;
+      const timer = setTimeout(openPaywall, 300);
+      return () => clearTimeout(timer);
+    }, [reveal, gated, openPaywall])
   );
 
   if (!source) {
@@ -117,6 +118,7 @@ export default function EditScreen() {
   };
 
   const exportImage = async (action: 'save' | 'share') => {
+    if (gated) return openPaywall();
     setBusy(action);
     try {
       const fileUri = await renderFilteredImage(source, config, original ? { base: original, blend: strength } : {});
@@ -169,22 +171,29 @@ export default function EditScreen() {
         <Pressable
           accessibilityRole="imagebutton"
           accessibilityLabel="Hold to compare with the original"
+          disabled={gated}
           onPressIn={() => {
             if (Platform.OS !== 'web') Haptics.selectionAsync();
             setComparing(true);
           }}
           onPressOut={() => setComparing(false)}
           onLayout={(event: LayoutChangeEvent) => setWidth(Math.round(event.nativeEvent.layout.width))}
-          style={[styles.photo, { backgroundColor: theme.surfaceRaised }]}>
-          {width > 0 && original ? <FilteredImage source={original} config={displayConfig} width={width} height={height} /> : null}
-          {width > 0 ? (
+          style={[styles.photo, { backgroundColor: theme.surfaceRaised, aspectRatio: ratio }]}>
+          {/* While locked the finished photo is never drawn sharp, only the blurred copy below. */}
+          {width > 0 && original && !gated ? <FilteredImage source={original} config={displayConfig} width={width} height={height} /> : null}
+          {width > 0 && !gated ? (
             <Animated.View style={original ? [StyleSheet.absoluteFill, revealStyle] : undefined}>
               <FilteredImage source={source} config={displayConfig} width={width} height={height} style={original ? { opacity: strengthShown } : undefined} />
             </Animated.View>
           ) : null}
-          {width > 0 && gated ? (
+          {gated ? (
             <Animated.View exiting={FadeOut.duration(700)} style={StyleSheet.absoluteFill}>
-              <Image source={{ uri: source }} style={{ width, height }} contentFit="cover" blurRadius={32} />
+              <Image source={{ uri: source }} style={styles.lockedImage} contentFit="cover" blurRadius={40} />
+              <View style={styles.lockOverlay}>
+                <View style={[styles.lockPill, { backgroundColor: theme.surface }]}>
+                  <ThemedText type="label">Your photo is ready</ThemedText>
+                </View>
+              </View>
             </Animated.View>
           ) : null}
           {!gated ? (
@@ -196,6 +205,16 @@ export default function EditScreen() {
           ) : null}
         </Pressable>
 
+        {gated ? (
+          <View style={styles.lockedCopy}>
+            <ThemedText type="subtitle" style={styles.center}>
+              Unlock to see your photo
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+              Join a plan to reveal it, save it and keep making new ones every day.
+            </ThemedText>
+          </View>
+        ) : (
         <View style={styles.controls}>
           <View style={styles.panelInner}>
             <Segmented options={panels} value={panel} onChange={setPanel} />
@@ -242,12 +261,19 @@ export default function EditScreen() {
             </View>
           ) : null}
         </View>
+        )}
       </ScrollView>
 
+      {gated ? (
+        <View style={styles.actions}>
+          <Button title="Unlock my photo" variant="accent" onPress={openPaywall} style={styles.grow} />
+        </View>
+      ) : (
       <View style={styles.actions}>
         <Button title={saved ? 'Saved ✓' : 'Save to Photos'} onPress={() => exportImage('save')} loading={busy === 'save'} disabled={busy !== null || saved} style={styles.grow} />
         <Button title="Share" variant="secondary" onPress={() => exportImage('share')} loading={busy === 'share'} disabled={busy !== null} style={styles.shareButton} />
       </View>
+      )}
     </Screen>
   );
 }
@@ -272,4 +298,9 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: Spacing.two, paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
   grow: { flex: 1 },
   shareButton: { minWidth: 110 },
+  lockedImage: { width: '100%', height: '100%', transform: [{ scale: 1.25 }] },
+  lockOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  lockPill: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: Radius.pill },
+  lockedCopy: { gap: Spacing.one, paddingHorizontal: Spacing.four, paddingTop: Spacing.four },
+  center: { textAlign: 'center' },
 });

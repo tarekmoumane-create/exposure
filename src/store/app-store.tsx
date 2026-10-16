@@ -38,7 +38,10 @@ export type Plan = 'free' | 'weekly' | 'yearly';
 /** Daily credit allowance per plan. Unused credits bank up to ROLLOVER_DAYS × allowance. */
 export const DAILY_ALLOWANCE: Record<Plan, number> = { free: 0, weekly: 5, yearly: 10 };
 export const ROLLOVER_DAYS = 3;
-/** One full-resolution generation on install, so the first session has a result. */
+/**
+ * One generation on install, so onboarding can show the user their own photo. It stays locked
+ * (blurred, no save or share) until they subscribe or buy a pack: there is no free photo.
+ */
 export const WELCOME_CREDITS = 1;
 
 export type Shot = {
@@ -51,6 +54,8 @@ export type Shot = {
   thumbUri?: string;
   edit: FilterConfig;
   createdAt: number;
+  /** Made before any purchase: shown blurred until the user is entitled. */
+  locked?: boolean;
 };
 
 export type Strip = {
@@ -82,6 +87,8 @@ type State = {
   grantedTransactions: string[];
   /** The user agreed to their photos being sent to Google Gemini for processing. */
   aiConsent: boolean;
+  /** Ever bought a pack (a plan is tracked by `plan`). Unlocks preview photos for good. */
+  hasPurchased: boolean;
 };
 
 type Action =
@@ -131,6 +138,7 @@ const initialState: State = {
   lastRefreshDay: localDay(),
   grantedTransactions: [],
   aiConsent: false,
+  hasPurchased: false,
 };
 
 function daysBetween(fromDay: string, toDay: string): number {
@@ -173,7 +181,7 @@ function sanitize(saved: Partial<State> & { version?: number }): Partial<State> 
     ? saved.strips.filter((strip) => strip && typeof strip.id === 'string' && typeof strip.resultUri === 'string' && Array.isArray(strip.frames))
     : [];
   const { version: _version, ...rest } = saved;
-  return { ...rest, shots, strips, aiConsent: saved.aiConsent === true };
+  return { ...rest, shots, strips, aiConsent: saved.aiConsent === true, hasPurchased: saved.hasPurchased === true };
 }
 
 function reducer(state: State, action: Action): State {
@@ -203,12 +211,13 @@ function reducer(state: State, action: Action): State {
     case 'setAiConsent':
       return { ...state, aiConsent: action.value };
     case 'addPack':
-      return { ...state, packCredits: state.packCredits + action.amount };
+      return { ...state, packCredits: state.packCredits + action.amount, hasPurchased: true };
     case 'setPlan':
       return applyPlan(state, action.plan, action.today);
     case 'applyCustomer': {
       let next = state.plan === action.customer.plan ? state : applyPlan(state, action.customer.plan, action.today);
       const fresh = action.customer.packTransactions.filter((transaction) => !next.grantedTransactions.includes(transaction.id));
+      if (action.customer.packTransactions.length > 0 && !next.hasPurchased) next = { ...next, hasPurchased: true };
       if (fresh.length === 0) return next;
       const credits = fresh.reduce((sum, transaction) => sum + PACK_PRODUCTS[transaction.packId].credits, 0);
       next = { ...next, packCredits: next.packCredits + credits, grantedTransactions: [...next.grantedTransactions, ...fresh.map((t) => t.id)] };
@@ -227,12 +236,14 @@ export type PurchaseFeedback = { ok: boolean; message: string };
 
 type AppStore = State & {
   credits: number;
+  /** Subscribed now, or bought a pack at some point: locked previews are revealed. */
+  unlocked: boolean;
   /** True when a store (RevenueCat) is configured and purchases are real. */
   purchasesLive: boolean;
   /** False in a release build with no store configured: buying is hidden rather than mocked. */
   canBuy: boolean;
   setOnboarded: () => void;
-  addShot: (shot: Pick<Shot, 'lookId' | 'sourceUri' | 'resultUri'> & { edit?: FilterConfig; thumbUri?: string }) => Shot;
+  addShot: (shot: Pick<Shot, 'lookId' | 'sourceUri' | 'resultUri'> & { edit?: FilterConfig; thumbUri?: string; locked?: boolean }) => Shot;
   updateShot: (id: string, patch: Partial<Shot>) => void;
   removeShot: (id: string) => void;
   addStrip: (strip: Omit<Strip, 'id' | 'kind' | 'createdAt'>) => Strip;
@@ -278,7 +289,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!state.hydrated) return;
-    const { shots, strips, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent } = state;
+    const { shots, strips, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent, hasPurchased } = state;
     // File uris are stored as relative keys: iOS moves the app container on every update.
     const portableShots = shots.map((shot) => ({
       ...shot,
@@ -305,6 +316,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         onboarded,
         grantedTransactions,
         aiConsent,
+        hasPurchased,
       })
     ).catch(() => {});
   }, [state]);
@@ -441,6 +453,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       shots,
       strips,
       credits: state.dailyCredits + state.packCredits,
+      unlocked: state.plan !== 'free' || state.hasPurchased,
       purchasesLive,
       canBuy,
       setOnboarded,

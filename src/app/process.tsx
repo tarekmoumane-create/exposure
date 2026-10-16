@@ -49,9 +49,9 @@ const REASSURANCE = [
 
 export default function ProcessScreen() {
   const theme = useTheme();
-  const { lookId, uri, first } = useLocalSearchParams<{ lookId: string; uri: string; first?: string }>();
+  const { lookId, uri } = useLocalSearchParams<{ lookId: string; uri: string }>();
   const look = getLook(lookId);
-  const { addShot, spendCredit, syncCredits, aiConsent, setAiConsent, plan, credits, hydrated } = useAppStore();
+  const { addShot, spendCredit, syncCredits, aiConsent, setAiConsent, unlocked, credits, hydrated } = useAppStore();
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<GenerateStage>('preparing');
   const [error, setError] = useState<string | null>(null);
@@ -59,11 +59,10 @@ export default function ProcessScreen() {
   const [line, setLine] = useState(0);
   const stageRef = useRef<GenerateStage>('preparing');
   const startedAt = useRef(0);
-  const firstRef = useRef(first);
-  const planRef = useRef(plan);
+  const unlockedRef = useRef(unlocked);
   useEffect(() => {
-    planRef.current = plan;
-  }, [plan]);
+    unlockedRef.current = unlocked;
+  }, [unlocked]);
 
   const outOfCredits = hydrated && credits <= 0;
 
@@ -112,12 +111,13 @@ export default function ProcessScreen() {
           resultUri: result.resultUri,
           thumbUri: result.thumbUri,
           edit: { ...DEFAULT_CONFIG, intensity: 1 },
+          locked: !unlockedRef.current,
         });
         if (result.credits) syncCredits(result.credits);
         else spendCredit();
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // First photo on a free plan: the editor opens the plan sheet over the blurred result.
-        const reveal = firstRef.current && planRef.current === 'free' ? { reveal: '1' } : {};
+        // Not paid yet: the editor opens the plan sheet over the blurred result (hard paywall).
+        const reveal = unlockedRef.current ? {} : { reveal: '1' };
         router.replace({ pathname: '/edit', params: { shotId: shot.id, fresh: '1', ...reveal } });
       })
       .catch((caught: unknown) => {

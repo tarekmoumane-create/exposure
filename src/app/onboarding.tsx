@@ -20,7 +20,7 @@ const SLIDES = [
   { lookId: 'golden-hour', title: 'One photo.\nEvery light.', line: 'Pick a look and the light changes. Not you.' },
   { lookId: 'night-flash', title: 'The flash you\nwish you had.', line: 'Digicam, night flash, red flash. In seconds.' },
   { lookId: 'booth-strip', title: 'Same face.\nSame outfit.', line: 'Every look keeps your photo exactly as it is. Only the light and the camera change.' },
-  { lookId: 'gold-200', title: 'Try it on\nyour photo.', line: 'Pick any photo. Your first one is on us.' },
+  { lookId: 'gold-200', title: 'Try it on\nyour photo.', line: 'Pick any photo and see it shot on a real camera.' },
 ];
 
 export default function OnboardingScreen() {

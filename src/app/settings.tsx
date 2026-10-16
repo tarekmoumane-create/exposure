@@ -53,7 +53,7 @@ export default function SettingsScreen() {
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Your first photo is free. Plans add photos every day.'
+            ? 'Join a plan to reveal your photos and get new ones every day.'
             : `${allowance} new photos ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''}`}
         </ThemedText>
         {plan === 'free' ? <Button title="See plans" size="md" onPress={() => router.push('/paywall')} /> : null}

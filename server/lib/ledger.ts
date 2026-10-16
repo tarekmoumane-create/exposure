@@ -4,7 +4,8 @@
  * Identity is the RevenueCat app user id the app sends in `x-exposure-user`. The plan and pack
  * purchases come from RevenueCat (read with the public SDK key, the same call the SDK makes), and the
  * balance lives in Upstash Redis. The rules mirror src/store/app-store.tsx exactly:
- *   - free: 1 welcome photo per new user (capped per IP per day so reinstalling is not a free tap)
+ *   - free: 1 preview per new user, shown locked in the app until they pay (hard paywall); capped
+ *     per IP per day so reinstalling is not a free tap
  *   - weekly 5/day, yearly 10/day, unused daily photos bank up to 3 days of allowance
  *   - each pack transaction adds its photos once
  * A photo is reserved before the model runs and refunded if it fails, so failures never charge.

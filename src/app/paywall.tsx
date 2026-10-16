@@ -36,7 +36,7 @@ const TEASER_LOOKS = ['golden-hour', 'after-dark', 'film-35', 'rouge'];
 export default function PaywallScreen() {
   const theme = useTheme();
   const { buyPlan, restore, shots, plan, canBuy, purchasesLive } = useAppStore();
-  const { intro, shotId } = useLocalSearchParams<{ intro?: string; shotId?: string }>();
+  const { shotId } = useLocalSearchParams<{ intro?: string; shotId?: string }>();
   const teaser = shots.find((shot) => shot.id === shotId)?.thumbUri ?? shots.find((shot) => shot.id === shotId)?.resultUri;
   const [selected, setSelected] = useState<Tier>(TIERS[0]);
   const [prices, setPrices] = useState<Record<string, string>>(FALLBACK_PRICES);
@@ -106,7 +106,7 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Your photo is ready.' : intro ? 'Your first photo is on us.' : 'Every look, every day.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Your photo is ready.' : 'Every look, every day.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
@@ -114,10 +114,8 @@ export default function PaywallScreen() {
             : plan === 'weekly'
               ? 'Yearly gives you ten a day instead of five, for about a fifth of the price per photo.'
               : teaser
-                ? 'This one is on us. Keep going with new photos every day, every look.'
-                : intro
-                  ? 'Then keep going with photos every day. Cancel any time.'
-                  : 'Photos every day. Unused ones bank for three days. Your photo stays exactly as it is.'}
+                ? 'Join a plan to reveal it and save it, then keep making new photos every day.'
+                : 'Photos every day. Unused ones bank for three days. Your photo stays exactly as it is.'}
         </ThemedText>
       </View>
 
@@ -167,7 +165,7 @@ export default function PaywallScreen() {
             Plans are not available in this build yet.
           </ThemedText>
         ) : null}
-        <Button title={teaser ? 'Keep my free photo' : 'Not now'} variant="ghost" size="md" onPress={() => dismiss()} disabled={busy !== null} />
+        <Button title="Not now" variant="ghost" size="md" onPress={() => dismiss()} disabled={busy !== null} />
         <Button title="Restore purchases" variant="ghost" size="md" onPress={onRestore} loading={busy === 'restore'} disabled={busy !== null} />
         <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
           {`Auto-renews until cancelled. Cancel any time in your device settings.${purchasesLive ? '' : ' Prices in USD, may vary by region.'}`}

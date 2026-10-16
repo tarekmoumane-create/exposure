@@ -5,6 +5,7 @@
  */
 
 import { getLook } from '@/data/looks';
+import { getUserId } from '@/lib/purchases';
 import { ImageReadError, makeThumbnail, matchFraming, persistEncoded, prepareForUpload } from '@/lib/image-io';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
@@ -24,9 +25,15 @@ export type GenerateOptions = {
   strength?: number;
   onStage?: (stage: GenerateStage) => void;
   signal?: AbortSignal;
+  /** The app's local calendar day, so the server's daily refresh lines up with the user's midnight. */
+  day?: string;
 };
 
+/** The server's photo balance after a request, when it keeps one. */
+export type ServerCredits = { daily: number; pack: number };
+
 export type GenerateResult = {
+  credits?: ServerCredits;
   resultUri: string;
   /** The downscaled, orientation-normalised JPEG that was sent. */
   sourceUri: string;
@@ -35,9 +42,11 @@ export type GenerateResult = {
 
 export class GenerateError extends Error {
   code: string;
-  constructor(code: string, message: string) {
+  credits?: ServerCredits;
+  constructor(code: string, message: string, credits?: ServerCredits) {
     super(message);
     this.code = code;
+    this.credits = credits;
   }
 }
 
@@ -47,6 +56,9 @@ const FRIENDLY: Record<string, string> = {
   config: 'The studio is being set up. Try again in a few minutes.',
   body: 'Something went wrong preparing your photo. Try again.',
   image: 'This photo is too large to send. Try a smaller one.',
+  update: 'Update Exposure to keep making photos.',
+  credits: 'You are out of photos for now.',
+  inflight: 'Your last photo is still being made. Give it a moment.',
 };
 
 export function isGenerationLive(): boolean {
@@ -57,7 +69,7 @@ function isAbort(error: unknown): boolean {
   return (error as Error)?.name === 'AbortError';
 }
 
-export async function generateLook({ uri, lookId, strength, onStage, signal }: GenerateOptions): Promise<GenerateResult> {
+export async function generateLook({ uri, lookId, strength, onStage, signal, day }: GenerateOptions): Promise<GenerateResult> {
   if (!API_URL) return simulate(uri, lookId, onStage, signal);
 
   onStage?.('preparing');
@@ -74,9 +86,12 @@ export async function generateLook({ uri, lookId, strength, onStage, signal }: G
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   const body = JSON.stringify({ lookId, image: { mimeType: image.mimeType, data: image.data, width: image.width, height: image.height }, strength });
 
-  let payload: { image: { mimeType: string; data: string } };
+  const userId = await getUserId();
+  const identity: Record<string, string> = { ...(userId ? { 'x-exposure-user': userId } : {}), ...(day ? { 'x-exposure-day': day } : {}) };
+
+  let payload: Payload;
   try {
-    payload = await post(body, combined, onStage, true);
+    payload = await post(body, identity, combined, onStage, true);
   } catch (error) {
     if (isAbort(error) && timeout.aborted && !signal?.aborted) {
       throw new GenerateError('timeout', 'That took too long. Try again, nothing was charged.');
@@ -90,15 +105,18 @@ export async function generateLook({ uri, lookId, strength, onStage, signal }: G
   // The model only outputs a few fixed ratios; trim any slack so the framing matches the photo picked.
   if (getLook(lookId)?.framing !== 'free') resultUri = await matchFraming(resultUri, image.width, image.height);
   const thumbUri = await makeThumbnail(resultUri, `${name}-thumb`);
-  return { resultUri, sourceUri: image.uri, thumbUri };
+  return { resultUri, sourceUri: image.uri, thumbUri, credits: payload.credits };
 }
+
+type Payload = { image: { mimeType: string; data: string }; credits?: ServerCredits };
 
 async function post(
   body: string,
+  identity: Record<string, string>,
   signal: AbortSignal,
   onStage: GenerateOptions['onStage'],
   allowBusyRetry: boolean
-): Promise<{ image: { mimeType: string; data: string } }> {
+): Promise<Payload> {
   onStage?.('uploading');
   // The response only arrives once the model is done, so switch the copy to "generating" on a timer.
   const generatingTimer = setTimeout(() => onStage?.('generating'), GENERATING_AFTER_MS);
@@ -106,7 +124,7 @@ async function post(
   try {
     response = await fetch(`${API_URL}/api/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(APP_TOKEN ? { 'x-exposure-app': APP_TOKEN } : {}) },
+      headers: { 'Content-Type': 'application/json', ...(APP_TOKEN ? { 'x-exposure-app': APP_TOKEN } : {}), ...identity },
       body,
       signal,
     });
@@ -120,11 +138,14 @@ async function post(
   if (!response.ok) {
     let message = 'The look could not be made right now.';
     let code = 'upstream';
+    let credits: ServerCredits | undefined;
     if (response.status === 413) {
       code = 'image';
     } else {
       try {
-        const error = ((await response.json()) as { error?: { code?: string; message?: string } }).error;
+        const json = (await response.json()) as { error?: { code?: string; message?: string }; credits?: ServerCredits };
+        const error = json.error;
+        credits = json.credits;
         code = error?.code ?? code;
         message = error?.message ?? message;
       } catch {}
@@ -135,13 +156,13 @@ async function post(
         const timer = setTimeout(resolve, BUSY_RETRY_DELAY_MS);
         signal.addEventListener('abort', () => (clearTimeout(timer), reject(new DOMException('Aborted', 'AbortError'))), { once: true });
       });
-      return post(body, signal, onStage, false);
+      return post(body, identity, signal, onStage, false);
     }
-    throw new GenerateError(code, FRIENDLY[code] ?? message);
+    throw new GenerateError(code, FRIENDLY[code] ?? message, credits);
   }
 
   try {
-    return (await response.json()) as { image: { mimeType: string; data: string } };
+    return (await response.json()) as Payload;
   } catch {
     throw new GenerateError('upstream', 'The look came back damaged. Try again, nothing was charged.');
   }

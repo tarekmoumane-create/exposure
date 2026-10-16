@@ -50,6 +50,16 @@ export async function configurePurchases(): Promise<void> {
   configured = true;
 }
 
+/** The RevenueCat app user id; the API keys the server-side photo balance on it. */
+export async function getUserId(): Promise<string | null> {
+  if (!configured) return null;
+  try {
+    return await Purchases.getAppUserID();
+  } catch {
+    return null;
+  }
+}
+
 export function toCustomerState(info: CustomerInfo): CustomerState {
   const active = info.entitlements.active[ENTITLEMENT_ID];
   const plan = planForProduct(active?.productIdentifier) ?? 'free';

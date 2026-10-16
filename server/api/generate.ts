@@ -2,12 +2,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sharp from 'sharp';
 
 import type { ImageSize, ThinkingLevel } from '../lib/gemini.js';
+import { reserve } from '../lib/ledger.js';
 import { getLook, runLook } from '../lib/pipeline.js';
 
 /**
  * POST /api/generate
  * Body: { lookId, image: { mimeType, data (base64), width?, height? }, strength?: number, deviceId?: string }
- * Returns: { image: { mimeType, data }, model, ms, meta: { relit, fallback, attempts } }
+ * Headers: x-exposure-user (RevenueCat app user id), x-exposure-day (the app's local YYYY-MM-DD)
+ * Returns: { image: { mimeType, data }, model, ms, meta: { relit, fallback, attempts }, credits?: { daily, pack, plan } }
+ * Out of photos: 402 { error: { code: 'credits' }, credits }
  *
  * Photos are never written to disk or logged. The function holds the bytes in memory for the
  * duration of one run and returns the result.
@@ -40,7 +43,7 @@ function reject(res: VercelResponse, status: number, code: string, message: stri
 function cors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-exposure-app');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-exposure-app, x-exposure-user, x-exposure-day');
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -72,6 +75,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const strength = typeof body?.strength === 'number' ? Math.min(1, Math.max(0, body.strength)) : undefined;
 
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim() || 'unknown';
+  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day'], ip);
+  if (!reservation.ok) {
+    return res.status(reservation.status).json({ error: { code: reservation.code, message: reservation.message }, credits: reservation.balance });
+  }
+  const release = reservation.enforced ? reservation.release : async () => null;
+
   const started = Date.now();
   try {
     const result = await runLook(lookId, { mimeType, data: Buffer.from(data, 'base64') }, {
@@ -84,14 +95,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       strength,
     });
     const image = await fitResponse(result.jpeg);
+    // The app's Cancel promises no charge: if it already hung up, refund.
+    const credits = (await release(!req.socket?.destroyed)) ?? undefined;
     console.log('[generate]', lookId, result.model, `${result.ms}ms`, `${Math.round(image.data.length / 1024)}kB`, result.stages.join(' | '));
     return res.status(200).json({
       image,
       model: result.model,
       ms: Date.now() - started,
       meta: { relit: result.relit, fallback: result.fallback, attempts: result.attempts, width: result.width, height: result.height },
+      credits,
     });
   } catch (error) {
+    await release(false);
     const status = (error as { status?: number }).status;
     const message = error instanceof Error ? error.message : 'unknown';
     console.error('[generate]', lookId, status ?? '-', message.slice(0, 200));

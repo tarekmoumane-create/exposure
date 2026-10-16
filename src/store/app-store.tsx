@@ -80,6 +80,8 @@ type State = {
   lastRefreshDay: string;
   /** Store transaction ids whose pack credits have already been added. */
   grantedTransactions: string[];
+  /** The user agreed to their photos being sent to Google Gemini for processing. */
+  aiConsent: boolean;
 };
 
 type Action =
@@ -92,6 +94,8 @@ type Action =
   | { type: 'updateStrip'; id: string; patch: Partial<Strip> }
   | { type: 'removeStrip'; id: string }
   | { type: 'spendCredit' }
+  | { type: 'syncCredits'; daily: number; pack: number }
+  | { type: 'setAiConsent'; value: boolean }
   | { type: 'addPack'; amount: number }
   | { type: 'setPlan'; plan: Plan; today: string }
   | { type: 'applyCustomer'; customer: CustomerState; today: string }
@@ -126,6 +130,7 @@ const initialState: State = {
   packCredits: WELCOME_CREDITS,
   lastRefreshDay: localDay(),
   grantedTransactions: [],
+  aiConsent: false,
 };
 
 function daysBetween(fromDay: string, toDay: string): number {
@@ -168,7 +173,7 @@ function sanitize(saved: Partial<State> & { version?: number }): Partial<State> 
     ? saved.strips.filter((strip) => strip && typeof strip.id === 'string' && typeof strip.resultUri === 'string' && Array.isArray(strip.frames))
     : [];
   const { version: _version, ...rest } = saved;
-  return { ...rest, shots, strips };
+  return { ...rest, shots, strips, aiConsent: saved.aiConsent === true };
 }
 
 function reducer(state: State, action: Action): State {
@@ -192,6 +197,11 @@ function reducer(state: State, action: Action): State {
     case 'spendCredit':
       if (state.dailyCredits > 0) return { ...state, dailyCredits: state.dailyCredits - 1 };
       return { ...state, packCredits: Math.max(0, state.packCredits - 1) };
+    case 'syncCredits':
+      // The server's balance is the one that counts; adopt it after every request that reports one.
+      return { ...state, dailyCredits: Math.max(0, action.daily), packCredits: Math.max(0, action.pack) };
+    case 'setAiConsent':
+      return { ...state, aiConsent: action.value };
     case 'addPack':
       return { ...state, packCredits: state.packCredits + action.amount };
     case 'setPlan':
@@ -229,6 +239,8 @@ type AppStore = State & {
   updateStrip: (id: string, patch: Partial<Strip>) => void;
   removeStrip: (id: string) => void;
   spendCredit: () => void;
+  syncCredits: (credits: { daily: number; pack: number }) => void;
+  setAiConsent: (value: boolean) => void;
   addPack: (amount: number) => void;
   setPlan: (plan: Plan) => void;
   /** Buys a plan through the store, or grants it locally in mock mode. */
@@ -266,7 +278,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!state.hydrated) return;
-    const { shots, strips, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions } = state;
+    const { shots, strips, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent } = state;
     // File uris are stored as relative keys: iOS moves the app container on every update.
     const portableShots = shots.map((shot) => ({
       ...shot,
@@ -292,6 +304,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         lastRefreshDay,
         onboarded,
         grantedTransactions,
+        aiConsent,
       })
     ).catch(() => {});
   }, [state]);
@@ -353,6 +366,8 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     []
   );
   const spendCredit = useCallback(() => dispatch({ type: 'spendCredit' }), []);
+  const syncCredits = useCallback((credits: { daily: number; pack: number }) => dispatch({ type: 'syncCredits', ...credits }), []);
+  const setAiConsent = useCallback((value: boolean) => dispatch({ type: 'setAiConsent', value }), []);
   const addPack = useCallback((amount: number) => dispatch({ type: 'addPack', amount }), []);
   const setPlan = useCallback((plan: Plan) => dispatch({ type: 'setPlan', plan, today: localDay() }), []);
 
@@ -436,13 +451,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       updateStrip,
       removeStrip,
       spendCredit,
+      syncCredits,
+      setAiConsent,
       addPack,
       setPlan,
       buyPlan,
       buyPack,
       restore,
     }),
-    [state, shots, strips, purchasesLive, canBuy, setOnboarded, addShot, updateShot, removeShot, addStrip, updateStrip, removeStrip, spendCredit, addPack, setPlan, buyPlan, buyPack, restore]
+    [state, shots, strips, purchasesLive, canBuy, setOnboarded, addShot, updateShot, removeShot, addStrip, updateStrip, removeStrip, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

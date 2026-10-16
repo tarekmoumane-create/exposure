@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Screen } from '@/components/screen';
@@ -17,13 +18,15 @@ import { DEFAULT_CONFIG } from '@/filters/presets';
 import { useTheme } from '@/hooks/use-theme';
 import { GenerateError, type GenerateStage, generateLook } from '@/lib/generate';
 import { dismiss } from '@/lib/navigation';
-import { useAppStore } from '@/store/app-store';
+import { localDay, useAppStore } from '@/store/app-store';
 
 /**
  * Generation screen. Sends the photo to the Exposure API and lands in the editor with the result.
  * The response only arrives once the model is done (15–35 s), so progress is driven by elapsed
  * time against a typical render and eases toward 95% without ever stalling visibly. A credit is
- * spent only once a result has come back; Cancel and Back never charge.
+ * spent only once a result has come back; Cancel and Back never charge. The server keeps the
+ * balance that counts and reports it back, so the app adopts it after each request. Before the
+ * very first upload the user is asked to agree to the photo going to Google Gemini.
  */
 
 /** A typical render; the bar reaches ~90% here and creeps toward 95% after. */
@@ -48,7 +51,7 @@ export default function ProcessScreen() {
   const theme = useTheme();
   const { lookId, uri, first } = useLocalSearchParams<{ lookId: string; uri: string; first?: string }>();
   const look = getLook(lookId);
-  const { addShot, spendCredit, plan, credits, hydrated } = useAppStore();
+  const { addShot, spendCredit, syncCredits, aiConsent, setAiConsent, plan, credits, hydrated } = useAppStore();
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState<GenerateStage>('preparing');
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export default function ProcessScreen() {
 
   // Time-based progress: fast at first, easing toward 95% as the render runs long.
   useEffect(() => {
-    if (error) return;
+    if (error || !aiConsent) return;
     startedAt.current = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startedAt.current;
@@ -77,23 +80,24 @@ export default function ProcessScreen() {
       setProgress((prev) => Math.max(prev, floor, Math.min(95, eased * 100)));
     }, 100);
     return () => clearInterval(timer);
-  }, [error, attempt]);
+  }, [error, attempt, aiConsent]);
 
   // Rotate the reassurance line while the model works.
   useEffect(() => {
-    if (error) return;
+    if (error || !aiConsent) return;
     const timer = setInterval(() => setLine((n) => (n + 1) % REASSURANCE.length), 5500);
     return () => clearInterval(timer);
-  }, [error, attempt]);
+  }, [error, attempt, aiConsent]);
 
   useEffect(() => {
-    if (!look || !uri || outOfCredits) return;
+    if (!look || !uri || outOfCredits || !aiConsent) return;
     const controller = new AbortController();
     const { signal } = controller;
     generateLook({
       uri,
       lookId: look.id,
       signal,
+      day: localDay(),
       onStage: (next) => {
         stageRef.current = next;
         setStage(next);
@@ -109,7 +113,8 @@ export default function ProcessScreen() {
           thumbUri: result.thumbUri,
           edit: { ...DEFAULT_CONFIG, intensity: 1 },
         });
-        spendCredit();
+        if (result.credits) syncCredits(result.credits);
+        else spendCredit();
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         // First photo on a free plan: the editor opens the plan sheet over the blurred result.
         const reveal = firstRef.current && planRef.current === 'free' ? { reveal: '1' } : {};
@@ -117,11 +122,17 @@ export default function ProcessScreen() {
       })
       .catch((caught: unknown) => {
         if (signal.aborted || (caught as Error).name === 'AbortError') return;
+        if (caught instanceof GenerateError && caught.code === 'credits') {
+          // The server says the balance is empty; trust it and offer the ways to continue.
+          syncCredits(caught.credits ?? { daily: 0, pack: 0 });
+          router.replace('/out-of-credits');
+          return;
+        }
         if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         setError(caught instanceof GenerateError ? caught.message : 'Something went wrong.');
       });
     return () => controller.abort();
-  }, [addShot, spendCredit, look, uri, attempt, outOfCredits]);
+  }, [addShot, spendCredit, syncCredits, look, uri, attempt, outOfCredits, aiConsent]);
 
   const retry = () => {
     stageRef.current = 'preparing';
@@ -149,6 +160,10 @@ export default function ProcessScreen() {
         />
       </Screen>
     );
+  }
+
+  if (hydrated && !aiConsent) {
+    return <AiConsent uri={uri} onAgree={() => setAiConsent(true)} onDecline={() => dismiss()} />;
   }
 
   const shown = Math.min(99, Math.round(progress));

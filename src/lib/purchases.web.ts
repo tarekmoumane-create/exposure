@@ -9,6 +9,9 @@ export function isPurchasesEnabled(): boolean {
   return false;
 }
 export async function configurePurchases(): Promise<void> {}
+export async function getUserId(): Promise<string | null> {
+  return null;
+}
 export async function fetchCustomerState(): Promise<CustomerState | null> {
   return null;
 }

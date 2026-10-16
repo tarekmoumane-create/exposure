@@ -16,7 +16,7 @@ const PLAN_LABEL = { free: 'Free', weekly: 'Weekly', yearly: 'Yearly' } as const
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { plan, credits, dailyCredits, packCredits, shots, strips, restore } = useAppStore();
+  const { plan, credits, dailyCredits, packCredits, shots, strips, restore, aiConsent, setAiConsent } = useAppStore();
   const [restoring, setRestoring] = useState(false);
   // Toasts render under native modals on iOS, so status is shown inline here.
   const [status, setStatus] = useState<string | null>(null);
@@ -81,9 +81,17 @@ export default function SettingsScreen() {
           Privacy
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Photos leave your phone only to make the look you asked for, and are never stored on our servers. No ads,
-          no tracking, no face data kept.
+          Photos leave your phone only to make the look you asked for. They go to Google Gemini, the AI that makes
+          the look, and are never stored on our servers. No ads, no tracking, no face data kept.
         </ThemedText>
+        <Row label="Google Gemini processing" value={aiConsent ? 'Allowed' : 'Off'} />
+        {aiConsent ? (
+          <Button title="Turn off" variant="secondary" size="md" onPress={() => setAiConsent(false)} />
+        ) : (
+          <ThemedText type="caption" themeColor="textTertiary">
+            You’ll be asked again before your next photo is made.
+          </ThemedText>
+        )}
         <View style={styles.links}>
           <ExternalLink href="https://exposure-api.vercel.app/privacy">
             <ThemedText type="small" style={{ color: theme.accentDeep }}>

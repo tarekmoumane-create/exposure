@@ -141,11 +141,15 @@ export default function StudioScreen() {
     return (
       <Screen scroll={false} withTabBar>
         <EmptyState
-          title="The booth needs a camera"
-          message="Four shots on a timer, a filter, a strip. Everything stays on your phone."
+          title="The booth uses the camera"
+          message={
+            permission.canAskAgain
+              ? 'The photobooth takes four shots on a timer and turns them into a strip. Everything stays on your phone.'
+              : 'Camera access is off. To use the photobooth, turn it on for Exposure in Settings.'
+          }
           action={
             <View style={styles.stack}>
-              <Button title={permission.canAskAgain ? 'Allow camera' : 'Open Settings'} onPress={allowCamera} />
+              <Button title={permission.canAskAgain ? 'Continue' : 'Open Settings'} onPress={allowCamera} />
               <Button title="Edit a photo from your library instead" variant="ghost" onPress={editFromRoll} />
             </View>
           }

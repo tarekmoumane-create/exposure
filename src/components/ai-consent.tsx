@@ -10,15 +10,15 @@ import { LEGAL_URLS } from '@/data/products';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
-  /** The photo about to be sent, so the user sees exactly what is shared. */
+  /** The first photo about to be sent, so the user sees what is shared. */
   uri: string;
   onAgree: () => void;
   onDecline: () => void;
 };
 
 const POINTS = [
-  'Sent only when you make a photo, and only that photo.',
-  'Not stored on Exposure’s servers after your photo comes back.',
+  'Sent only when you develop a roll, and only the photos in it.',
+  'Not stored on Exposure’s servers after your frame comes back.',
   'Never sold, and not shared with anyone besides Google for this.',
 ];
 
@@ -36,17 +36,17 @@ export function AiConsent({ uri, onAgree, onDecline }: Props) {
         </View>
 
         <View style={styles.copy}>
-          <ThemedText type="title">Your photo goes to Google’s AI</ThemedText>
+          <ThemedText type="title">Your photos go to Google’s AI</ThemedText>
           <ThemedText type="body" themeColor="textSecondary">
-            To apply a look, Exposure sends this photo to Google Gemini, an AI service run by Google LLC. Google uses it to
-            make your new image and may keep it for a short time to prevent abuse, under its own terms.
+            To develop a roll, Exposure sends your photos to Google Gemini, an AI service run by Google LLC. Google uses them
+            to make your developed frames and may keep them for a short time to prevent abuse, under its own terms.
           </ThemedText>
         </View>
 
         <View style={[styles.points, { borderColor: theme.line }]}>
           {POINTS.map((point) => (
             <View key={point} style={styles.point}>
-              <View style={[styles.dot, { backgroundColor: theme.accent }]} />
+              <View style={[styles.dot, { backgroundColor: theme.brand }]} />
               <ThemedText type="small" style={styles.pointText}>
                 {point}
               </ThemedText>

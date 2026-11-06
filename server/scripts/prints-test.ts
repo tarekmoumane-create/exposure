@@ -1,0 +1,82 @@
+/**
+ * Exercises the prints flow with Redis, Stripe and Prodigi stubbed out: pricing guard, signature
+ * checks, idempotent lab submission and status mapping. No network, no keys.   npx tsx scripts/prints-test.ts
+ */
+import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import { Readable } from 'node:stream';
+
+Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test', STRIPE_WEBHOOK_SECRET: 'whsec_x', PRODIGI_API_KEY: 'pk', KV_REST_API_URL: 'https://redis.test', KV_REST_API_TOKEN: 't', APP_TOKEN: 'app' });
+
+const kv = new Map<string, string>();
+const calls: { url: string; body?: string }[] = [];
+let labCost = '6.00';
+let labOrders = 0;
+globalThis.fetch = (async (input: string, init?: RequestInit) => {
+  const url = String(input);
+  const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status });
+  calls.push({ url, body: init?.body as string });
+  if (url.startsWith('https://redis.test')) {
+    const [cmd, key, value] = JSON.parse(init!.body as string) as string[];
+    if (cmd === 'SET') { kv.set(key, value); return json({ result: 'OK' }); }
+    if (cmd === 'GET') return json({ result: kv.get(key) ?? null });
+    if (cmd === 'EXISTS') return json({ result: kv.has(key) ? 1 : 0 });
+  }
+  if (url.includes('/quotes')) return json({ outcome: 'Created', quotes: [{ shipmentMethod: 'Budget', costSummary: { items: { amount: '3.00', currency: 'USD' }, shipping: { amount: '3.00', currency: 'USD' }, totalCost: { amount: labCost, currency: 'USD' } } }] });
+  if (url.includes('/checkout/sessions')) return json({ id: 'cs_1', url: 'https://checkout.stripe.test/x' });
+  if (url.endsWith('/orders') && init?.method === 'POST') { labOrders++; return json({ outcome: 'Created', order: { id: 'ord_lab1' } }); }
+  if (url.includes('/orders/ord_lab1')) return json({ order: { status: { stage: 'InProgress' }, shipments: [{ status: 'Shipped', carrier: { name: 'USPS' }, tracking: { url: 'https://track.test/1' } }] } });
+  throw new Error(`unexpected ${url}`);
+}) as typeof fetch;
+
+const { default: checkout } = await import('../api/prints/checkout.js');
+const { default: webhook } = await import('../api/prints/webhook.js');
+const { default: orderStatus } = await import('../api/prints/order.js');
+const P = await import('../lib/prints.js');
+
+function mockRes() {
+  const out: { status?: number; json?: Record<string, unknown> } = {};
+  const res = { status(code: number) { out.status = code; return res; }, json(v: Record<string, unknown>) { out.json = v; return res; }, end() { return res; }, setHeader() {} };
+  return { res: res as never, out };
+}
+const appReq = (body: unknown) => ({ method: 'POST', headers: { 'x-exposure-app': 'app' }, body }) as never;
+
+const tokens: string[] = [];
+for (let i = 0; i < 6; i++) tokens.push(await P.storeFile('aGVsbG8='));
+
+// Price guard: refuse when the lab costs more than the customer pays.
+labCost = '50.00';
+{ const { res, out } = mockRes(); await checkout(appReq({ tokens, roll: 'Test' }), res); assert.equal(out.status, 503); assert.equal(out.json!.error && (out.json!.error as { code: string }).code, 'pricing'); }
+labCost = '6.00';
+
+{ const { res, out } = mockRes(); await checkout({ method: 'POST', headers: {}, body: {} } as never, res); assert.equal(out.status, 401); }
+{ const { res, out } = mockRes(); await checkout(appReq({ tokens: tokens.slice(0, 2), roll: 'Test' }), res); assert.equal(out.status, 400); }
+{ const { res, out } = mockRes(); await checkout(appReq({ tokens: [...tokens.slice(1), 'A'.repeat(32)], roll: 'Test' }), res); assert.equal(out.status, 410); }
+
+const { res, out } = mockRes();
+await checkout(appReq({ tokens, roll: 'Test' }), res);
+assert.equal(out.status, 200);
+const orderId = out.json!.orderId as string;
+const secret = out.json!.secret as string;
+const stripeBody = calls.find((c) => c.url.includes('checkout/sessions'))!.body!;
+assert.match(stripeBody, /mode=payment/);
+assert.match(stripeBody, new RegExp(`metadata%5Border%5D=${orderId}`));
+
+const event = JSON.stringify({ type: 'checkout.session.completed', data: { object: { id: 'cs_1', payment_status: 'paid', metadata: { order: orderId }, customer_details: { email: 'a@b.test' }, collected_information: { shipping_details: { name: 'A B', address: { line1: '1 St', city: 'NYC', state: 'NY', postal_code: '10001', country: 'US' } } } } } });
+const signed = (body: string, key = 'whsec_x', t = Math.floor(Date.now() / 1000)) => `t=${t},v1=${crypto.createHmac('sha256', key).update(`${t}.${body}`).digest('hex')}`;
+const hook = (signature: string) => Object.assign(Readable.from([Buffer.from(event)]), { method: 'POST', headers: { 'stripe-signature': signature } }) as never;
+
+{ const { res, out } = mockRes(); await webhook(hook(signed(event, 'wrong')), res); assert.equal(out.status, 400); assert.equal(labOrders, 0); }
+{ const { res } = mockRes(); await webhook(hook(signed(event, 'whsec_x', Math.floor(Date.now() / 1000) - 3600)), res); assert.equal(labOrders, 0, 'stale signature must not print'); }
+{ const { res, out } = mockRes(); await webhook(hook(signed(event)), res); assert.equal(out.status, 200); assert.equal(labOrders, 1); }
+{ const { res, out } = mockRes(); await webhook(hook(signed(event)), res); assert.equal(out.status, 200); assert.equal(labOrders, 1, 'a repeated webhook must not print twice'); }
+
+const labBody = JSON.parse(calls.filter((c) => c.url.endsWith('/orders')).at(-1)!.body!);
+assert.equal(labBody.items.length, 6);
+assert.equal(labBody.recipient.address.postalOrZipCode, '10001');
+assert.match(labBody.items[0].assets[0].url, /\/api\/prints\/file\//);
+
+{ const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret: 'nope'.repeat(8) } } as never, res); assert.equal(out.status, 404); }
+{ const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret } } as never, res); assert.equal(out.json!.stage, 'shipped'); assert.equal(out.json!.trackingUrl, 'https://track.test/1'); }
+
+console.log('prints flow: all checks passed');

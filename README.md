@@ -1,31 +1,34 @@
 # Exposure
 
-Real-camera looks for any photo. Pick a look, add a photo, get it back in seconds with everything in it exactly where it was: only the light and the camera change.
-Cream, serif, photo-first, for the same audience as the apps that already print money in this category.
+Your camera roll as a roll of film. Choose one stock and up to 12 photos; Exposure develops them as a set, with a contact sheet, and can mail them as real prints.
 
 ## Run
 
 ```bash
 npm install
-npx expo start            # i / a / w, or scan with Expo Go
+npx expo start
 npx expo lint
 npx tsc --noEmit
+cd server && npx tsx scripts/ledger-test.ts && npx tsx scripts/prints-test.ts
 ```
 
-Web preview with a phone frame: http://localhost:8081/phone.html. Store screenshot generator: http://localhost:8081/store.html.
-The camera and Save to Photos need a real device. Everything else runs in Expo Go, a simulator and on web.
+Web preview with a phone frame: http://localhost:8081/phone.html. Move `.env.local` aside while previewing to run simulated (no calls to the live API).
 
-## What works today
+## How it works
 
-- **Onboarding**: three before/after slides, then "Try it on your photo": pick a photo, pick a look, and the plan sheet opens over the blurred result right before the first reveal (closing it still reveals the free photo).
-- **Looks**: twelve AI looks in three groups, before/after cards, look detail with hold-to-compare, pick from camera or roll.
-- **Processing**: real, in two halves (`research/look-science.md` has the measurements and physics). The photo is downscaled to 1536px and posted to the Exposure API (`server/`, a Vercel function). Looks that change the light source (flash, golden hour, blue hour, window, webcam) ask Gemini `gemini-nano-banana-2.1` for a relight only, with a prompt that forbids adding, removing or reframing anything and asks for a clean, unstyled result (`server/lib/relight.ts`). The result is verified against the input (frame alignment at the original's edges, and the share of new edges that were not in the input; `server/lib/render/lock.ts`), retried once with a stricter prompt, and otherwise replaced by a deterministic approximation so a user never gets an invented photo. An accepted relight keeps only its large-scale light: every edge and texture is transferred back from the original pixels (the detail lock). Then the camera or film rendering (tone curve, colour science, grain, halation, optics, resolution, JPEG) is applied in code (`server/lib/render/recipes.ts`), the same on a face, a landscape or a screenshot. 35mm Film and Haze are rendering only and never call the model. Flat inputs skip the model. About 15–25 s and $0.05 per relit photo, under a second for rendering-only looks. A credit is spent only on success; errors show a retry. Without `EXPO_PUBLIC_API_URL` the screen runs a simulated pass.
-- **Editor / result**: strength slider (a true cross-fade from the original to the AI result, baked into the export), 17 live filter thumbnails, warmth / brightness / contrast / saturation / grain / vignette, hold-to-compare, Save to Photos and Share. All rendering is on-device: Skia on native, SVG color matrices on web. Export renders at up to 2048px.
-- **Studio**: the free photobooth. Four shots on a countdown, filter chips, flash and haptics, then a strip with white or black paper and a date stamp. Save and share the strip. "Roll" edits any photo for free.
-- **Gallery**: shots and strips, on this phone only, with live-filtered thumbnails. Files live in the app's document folder and are stored as relative keys, so they survive iOS updates and cache purges; deleting an item deletes its files.
-- **Credits**: one free photo on install; plans grant daily photos that refresh at local midnight and bank up to three days; packs never expire; out-of-credits sheet.
-- **Purchases**: RevenueCat through `src/lib/purchases.ts`. With `EXPO_PUBLIC_REVENUECAT_IOS_KEY` set, the plan follows the `pro` entitlement and pack credits are granted once per store transaction (so restores and reinstalls reconcile). Without a key, or on web, purchases are mocked locally. Product ids live in `src/data/products.ts`.
-- **Paywall, out-of-credits, settings**, toast, haptics, cream app icon and splash.
+- **Rolls** (`src/app/(tabs)/index.tsx`, `src/app/new-roll.tsx`, `src/app/roll/[id].tsx`): one stock, up to 12 frames, all on this phone.
+- **Developer** (`src/components/developer.tsx`): works through waiting frames. The first runs alone, the rest run three at a time with it as the match frame. A frame only starts if a photo can pay for it.
+- **Engine** (`server/lib/pipeline.ts`): the model renders each frame; the verifier rejects shifted content or invented borders, then retries or falls back. `server/scripts/roll.ts` develops a folder the same way.
+- **Frame viewer** (`src/app/frame.tsx`): swipe, hold for the original, set strength.
+- **Sample roll** (`src/data/sample-roll.ts`): a real developed roll bundled in the app, no AI call.
+- **Credits**: one free frame per device (keychain id, capped by `FREE_DAILY_CAP`), then plans and packs. `server/lib/ledger.ts` decides.
+- **Prints** (`server/lib/prints.ts`, `src/lib/prints.ts`): frames upload, Stripe Checkout takes payment and address, the webhook sends the order to Prodigi. Hidden until `/api/prints/config` reports enabled.
+
+## Turning prints on
+
+Vercel env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PRODIGI_API_KEY`; `PRODIGI_ENV=live` when ready. Optional: `PRODIGI_SKU`, `PRINT_PRICE_CENTS`, `PRINT_SHIPPING_CENTS`, `PRINT_COUNTRY`, `STRIPE_AUTOMATIC_TAX=on`.
+Stripe webhook URL: `https://exposure-api.vercel.app/api/prints/webhook`, events `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+Confirm the 4x6 SKU with `GET /v4.0/products/{sku}` before going live.
 
 ## Services
 

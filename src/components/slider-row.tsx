@@ -27,7 +27,7 @@ export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete
         <ThemedText type="caption" themeColor="textSecondary">
           {label}
         </ThemedText>
-        <ThemedText type="mono" themeColor="textTertiary">
+        <ThemedText type="caption" themeColor="textTertiary">
           {display}
         </ThemedText>
       </View>
@@ -40,9 +40,9 @@ export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete
         value={value === 0 && min < 0 ? 0.000001 : value}
         onValueChange={onChange}
         onSlidingComplete={onComplete}
-        minimumTrackTintColor={theme.text}
+        minimumTrackTintColor={theme.brand}
         maximumTrackTintColor={theme.line}
-        thumbTintColor={theme.text}
+        thumbTintColor={theme.brand}
         accessibilityLabel={label}
         accessibilityValue={{ min: Math.round(min * 100), max: Math.round(max * 100), now: Math.round(value * 100), text: display }}
       />

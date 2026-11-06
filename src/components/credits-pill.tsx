@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
@@ -17,14 +17,12 @@ export function CreditsPill() {
       accessibilityLabel={`${credits} photos left. ${plan === 'free' ? 'See plans.' : 'Add photos.'}`}
       hitSlop={6}
       onPress={() => router.push(plan === 'free' ? '/paywall' : '/out-of-credits')}
-      style={({ pressed }) => [styles.pill, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.8 : 1 }]}>
-      <View style={[styles.dot, { backgroundColor: theme.accent }]} />
-      <ThemedText type="caption">{credits}</ThemedText>
+      style={({ pressed }) => [styles.pill, { backgroundColor: theme.accent, opacity: pressed ? 0.8 : 1 }]}>
+      <ThemedText type="caption">{credits === 1 ? '1 photo' : `${credits} photos`}</ThemedText>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: Radius.pill },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  pill: { alignItems: 'center', justifyContent: 'center', minHeight: 36, paddingHorizontal: 12, borderRadius: Radius.md },
 });

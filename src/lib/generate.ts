@@ -1,10 +1,10 @@
 /**
- * The generation call. Prepares the photo, posts it to the Exposure API, and returns local uris
- * for the result and the normalised source. With no API URL configured (web preview, early dev)
- * it runs a simulated pass so the rest of the flow is still exercisable.
+ * Develops one frame. Prepares the photo, posts it to the Exposure API, and returns local uris for
+ * the result. With no API URL configured (web preview, early dev) it runs a simulated pass so the
+ * rest of the flow is still exercisable.
  */
 
-import { getLook } from '@/data/looks';
+import { getDeviceId } from '@/lib/device';
 import { getUserId } from '@/lib/purchases';
 import { ImageReadError, makeThumbnail, matchFraming, persistEncoded, prepareForUpload } from '@/lib/image-io';
 
@@ -16,12 +16,17 @@ const CLIENT_TIMEOUT_MS = 95_000;
 /** How long after the upload starts we assume the model is working (the response only arrives at the end). */
 const GENERATING_AFTER_MS = 1_200;
 const BUSY_RETRY_DELAY_MS = 3_000;
+/** Enough for a sharp 4x6 print; a request must also stay under the server's 4.5 MB body limit. */
+const UPLOAD_EDGE = 2048;
+const MATCH_EDGE = 640;
 
 export type GenerateStage = 'preparing' | 'uploading' | 'generating' | 'retrying' | 'finishing';
 
 export type GenerateOptions = {
   uri: string;
   lookId: string;
+  /** A finished frame from the same roll, so this one is rendered to sit beside it. */
+  matchUri?: string;
   strength?: number;
   onStage?: (stage: GenerateStage) => void;
   signal?: AbortSignal;
@@ -35,8 +40,6 @@ export type ServerCredits = { daily: number; pack: number };
 export type GenerateResult = {
   credits?: ServerCredits;
   resultUri: string;
-  /** The downscaled, orientation-normalised JPEG that was sent. */
-  sourceUri: string;
   thumbUri: string;
 };
 
@@ -58,7 +61,7 @@ const FRIENDLY: Record<string, string> = {
   image: 'This photo is too large to send. Try a smaller one.',
   update: 'Update Exposure to keep making photos.',
   credits: 'You are out of photos for now.',
-  inflight: 'Your last photo is still being made. Give it a moment.',
+  inflight: 'A few frames are still developing. Give it a moment.',
 };
 
 export function isGenerationLive(): boolean {
@@ -69,13 +72,15 @@ function isAbort(error: unknown): boolean {
   return (error as Error)?.name === 'AbortError';
 }
 
-export async function generateLook({ uri, lookId, strength, onStage, signal, day }: GenerateOptions): Promise<GenerateResult> {
+export async function generateLook({ uri, lookId, matchUri, strength, onStage, signal, day }: GenerateOptions): Promise<GenerateResult> {
   if (!API_URL) return simulate(uri, lookId, onStage, signal);
 
   onStage?.('preparing');
   let image;
+  let match;
   try {
-    image = await prepareForUpload(uri);
+    image = await prepareForUpload(uri, UPLOAD_EDGE);
+    if (matchUri) match = await prepareForUpload(matchUri, MATCH_EDGE, 0.8);
   } catch (error) {
     if (error instanceof ImageReadError) throw new GenerateError('photo', error.message);
     throw error;
@@ -84,10 +89,14 @@ export async function generateLook({ uri, lookId, strength, onStage, signal, day
 
   const timeout = AbortSignal.timeout(CLIENT_TIMEOUT_MS);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  const body = JSON.stringify({ lookId, image: { mimeType: image.mimeType, data: image.data, width: image.width, height: image.height }, strength });
+  const body = JSON.stringify({ lookId, image: { mimeType: image.mimeType, data: image.data, width: image.width, height: image.height }, match: match ? { mimeType: match.mimeType, data: match.data } : undefined, strength });
 
-  const userId = await getUserId();
-  const identity: Record<string, string> = { ...(userId ? { 'x-exposure-user': userId } : {}), ...(day ? { 'x-exposure-day': day } : {}) };
+  const [userId, deviceId] = await Promise.all([getUserId(), getDeviceId()]);
+  const identity: Record<string, string> = {
+    ...(userId ? { 'x-exposure-user': userId } : {}),
+    ...(deviceId ? { 'x-exposure-device': deviceId } : {}),
+    ...(day ? { 'x-exposure-day': day } : {}),
+  };
 
   let payload: Payload;
   try {
@@ -101,11 +110,10 @@ export async function generateLook({ uri, lookId, strength, onStage, signal, day
 
   onStage?.('finishing');
   const name = `exposure-${lookId}-${Date.now()}`;
-  let resultUri = await persistEncoded(payload.image, name);
   // The model only outputs a few fixed ratios; trim any slack so the framing matches the photo picked.
-  if (getLook(lookId)?.framing !== 'free') resultUri = await matchFraming(resultUri, image.width, image.height);
+  const resultUri = await matchFraming(await persistEncoded(payload.image, name), image.width, image.height);
   const thumbUri = await makeThumbnail(resultUri, `${name}-thumb`);
-  return { resultUri, sourceUri: image.uri, thumbUri, credits: payload.credits };
+  return { resultUri, thumbUri, credits: payload.credits };
 }
 
 type Payload = { image: { mimeType: string; data: string }; credits?: ServerCredits };
@@ -175,10 +183,12 @@ function simulate(uri: string, lookId: string, onStage?: (stage: GenerateStage) 
     const tick = () => {
       if (signal?.aborted) return reject(new DOMException('Aborted', 'AbortError'));
       if (index < stages.length) {
-        onStage?.(stages[index++]);
+        const stage = stages[index];
+        index += 1;
+        onStage?.(stage);
         setTimeout(tick, index === 3 ? 1800 : 500);
       } else {
-        makeThumbnail(uri, `exposure-${lookId}-${Date.now()}-thumb`).then((thumbUri) => resolve({ resultUri: uri, sourceUri: uri, thumbUri }));
+        makeThumbnail(uri, `exposure-${lookId}-${Date.now()}-thumb`).then((thumbUri) => resolve({ resultUri: uri, thumbUri }));
       }
     };
     setTimeout(tick, 0);

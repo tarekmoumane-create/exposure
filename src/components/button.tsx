@@ -40,18 +40,18 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const background = {
-    primary: theme.text,
+    primary: theme.brand,
     accent: theme.accent,
     secondary: theme.surfaceRaised,
     ghost: 'transparent',
     danger: 'transparent',
   }[variant];
   const color = {
-    primary: theme.surface,
+    primary: theme.onBrand,
     accent: theme.onAccent,
     secondary: theme.text,
     ghost: theme.textSecondary,
-    danger: theme.danger,
+    danger: theme.mark,
   }[variant];
 
   return (
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.pill,
+    borderRadius: Radius.md,
   },
   lg: { paddingVertical: 16, paddingHorizontal: Spacing.four, minHeight: 54 },
   md: { paddingVertical: 10, paddingHorizontal: Spacing.three, minHeight: 42 },

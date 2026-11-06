@@ -4,11 +4,13 @@
  * Identity is the RevenueCat app user id the app sends in `x-exposure-user`. The plan and pack
  * purchases come from RevenueCat (read with the public SDK key, the same call the SDK makes), and the
  * balance lives in Upstash Redis. The rules mirror src/store/app-store.tsx exactly:
- *   - free: nothing. The app shows its paywall before any generation (hard paywall), so a user
- *     with no plan and no pack is always refused here
+ *   - free: one welcome photo per device (x-exposure-device, kept in the iOS keychain so it survives
+ *     a reinstall), capped per day across all users by FREE_DAILY_CAP so abuse has a ceiling
  *   - weekly 5/day, yearly 10/day, unused daily photos bank up to 3 days of allowance
  *   - each pack transaction adds its photos once
  * A photo is reserved before the model runs and refunded if it fails, so failures never charge.
+ * A roll develops a few frames at once, so the balance lock is held only while it is read and
+ * written, never while the model runs; MAX_IN_FLIGHT caps the frames running per user.
  *
  * Until both Redis and REVENUECAT_API_KEY (the public iOS SDK key) are set, the ledger is off and
  * every request is allowed, as before.
@@ -22,9 +24,15 @@ const ENTITLEMENT_ID = 'pro';
 const PLAN_PRODUCTS: Record<string, Plan> = { 'app.exposure.weekly': 'weekly', 'app.exposure.yearly': 'yearly' };
 const PACK_CREDITS: Record<string, number> = { 'app.exposure.credits10': 10, 'app.exposure.credits30': 30, 'app.exposure.credits80': 80 };
 const LEDGER_TTL_S = 400 * 86_400;
-const LOCK_TTL_S = 120;
+const LOCK_TTL_S = 10;
+const LOCK_WAIT_MS = 120;
+const LOCK_ATTEMPTS = 25;
+const MAX_IN_FLIGHT = 4;
+const IN_FLIGHT_TTL_S = 120;
+const WELCOME_PHOTOS = 1;
+const FREE_DAILY_CAP = Number(process.env.FREE_DAILY_CAP ?? 300);
 
-type Ledger = { day: string; daily: number; pack: number; plan: Plan; granted: string[] };
+type Ledger = { day: string; daily: number; pack: number; plan: Plan; granted: string[]; welcomed?: boolean };
 
 export type Balance = { daily: number; pack: number; plan: Plan };
 
@@ -38,12 +46,16 @@ export type Reservation =
 const REDIS_URL = (process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL)?.replace(/\/$/, '');
 const REDIS_TOKEN = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
 
+export function isRedisConfigured(): boolean {
+  return Boolean(REDIS_URL && REDIS_TOKEN);
+}
+
 /** Both are needed: without RevenueCat every subscriber would look free and be refused. */
 export function isLedgerEnabled(): boolean {
   return Boolean(REDIS_URL && REDIS_TOKEN && process.env.REVENUECAT_API_KEY);
 }
 
-async function redis<T = unknown>(...command: (string | number)[]): Promise<T> {
+export async function redis<T = unknown>(...command: (string | number)[]): Promise<T> {
   const response = await fetch(REDIS_URL!, {
     method: 'POST',
     headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
@@ -136,13 +148,46 @@ const balanceOf = (ledger: Ledger): Balance => ({ daily: ledger.daily, pack: led
 // ---------------------------------------------------------------- Reserve / release
 
 const USER_ID = /^[A-Za-z0-9$:._-]{8,128}$/;
+const DEVICE_ID = /^[A-Za-z0-9-]{16,64}$/;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Runs `work` while holding the user's balance lock. Waits briefly when another frame holds it. */
+async function withLock<T>(userId: string, work: () => Promise<T>): Promise<T> {
+  const key = `lock:${userId}`;
+  for (let attempt = 0; attempt < LOCK_ATTEMPTS; attempt++) {
+    if ((await redis<string | null>('SET', key, '1', 'NX', 'EX', LOCK_TTL_S)) === 'OK') {
+      try {
+        return await work();
+      } finally {
+        await redis('DEL', key).catch(() => {});
+      }
+    }
+    await sleep(LOCK_WAIT_MS);
+  }
+  throw new Error('balance lock busy');
+}
+
+/** Grants the one free photo if this device has never had it and today's cap is not used up. */
+async function grantWelcome(ledger: Ledger, deviceId: unknown): Promise<Ledger> {
+  if (ledger.welcomed || typeof deviceId !== 'string' || !DEVICE_ID.test(deviceId)) return ledger;
+  // Check the device first: a repeat visitor must not use up today's cap for new people.
+  const key = `welcome:${deviceId}`;
+  if (await redis<string | null>('GET', key)) return { ...ledger, welcomed: true };
+  const capKey = `freecap:${utcDay()}`;
+  const spentToday = await redis<number>('INCR', capKey);
+  if (spentToday === 1) await redis('EXPIRE', capKey, 2 * 86_400);
+  if (spentToday > FREE_DAILY_CAP) return ledger;
+  if ((await redis<string | null>('SET', key, '1', 'NX', 'EX', LEDGER_TTL_S * 2)) !== 'OK') return { ...ledger, welcomed: true };
+  return { ...ledger, welcomed: true, pack: ledger.pack + WELCOME_PHOTOS };
+}
 
 /**
- * Takes one photo from the user's balance and holds a per-user lock while the model runs.
- * `release(true)` keeps the charge, `release(false)` refunds it. Infrastructure errors fail open so
- * an outage of Redis or RevenueCat never blocks paying users.
+ * Takes one photo from the user's balance. `release(true)` keeps the charge, `release(false)`
+ * refunds it. Infrastructure errors fail open so an outage of Redis or RevenueCat never blocks
+ * paying users.
  */
-export async function reserve(userId: unknown, clientDay: unknown): Promise<Reservation> {
+export async function reserve(userId: unknown, clientDay: unknown, deviceId?: unknown): Promise<Reservation> {
   if (!isLedgerEnabled()) return { ok: true, enforced: false };
   if (typeof userId !== 'string' || !USER_ID.test(userId)) {
     return { ok: false, status: 426, code: 'update', message: 'Update Exposure to keep making photos.' };
@@ -150,55 +195,69 @@ export async function reserve(userId: unknown, clientDay: unknown): Promise<Rese
 
   const today = resolveDay(clientDay);
   const ledgerKey = `ledger:${userId}`;
-  const lockKey = `lock:${userId}`;
+  const flightKey = `inflight:${userId}`;
 
   try {
-    const locked = await redis<string | null>('SET', lockKey, '1', 'NX', 'EX', LOCK_TTL_S);
-    if (locked !== 'OK') return { ok: false, status: 409, code: 'inflight', message: 'One photo at a time. Your last one is still being made.' };
+    const running = await redis<number>('INCR', flightKey);
+    await redis('EXPIRE', flightKey, IN_FLIGHT_TTL_S);
+    if (running > MAX_IN_FLIGHT) {
+      await redis('DECR', flightKey);
+      return { ok: false, status: 409, code: 'inflight', message: 'A few frames are still developing. Give it a moment.' };
+    }
   } catch (error) {
-    console.error('[ledger] lock failed, allowing', (error as Error).message);
+    console.error('[ledger] in-flight count failed, allowing', (error as Error).message);
     return { ok: true, enforced: false };
   }
-  const unlock = () => redis('DEL', lockKey).catch(() => {});
+  const land = () => redis('DECR', flightKey).catch(() => {});
 
   try {
-    const [raw, customer] = await Promise.all([redis<string | null>('GET', ledgerKey), fetchCustomer(userId)]);
-    let ledger: Ledger = raw ? (JSON.parse(raw) as Ledger) : { day: today, daily: 0, pack: 0, plan: 'free', granted: [] };
-    // RevenueCat unreachable: keep the last known plan rather than downgrading a paying user.
-    if (customer) ledger = applyPacks(applyPlan(ledger, customer.plan, today), customer.packs);
-    ledger = applyRefresh(ledger, today);
+    const customer = await fetchCustomer(userId);
+    const outcome = await withLock(userId, async () => {
+      const raw = await redis<string | null>('GET', ledgerKey);
+      let ledger: Ledger = raw ? (JSON.parse(raw) as Ledger) : { day: today, daily: 0, pack: 0, plan: 'free', granted: [] };
+      // RevenueCat unreachable: keep the last known plan rather than downgrading a paying user.
+      if (customer) ledger = applyPacks(applyPlan(ledger, customer.plan, today), customer.packs);
+      ledger = applyRefresh(ledger, today);
+      ledger = await grantWelcome(ledger, deviceId);
+      if (ledger.daily + ledger.pack <= 0) {
+        await redis('SET', ledgerKey, JSON.stringify(ledger), 'EX', LEDGER_TTL_S);
+        return { charged: null, ledger };
+      }
+      const bucket: 'daily' | 'pack' = ledger.daily > 0 ? 'daily' : 'pack';
+      const charged: Ledger = { ...ledger, [bucket]: ledger[bucket] - 1 };
+      await redis('SET', ledgerKey, JSON.stringify(charged), 'EX', LEDGER_TTL_S);
+      return { charged, ledger: charged, bucket };
+    });
 
-    if (ledger.daily + ledger.pack <= 0) {
-      await redis('SET', ledgerKey, JSON.stringify(ledger), 'EX', LEDGER_TTL_S);
-      await unlock();
-      return { ok: false, status: 402, code: 'credits', message: 'You are out of photos for now.', balance: balanceOf(ledger) };
+    if (!outcome.charged) {
+      await land();
+      return { ok: false, status: 402, code: 'credits', message: 'You are out of photos for now.', balance: balanceOf(outcome.ledger) };
     }
-
-    const before = ledger;
-    const charged: Ledger = ledger.daily > 0 ? { ...ledger, daily: ledger.daily - 1 } : { ...ledger, pack: ledger.pack - 1 };
-    await redis('SET', ledgerKey, JSON.stringify(charged), 'EX', LEDGER_TTL_S);
 
     let released = false;
     const release = async (keep: boolean): Promise<Balance | null> => {
       if (released) return null;
       released = true;
       try {
-        if (!keep) {
-          // Refund the exact unit taken. Nothing else can have changed it: the lock is still held.
-          await redis('SET', ledgerKey, JSON.stringify(before), 'EX', LEDGER_TTL_S);
-          return balanceOf(before);
-        }
-        return balanceOf(charged);
+        return await withLock(userId, async () => {
+          const raw = await redis<string | null>('GET', ledgerKey);
+          const current = raw ? (JSON.parse(raw) as Ledger) : outcome.ledger;
+          if (keep) return balanceOf(current);
+          // Other frames may have changed the balance since, so only this frame's unit goes back.
+          const refunded: Ledger = { ...current, [outcome.bucket!]: current[outcome.bucket!] + 1 };
+          await redis('SET', ledgerKey, JSON.stringify(refunded), 'EX', LEDGER_TTL_S);
+          return balanceOf(refunded);
+        });
       } catch (error) {
         console.error('[ledger] release failed', (error as Error).message);
         return null;
       } finally {
-        await unlock();
+        await land();
       }
     };
-    return { ok: true, enforced: true, userId, balance: balanceOf(charged), release };
+    return { ok: true, enforced: true, userId, balance: balanceOf(outcome.charged), release };
   } catch (error) {
-    await unlock();
+    await land();
     console.error('[ledger] reserve failed, allowing', (error as Error).message);
     return { ok: true, enforced: false };
   }

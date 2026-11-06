@@ -1,5 +1,5 @@
 /**
- * App state: on-device gallery (AI shots and photobooth strips), the credit engine, plan and
+ * App state: rolls and their frames (all on this device), print orders, the credit engine, plan and
  * onboarding flag. Persists to AsyncStorage. With a RevenueCat key configured the plan follows the
  * store entitlement and pack credits are granted once per store transaction; without one (web,
  * Expo Go, early dev) purchases are mocked locally so every flow stays testable.
@@ -15,12 +15,13 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from 'react';
 import { AppState } from 'react-native';
 
 import { PACK_PRODUCTS, type PackId, type PlanId } from '@/data/products';
-import { DEFAULT_CONFIG, type FilterConfig } from '@/filters/presets';
 import { deleteMedia, fromMediaKey, toMediaKey } from '@/lib/files';
+import { fetchPrintConfig, type PrintConfig, type PrintStage, PRINTS_OFF } from '@/lib/prints';
 import {
   addCustomerStateListener,
   configurePurchases,
@@ -38,49 +39,55 @@ export type Plan = 'free' | 'weekly' | 'yearly';
 /** Daily credit allowance per plan. Unused credits bank up to ROLLOVER_DAYS × allowance. */
 export const DAILY_ALLOWANCE: Record<Plan, number> = { free: 0, weekly: 5, yearly: 10 };
 export const ROLLOVER_DAYS = 3;
-/**
- * No free photos. Before a purchase the app makes no AI call at all: the picked photo waits as a
- * pending shot behind the paywall and is developed only once the user subscribes or buys a pack.
- */
-export const WELCOME_CREDITS = 0;
+/** One real frame is free. The server decides for good, per device; this only sets the first display. */
+export const WELCOME_CREDITS = 1;
 
-export type Shot = {
+export const MAX_FRAMES = 12;
+
+/** A stored file uri, or a bundled image (the sample roll). */
+export type MediaRef = string | number;
+
+export type FrameStatus = 'waiting' | 'developing' | 'done' | 'failed';
+
+export type Frame = {
   id: string;
-  kind: 'look';
-  lookId: string;
-  sourceUri: string;
-  resultUri: string;
+  sourceUri: MediaRef;
+  resultUri?: MediaRef;
   /** Small copy for grids; falls back to resultUri. */
-  thumbUri?: string;
-  edit: FilterConfig;
-  createdAt: number;
-  /**
-   * Picked before any purchase: nothing has been generated yet (resultUri is the original). Shown
-   * blurred behind the paywall, then developed once the user is entitled.
-   */
-  pending?: boolean;
+  thumbUri?: MediaRef;
+  status: FrameStatus;
+  /** What went wrong, in words for the user. */
+  error?: string;
+  /** How far the look is applied over the original, 0 to 1. */
+  strength: number;
 };
 
-export type Strip = {
+export type Roll = {
   id: string;
-  kind: 'strip';
-  frames: string[];
-  resultUri: string;
-  thumbUri?: string;
-  edit: FilterConfig;
-  paper: 'white' | 'black';
-  /** Whether the date stamp is printed. Defaults to on for older strips. */
-  stamp?: boolean;
+  name: string;
+  lookId: string;
+  frames: Frame[];
   createdAt: number;
 };
 
-export type GalleryItem = Shot | Strip;
+export type PrintOrder = {
+  id: string;
+  secret: string;
+  rollName: string;
+  count: number;
+  totalCents: number;
+  coverUri?: MediaRef;
+  stage: PrintStage;
+  trackingUrl?: string;
+  carrier?: string;
+  createdAt: number;
+};
 
 type State = {
   hydrated: boolean;
   onboarded: boolean;
-  shots: Shot[];
-  strips: Strip[];
+  rolls: Roll[];
+  orders: PrintOrder[];
   plan: Plan;
   dailyCredits: number;
   packCredits: number;
@@ -97,12 +104,11 @@ type State = {
 type Action =
   | { type: 'hydrate'; state: Partial<State> }
   | { type: 'setOnboarded' }
-  | { type: 'addShot'; shot: Shot }
-  | { type: 'updateShot'; id: string; patch: Partial<Shot> }
-  | { type: 'removeShot'; id: string }
-  | { type: 'addStrip'; strip: Strip }
-  | { type: 'updateStrip'; id: string; patch: Partial<Strip> }
-  | { type: 'removeStrip'; id: string }
+  | { type: 'addRoll'; roll: Roll }
+  | { type: 'removeRoll'; id: string }
+  | { type: 'updateFrame'; rollId: string; frameId: string; patch: Partial<Frame> }
+  | { type: 'addOrder'; order: PrintOrder }
+  | { type: 'updateOrder'; id: string; patch: Partial<PrintOrder> }
   | { type: 'spendCredit' }
   | { type: 'syncCredits'; daily: number; pack: number }
   | { type: 'setAiConsent'; value: boolean }
@@ -113,7 +119,7 @@ type Action =
 
 const STORAGE_KEY = 'exposure.state.v2';
 /** Bumped when the persisted shape changes; older blobs are migrated in `hydrate`. */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 /** If storage never answers, start fresh rather than sit on the splash forever. */
 const HYDRATE_TIMEOUT_MS = 4000;
 
@@ -133,8 +139,8 @@ export function nextMidnight(): Date {
 const initialState: State = {
   hydrated: false,
   onboarded: false,
-  shots: [],
-  strips: [],
+  rolls: [],
+  orders: [],
   plan: 'free',
   dailyCredits: 0,
   packCredits: WELCOME_CREDITS,
@@ -175,16 +181,34 @@ function applyPlan(state: State, plan: Plan, today: string): State {
   return { ...state, plan, dailyCredits, lastRefreshDay: today };
 }
 
-/** Drops anything in a persisted blob that does not look like ours. */
-function sanitize(saved: Partial<State> & { version?: number }): Partial<State> {
-  const shots = Array.isArray(saved.shots)
-    ? saved.shots.filter((shot) => shot && typeof shot.id === 'string' && typeof shot.resultUri === 'string' && typeof shot.lookId === 'string')
-    : [];
-  const strips = Array.isArray(saved.strips)
-    ? saved.strips.filter((strip) => strip && typeof strip.id === 'string' && typeof strip.resultUri === 'string' && Array.isArray(strip.frames))
-    : [];
-  const { version: _version, ...rest } = saved;
-  return { ...rest, shots, strips, aiConsent: saved.aiConsent === true, hasPurchased: saved.hasPurchased === true };
+type SavedShot = { id: string; lookId: string; sourceUri: string; resultUri: string; thumbUri?: string; createdAt: number; pending?: boolean };
+
+/** Builds before rolls kept single photos; each one becomes a one-frame roll. */
+function rollFromShot(shot: SavedShot): Roll {
+  return {
+    id: shot.id,
+    name: 'Single photo',
+    lookId: shot.lookId,
+    createdAt: shot.createdAt,
+    frames: [{ id: shot.id, sourceUri: shot.sourceUri, resultUri: shot.pending ? undefined : shot.resultUri, thumbUri: shot.thumbUri, status: shot.pending ? 'waiting' : 'done', strength: 1 }],
+  };
+}
+
+/** Drops anything in a persisted blob that does not look like ours. A frame cut off mid-develop goes back in the queue. */
+function sanitize(saved: Partial<State> & { version?: number; shots?: SavedShot[] }): Partial<State> {
+  const rolls = Array.isArray(saved.rolls) ? saved.rolls.filter((roll) => roll && typeof roll.id === 'string' && Array.isArray(roll.frames)) : [];
+  const migrated = Array.isArray(saved.shots) ? saved.shots.filter((shot) => shot && typeof shot.id === 'string' && typeof shot.resultUri === 'string').map(rollFromShot) : [];
+  const { version: _version, shots: _shots, ...rest } = saved;
+  return {
+    ...rest,
+    rolls: [...rolls, ...migrated].map((roll) => ({
+      ...roll,
+      frames: roll.frames.map((frame) => (frame.status === 'developing' ? { ...frame, status: 'waiting' as const } : frame)),
+    })),
+    orders: Array.isArray(saved.orders) ? saved.orders : [],
+    aiConsent: saved.aiConsent === true,
+    hasPurchased: saved.hasPurchased === true,
+  };
 }
 
 function reducer(state: State, action: Action): State {
@@ -193,18 +217,21 @@ function reducer(state: State, action: Action): State {
       return applyRefresh({ ...state, ...action.state, hydrated: true }, localDay());
     case 'setOnboarded':
       return { ...state, onboarded: true };
-    case 'addShot':
-      return { ...state, shots: [action.shot, ...state.shots] };
-    case 'updateShot':
-      return { ...state, shots: state.shots.map((shot) => (shot.id === action.id ? { ...shot, ...action.patch } : shot)) };
-    case 'removeShot':
-      return { ...state, shots: state.shots.filter((shot) => shot.id !== action.id) };
-    case 'addStrip':
-      return { ...state, strips: [action.strip, ...state.strips] };
-    case 'updateStrip':
-      return { ...state, strips: state.strips.map((strip) => (strip.id === action.id ? { ...strip, ...action.patch } : strip)) };
-    case 'removeStrip':
-      return { ...state, strips: state.strips.filter((strip) => strip.id !== action.id) };
+    case 'addRoll':
+      return { ...state, rolls: [action.roll, ...state.rolls] };
+    case 'removeRoll':
+      return { ...state, rolls: state.rolls.filter((roll) => roll.id !== action.id) };
+    case 'updateFrame':
+      return {
+        ...state,
+        rolls: state.rolls.map((roll) =>
+          roll.id !== action.rollId ? roll : { ...roll, frames: roll.frames.map((frame) => (frame.id === action.frameId ? { ...frame, ...action.patch } : frame)) }
+        ),
+      };
+    case 'addOrder':
+      return { ...state, orders: [action.order, ...state.orders] };
+    case 'updateOrder':
+      return { ...state, orders: state.orders.map((order) => (order.id === action.id ? { ...order, ...action.patch } : order)) };
     case 'spendCredit':
       if (state.dailyCredits > 0) return { ...state, dailyCredits: state.dailyCredits - 1 };
       return { ...state, packCredits: Math.max(0, state.packCredits - 1) };
@@ -239,19 +266,18 @@ export type PurchaseFeedback = { ok: boolean; message: string };
 
 type AppStore = State & {
   credits: number;
-  /** Subscribed now, or bought a pack at some point: pending photos can be developed. */
-  unlocked: boolean;
   /** True when a store (RevenueCat) is configured and purchases are real. */
   purchasesLive: boolean;
   /** False in a release build with no store configured: buying is hidden rather than mocked. */
   canBuy: boolean;
+  /** Whether prints can be ordered right now, and their prices. */
+  printConfig: PrintConfig;
   setOnboarded: () => void;
-  addShot: (shot: Pick<Shot, 'lookId' | 'sourceUri' | 'resultUri'> & { edit?: FilterConfig; thumbUri?: string; pending?: boolean }) => Shot;
-  updateShot: (id: string, patch: Partial<Shot>) => void;
-  removeShot: (id: string) => void;
-  addStrip: (strip: Omit<Strip, 'id' | 'kind' | 'createdAt'>) => Strip;
-  updateStrip: (id: string, patch: Partial<Strip>) => void;
-  removeStrip: (id: string) => void;
+  addRoll: (roll: { name: string; lookId: string; sourceUris: string[] }) => Roll;
+  removeRoll: (id: string) => void;
+  updateFrame: (rollId: string, frameId: string, patch: Partial<Frame>) => void;
+  addOrder: (order: Omit<PrintOrder, 'createdAt'>) => void;
+  updateOrder: (id: string, patch: Partial<PrintOrder>) => void;
   spendCredit: () => void;
   syncCredits: (credits: { daily: number; pack: number }) => void;
   setAiConsent: (value: boolean) => void;
@@ -268,6 +294,7 @@ const AppStoreContext = createContext<AppStore | null>(null);
 
 export function AppStoreProvider({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [printConfig, setPrintConfig] = useState<PrintConfig>(PRINTS_OFF);
   const stateRef = useRef(state);
   useEffect(() => {
     stateRef.current = state;
@@ -292,26 +319,19 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!state.hydrated) return;
-    const { shots, strips, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent, hasPurchased } = state;
+    const { rolls, orders, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent, hasPurchased } = state;
     // File uris are stored as relative keys: iOS moves the app container on every update.
-    const portableShots = shots.map((shot) => ({
-      ...shot,
-      sourceUri: toMediaKey(shot.sourceUri),
-      resultUri: toMediaKey(shot.resultUri),
-      thumbUri: shot.thumbUri ? toMediaKey(shot.thumbUri) : undefined,
-    }));
-    const portableStrips = strips.map((strip) => ({
-      ...strip,
-      frames: strip.frames.map(toMediaKey),
-      resultUri: toMediaKey(strip.resultUri),
-      thumbUri: strip.thumbUri ? toMediaKey(strip.thumbUri) : undefined,
+    const portable = (uri: MediaRef | undefined) => (typeof uri === 'string' ? toMediaKey(uri) : uri);
+    const portableRolls = rolls.map((roll) => ({
+      ...roll,
+      frames: roll.frames.map((frame) => ({ ...frame, sourceUri: portable(frame.sourceUri), resultUri: portable(frame.resultUri), thumbUri: portable(frame.thumbUri) })),
     }));
     AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         version: SCHEMA_VERSION,
-        shots: portableShots,
-        strips: portableStrips,
+        rolls: portableRolls,
+        orders: orders.map((order) => ({ ...order, coverUri: portable(order.coverUri) })),
         plan,
         dailyCredits,
         packCredits,
@@ -323,6 +343,10 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       })
     ).catch(() => {});
   }, [state]);
+
+  useEffect(() => {
+    fetchPrintConfig().then(setPrintConfig);
+  }, []);
 
   // Store sync: configure RevenueCat once, pull the current entitlement, and follow updates.
   useEffect(() => {
@@ -352,34 +376,25 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, []);
 
   const setOnboarded = useCallback(() => dispatch({ type: 'setOnboarded' }), []);
-  const addShot = useCallback<AppStore['addShot']>((partial) => {
-    const shot: Shot = { kind: 'look', edit: DEFAULT_CONFIG, ...partial, id: newId(), createdAt: Date.now() };
-    dispatch({ type: 'addShot', shot });
-    return shot;
+  const addRoll = useCallback<AppStore['addRoll']>(({ name, lookId, sourceUris }) => {
+    const roll: Roll = {
+      id: newId(),
+      name,
+      lookId,
+      createdAt: Date.now(),
+      frames: sourceUris.map((sourceUri) => ({ id: newId(), sourceUri, status: 'waiting', strength: 1 })),
+    };
+    dispatch({ type: 'addRoll', roll });
+    return roll;
   }, []);
-  const updateShot = useCallback((id: string, patch: Partial<Shot>) => dispatch({ type: 'updateShot', id, patch }), []);
-  const removeShot = useCallback(
-    (id: string) => {
-      const shot = stateRef.current.shots.find((item) => item.id === id);
-      dispatch({ type: 'removeShot', id });
-      if (shot) [shot.resultUri, shot.sourceUri, shot.thumbUri].forEach((uri) => uri && deleteMedia(uri));
-    },
-    []
-  );
-  const addStrip = useCallback<AppStore['addStrip']>((partial) => {
-    const strip: Strip = { ...partial, kind: 'strip', id: newId(), createdAt: Date.now() };
-    dispatch({ type: 'addStrip', strip });
-    return strip;
+  const removeRoll = useCallback((id: string) => {
+    const roll = stateRef.current.rolls.find((item) => item.id === id);
+    dispatch({ type: 'removeRoll', id });
+    roll?.frames.forEach((frame) => [frame.sourceUri, frame.resultUri, frame.thumbUri].forEach((uri) => typeof uri === 'string' && deleteMedia(uri)));
   }, []);
-  const updateStrip = useCallback((id: string, patch: Partial<Strip>) => dispatch({ type: 'updateStrip', id, patch }), []);
-  const removeStrip = useCallback(
-    (id: string) => {
-      const strip = stateRef.current.strips.find((item) => item.id === id);
-      dispatch({ type: 'removeStrip', id });
-      if (strip) [strip.resultUri, strip.thumbUri, ...strip.frames].forEach((uri) => uri && deleteMedia(uri));
-    },
-    []
-  );
+  const updateFrame = useCallback((rollId: string, frameId: string, patch: Partial<Frame>) => dispatch({ type: 'updateFrame', rollId, frameId, patch }), []);
+  const addOrder = useCallback((order: Omit<PrintOrder, 'createdAt'>) => dispatch({ type: 'addOrder', order: { ...order, createdAt: Date.now() } }), []);
+  const updateOrder = useCallback((id: string, patch: Partial<PrintOrder>) => dispatch({ type: 'updateOrder', id, patch }), []);
   const spendCredit = useCallback(() => dispatch({ type: 'spendCredit' }), []);
   const syncCredits = useCallback((credits: { daily: number; pack: number }) => dispatch({ type: 'syncCredits', ...credits }), []);
   const setAiConsent = useCallback((value: boolean) => dispatch({ type: 'setAiConsent', value }), []);
@@ -429,43 +444,33 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   }, [purchasesLive]);
 
   // Stored keys are relative; hand components absolute uris they can load.
-  const shots = useMemo(
-    () =>
-      state.shots.map((shot) => ({
-        ...shot,
-        sourceUri: fromMediaKey(shot.sourceUri),
-        resultUri: fromMediaKey(shot.resultUri),
-        thumbUri: shot.thumbUri ? fromMediaKey(shot.thumbUri) : undefined,
-      })),
-    [state.shots]
-  );
-  const strips = useMemo(
-    () =>
-      state.strips.map((strip) => ({
-        ...strip,
-        frames: strip.frames.map(fromMediaKey),
-        resultUri: fromMediaKey(strip.resultUri),
-        thumbUri: strip.thumbUri ? fromMediaKey(strip.thumbUri) : undefined,
-      })),
-    [state.strips]
+  const rolls = useMemo(() => {
+    const absolute = (uri: MediaRef | undefined) => (typeof uri === 'string' ? fromMediaKey(uri) : uri);
+    return state.rolls.map((roll) => ({
+      ...roll,
+      frames: roll.frames.map((frame) => ({ ...frame, sourceUri: absolute(frame.sourceUri)!, resultUri: absolute(frame.resultUri), thumbUri: absolute(frame.thumbUri) })),
+    }));
+  }, [state.rolls]);
+  const orders = useMemo(
+    () => state.orders.map((order) => ({ ...order, coverUri: typeof order.coverUri === 'string' ? fromMediaKey(order.coverUri) : order.coverUri })),
+    [state.orders]
   );
 
   const value = useMemo<AppStore>(
     () => ({
       ...state,
-      shots,
-      strips,
+      rolls,
+      orders,
       credits: state.dailyCredits + state.packCredits,
-      unlocked: state.plan !== 'free' || state.hasPurchased,
       purchasesLive,
       canBuy,
+      printConfig,
       setOnboarded,
-      addShot,
-      updateShot,
-      removeShot,
-      addStrip,
-      updateStrip,
-      removeStrip,
+      addRoll,
+      removeRoll,
+      updateFrame,
+      addOrder,
+      updateOrder,
       spendCredit,
       syncCredits,
       setAiConsent,
@@ -475,7 +480,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       buyPack,
       restore,
     }),
-    [state, shots, strips, purchasesLive, canBuy, setOnboarded, addShot, updateShot, removeShot, addStrip, updateStrip, removeStrip, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
+    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, addOrder, updateOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

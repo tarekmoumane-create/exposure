@@ -1,3 +1,5 @@
+> **Superseded 6 Nov 2026.** Apple rejected v1.0 under guideline 4.3. Exposure is now Rolls plus mail-order prints with a new identity. Kept for history.
+
 # Exposure — product brief
 
 Exposure takes Boothie's proven job-to-be-done and business model, and ships it with its own identity, its own look library, and fixes for Boothie's biggest user complaints. It must **not** read as a Boothie clone (App Store Guideline 4.1 Copycats): different name, icon, palette, typography, copy, look names, screenshot style, and at least three features Boothie does not have.

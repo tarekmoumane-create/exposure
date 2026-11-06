@@ -10,7 +10,7 @@
 import { generateImage, nearestAspectRatio, type ImageSize, type ThinkingLevel } from './gemini.js';
 import { LOOKS, type LookSpec } from './looks.js';
 import { buildPrompt } from './relight.js';
-import { anchor, edgeEnergy, verify, type Verification } from './render/lock.js';
+import { addedBorder, anchor, edgeEnergy, verify, type Verification } from './render/lock.js';
 import { decode, encodeJpeg, fitCover, type Img } from './render/pixels.js';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,9 +40,11 @@ export type RunOptions = {
   /** Absolute ms deadline for the whole run. */
   deadline: number;
   strength?: number;
+  /** A finished frame from the same roll; this photo is rendered to match it. */
+  match?: { mimeType: string; data: Buffer };
   /** Set false to skip the model entirely (offline tests). */
   allowRelight?: boolean;
-  /** Decoded long-edge cap. The app uploads 1536; anything larger is reduced. */
+  /** Decoded long-edge cap. The app uploads 2048; anything larger is reduced. */
   maxEdge?: number;
   jpegQuality?: number;
   /** Receives every raw model candidate with its scores (bench calibration). */
@@ -128,8 +130,11 @@ export async function runLook(requestedLookId: string, input: { mimeType: string
     if (energy < FLAT_INPUT_ENERGY) {
       stages.push('flat input, model skipped');
     } else {
-      const references = loadReference(look.reference);
-      if (references) stages.push('reference attached');
+      const lookReference = loadReference(look.reference);
+      const matchImage = opts.match ? { mimeType: opts.match.mimeType, data: opts.match.data.toString('base64') } : undefined;
+      const references = [...(lookReference ?? []), ...(matchImage ? [matchImage] : [])];
+      if (lookReference) stages.push('reference attached');
+      if (matchImage) stages.push('roll match attached');
       for (let attempt = 0; attempt < 2 && !accepted; attempt++) {
         if (attempt > 0 && opts.deadline - Date.now() < MIN_RETRY_BUDGET_MS) { stages.push('no budget for retry'); break; }
         attempts++;
@@ -139,7 +144,7 @@ export async function runLook(requestedLookId: string, input: { mimeType: string
             apiKey: opts.apiKey!, model: opts.model, fallbackModels: opts.fallbackModels,
             image: { mimeType: input.mimeType, data: input.data.toString('base64') },
             references,
-            prompt: buildPrompt(lookId, { strength: opts.strength, strict: attempt > 0, reference: Boolean(references) }),
+            prompt: buildPrompt(lookId, { strength: opts.strength, strict: attempt > 0, reference: Boolean(lookReference), match: Boolean(matchImage) }),
             imageSize: opts.imageSize, thinkingLevel: opts.thinkingLevel,
             aspectRatio: nearestAspectRatio(original.width, original.height), deadline: opts.deadline,
           });
@@ -152,8 +157,9 @@ export async function runLook(requestedLookId: string, input: { mimeType: string
         model = out.model;
         const candidate = await fitCover(await decode(Buffer.from(out.data, 'base64')), original.width, original.height);
         verification = await verify(original, candidate);
-        const ok = verification.aligned >= look.verify.aligned && verification.added <= look.verify.added;
-        stages.push(`model ${attempt + 1} ${model} aligned=${verification.aligned.toFixed(2)} added=${verification.added.toFixed(2)} ${ok ? 'accepted' : 'rejected'}`);
+        const bordered = addedBorder(original, candidate);
+        const ok = !bordered && verification.aligned >= look.verify.aligned && verification.added <= look.verify.added;
+        stages.push(`model ${attempt + 1} ${model} aligned=${verification.aligned.toFixed(2)} added=${verification.added.toFixed(2)}${bordered ? ' border' : ''} ${ok ? 'accepted' : 'rejected'}`);
         if (opts.onCandidate) await opts.onCandidate({ attempt, jpeg: await encodeJpeg(candidate, 88), verification, accepted: ok });
         if (ok) accepted = candidate;
       }

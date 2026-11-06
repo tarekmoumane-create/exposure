@@ -7,8 +7,10 @@ import { getLook, runLook } from '../lib/pipeline.js';
 
 /**
  * POST /api/generate
- * Body: { lookId, image: { mimeType, data (base64), width?, height? }, strength?: number, deviceId?: string }
- * Headers: x-exposure-user (RevenueCat app user id), x-exposure-day (the app's local YYYY-MM-DD)
+ * Body: { lookId, image: { mimeType, data (base64), width?, height? }, match?: { mimeType, data }, strength?: number }
+ * `match` is a small copy of a finished frame from the same roll; this photo is rendered to sit beside it.
+ * Headers: x-exposure-user (RevenueCat app user id), x-exposure-day (the app's local YYYY-MM-DD),
+ * x-exposure-device (keychain device id, for the one free photo)
  * Returns: { image: { mimeType, data }, model, ms, meta: { relit, fallback, attempts }, credits?: { daily, pack, plan } }
  * Out of photos: 402 { error: { code: 'credits' }, credits }
  *
@@ -21,8 +23,9 @@ const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-3.1-flash
 const IMAGE_SIZE = (process.env.GEMINI_IMAGE_SIZE ?? '2K') as ImageSize;
 const THINKING_LEVEL = (process.env.GEMINI_THINKING_LEVEL ?? 'medium') as ThinkingLevel;
 // Vercel rejects request bodies over 4.5 MB before the handler runs, so stay well under it. The app
-// uploads a 1536px JPEG (~0.5–1.2 MB base64).
-const MAX_BASE64_CHARS = 4_000_000;
+// uploads a 2048px JPEG (~1–2.5 MB base64) so a developed frame holds up as a 4x6 print.
+const MAX_BASE64_CHARS = 3_800_000;
+const MAX_MATCH_BASE64_CHARS = 300_000;
 // Responses are buffered too; keep the returned image under this so a render always arrives.
 const MAX_RESPONSE_BASE64_CHARS = 3_600_000;
 /** The function budget (vercel.json maxDuration) minus headroom for rendering, encoding and transfer. */
@@ -32,8 +35,8 @@ const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/h
 type Body = {
   lookId?: string;
   image?: { mimeType?: string; data?: string; width?: number; height?: number };
+  match?: { mimeType?: string; data?: string };
   strength?: number;
-  deviceId?: string;
 };
 
 function reject(res: VercelResponse, status: number, code: string, message: string) {
@@ -43,7 +46,7 @@ function reject(res: VercelResponse, status: number, code: string, message: stri
 function cors(res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-exposure-app, x-exposure-user, x-exposure-day');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-exposure-app, x-exposure-user, x-exposure-day, x-exposure-device');
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -73,9 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!ALLOWED_TYPES.has(mimeType)) return reject(res, 400, 'image', 'Unsupported image type');
   if (!data || data.length > MAX_BASE64_CHARS) return reject(res, 413, 'image', 'Image missing or too large');
 
+  const matchData = body?.match?.data;
+  if (matchData && (matchData.length > MAX_MATCH_BASE64_CHARS || !ALLOWED_TYPES.has(body?.match?.mimeType ?? ''))) {
+    return reject(res, 413, 'image', 'Match frame too large');
+  }
+
   const strength = typeof body?.strength === 'number' ? Math.min(1, Math.max(0, body.strength)) : undefined;
 
-  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day']);
+  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day'], req.headers['x-exposure-device']);
   if (!reservation.ok) {
     return res.status(reservation.status).json({ error: { code: reservation.code, message: reservation.message }, credits: reservation.balance });
   }
@@ -91,6 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       thinkingLevel: THINKING_LEVEL,
       deadline: started + DEADLINE_MS,
       strength,
+      match: matchData ? { mimeType: body!.match!.mimeType!, data: Buffer.from(matchData, 'base64') } : undefined,
     });
     const image = await fitResponse(result.jpeg);
     // The app's Cancel promises no charge: if it already hung up, refund.

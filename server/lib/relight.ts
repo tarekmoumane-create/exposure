@@ -11,7 +11,8 @@ export const RULES =
   'TASK: re-render this exact photograph as if it had been taken by the camera, film and light described under LOOK, straight out of that camera. ' +
   'The change must be unmistakable: a viewer should recognise the camera at a glance. Do not return a subtle colour grade or the phone photo with a tint; ' +
   'produce the photograph that camera would have made of this exact moment, with every physical signature listed below clearly visible: its light, its colour rendering, its highlight and shadow behaviour, its grain or noise, its sharpness character, its lens and its compression. ' +
-  'Remove phone-camera signatures (HDR flatness, computational smoothing, over-sharpening) unless the look calls for them.\n\n' +
+  'Remove phone-camera signatures (HDR flatness, computational smoothing, over-sharpening) unless the look calls for them. ' +
+  'The picture runs to all four edges: no border, paper margin, rounded corners or print frame.\n\n' +
   'CONTENT LOCK (never break, no matter how strong the look):\n' +
   '- Same content: every person, face, animal, object, sign, text and background element stays, in the same place, at the same size and shape. Add nothing: no new people, faces, hands, objects, lamps, text or decoration. If there is no person, do not create one.\n' +
   '- Same framing: same crop, aspect ratio, zoom and orientation; nothing extends past the input edges, nothing is cut off.\n' +
@@ -78,9 +79,13 @@ export function strengthHint(strength: number | undefined): string {
 export const REFERENCE =
   '\n\nREFERENCE: image 2 is a photograph with exactly the rendering to reproduce (its colour balance, highlight and shadow behaviour, grain, softness and halation). Take only its rendering. Take nothing of its content, subject, composition, framing or light direction; image 1 is the photograph being re-rendered.';
 
-export function buildPrompt(lookId: string, { strength, strict = false, reference = false }: { strength?: number; strict?: boolean; reference?: boolean } = {}): string {
+/** A roll: the first developed frame is sent with every later one so the whole set matches. */
+export const ROLL_MATCH =
+  '\n\nROLL MATCH: the last image is a finished frame from the same roll. Render this photograph so the two look like neighbouring frames from one roll of the same camera: the same colour balance, black level, highlight roll-off, contrast, grain size and overall density. Take only that rendering. Take nothing of its content, subject, composition, framing or light direction; image 1 is the photograph being re-rendered.';
+
+export function buildPrompt(lookId: string, { strength, strict = false, reference = false, match = false }: { strength?: number; strict?: boolean; reference?: boolean; match?: boolean } = {}): string {
   const look = LOOK_PROMPTS[lookId];
   if (!look) throw new Error(`no prompt for ${lookId}`);
   if (lookId === 'booth-strip') return `${look}${strengthHint(strength)}\n\nOutput one image.`;
-  return `${RULES.replace('re-render this exact photograph', 're-render this exact photograph (image 1)')}${look}${reference ? REFERENCE : ''}${strengthHint(strength)}${strict ? STRICT : ''}\n\nOutput one image.`;
+  return `${RULES.replace('re-render this exact photograph', 're-render this exact photograph (image 1)')}${look}${reference ? REFERENCE : ''}${match ? ROLL_MATCH : ''}${strengthHint(strength)}${strict ? STRICT : ''}\n\nOutput one image.`;
 }

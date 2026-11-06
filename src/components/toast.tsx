@@ -51,5 +51,5 @@ export function useToast() {
 
 const styles = StyleSheet.create({
   host: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  toast: { paddingVertical: 10, paddingHorizontal: Spacing.three, borderRadius: Radius.pill },
+  toast: { paddingVertical: 10, paddingHorizontal: Spacing.three, borderRadius: Radius.md },
 });

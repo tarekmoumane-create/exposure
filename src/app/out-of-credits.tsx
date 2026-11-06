@@ -19,7 +19,7 @@ const PACKS: { id: PackId; badge?: string }[] = [
   { id: 'credits80', badge: 'Best value' },
 ];
 
-/** Shown when a generation is attempted with no credits left. */
+/** Packs, for when a roll needs more photos than are left. */
 export default function OutOfCreditsScreen() {
   const theme = useTheme();
   const { plan, buyPack, canBuy } = useAppStore();
@@ -54,10 +54,10 @@ export default function OutOfCreditsScreen() {
       </View>
 
       <View style={styles.copy}>
-        <ThemedText type="title">{plan === 'free' ? 'Unlock Exposure.' : 'That’s all for today.'}</ThemedText>
+        <ThemedText type="title">{plan === 'free' ? 'Keep developing.' : 'That’s all for today.'}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan for photos every day, or add a few and keep going.'
+            ? 'Join a plan for new photos every day, or buy a pack and finish your roll.'
             : `${allowance} more arrive ${refresh}. Add a few now, or ${plan === 'weekly' ? 'double your daily photos with Yearly' : 'keep going with a pack'}.`}
         </ThemedText>
       </View>
@@ -69,13 +69,13 @@ export default function OutOfCreditsScreen() {
             accessibilityRole="button"
             onPress={() => buy(pack.id)}
             disabled={busy !== null || !canBuy}
-            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.accent : theme.line, opacity: pressed || (busy && busy !== pack.id) ? 0.7 : 1 }]}>
+            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.brand : theme.line, opacity: pressed || (busy && busy !== pack.id) ? 0.7 : 1 }]}>
             <View style={styles.packText}>
               <View style={styles.packTitle}>
                 <ThemedText type="bodyStrong">{PACK_PRODUCTS[pack.id].credits} photos</ThemedText>
                 {pack.badge ? (
-                  <View style={[styles.badge, { backgroundColor: theme.accentSoft }]}>
-                    <ThemedText type="caption" style={{ color: theme.accentDeep }}>
+                  <View style={[styles.badge, { backgroundColor: theme.accent }]}>
+                    <ThemedText type="caption" style={{ color: theme.onAccent }}>
                       {pack.badge}
                     </ThemedText>
                   </View>
@@ -101,8 +101,8 @@ export default function OutOfCreditsScreen() {
             Purchases are not available in this build yet.
           </ThemedText>
         ) : null}
-        {plan === 'free' ? <Button title="See plans" variant="accent" onPress={() => router.replace('/paywall')} /> : null}
-        {plan === 'weekly' ? <Button title="Switch to Yearly" variant="accent" onPress={() => router.replace('/paywall')} /> : null}
+        {plan === 'free' ? <Button title="See plans"  onPress={() => router.replace('/paywall')} /> : null}
+        {plan === 'weekly' ? <Button title="Switch to Yearly"  onPress={() => router.replace('/paywall')} /> : null}
         <Button title="Not now" variant="ghost" size="md" onPress={() => dismiss()} />
       </View>
     </Screen>
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   pack: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.three, borderRadius: Radius.lg, borderWidth: 1.5 },
   packText: { gap: 2 },
   packTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.pill },
+  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.sm },
   actions: { gap: Spacing.two, marginTop: 'auto', paddingTop: Spacing.four },
   center: { textAlign: 'center' },
 });

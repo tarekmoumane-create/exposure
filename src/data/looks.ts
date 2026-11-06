@@ -1,94 +1,81 @@
 /**
- * The look library. Names, groups and copy are Exposure's own; each look maps to a real camera,
- * film stock or light. The prompts live server-side in server/lib/relight.ts so they can be
- * tuned without an app release. Ids must match the server registry.
+ * The film stocks. Each maps to a real camera, film or light. The prompts live server-side in
+ * server/lib/relight.ts so they can be tuned without an app release. Ids must match the server.
  */
 
 import { type ImageSourcePropType } from 'react-native';
 
-export type LookGroup = 'flash' | 'digicam' | 'film' | 'light' | 'booth';
+export type LookGroup = 'flash' | 'compact' | 'film' | 'light';
 
 export type Look = {
   id: string;
   name: string;
   group: LookGroup;
+  /** What it looks like, in one line. */
   tagline: string;
+  /** When to load it. */
+  bestFor: string;
   description: string;
-  /** Placeholder gradient, used only if the preview image fails to load. */
-  colors: [string, string];
   /** Bundled before/after preview pair, produced by the app's own pipeline. */
   before: ImageSourcePropType;
   after: ImageSourcePropType;
-  /** 'free' looks change the format (the photobooth strip); everything else keeps the photo's framing. */
-  framing?: 'locked' | 'free';
 };
 
 export const LOOK_GROUPS: { id: LookGroup; label: string }[] = [
   { id: 'flash', label: 'Flash' },
-  { id: 'digicam', label: 'Digicam' },
+  { id: 'compact', label: 'Compact cameras' },
   { id: 'film', label: 'Film' },
   { id: 'light', label: 'Light' },
-  { id: 'booth', label: 'Booth' },
 ];
 
 export const LOOKS: Look[] = [
   {
     id: 'night-flash',
-    name: 'Night Flash',
+    name: 'Night Out',
     group: 'flash',
-    tagline: 'Compact camera, flash on, lights off.',
-    description: 'The nightlife digicam photo: bright flash-lit subject, black background, crushed shadows, a little noise.',
-    colors: ['#2B3340', '#05070A'],
+    tagline: 'On-camera flash in a dark room.',
+    bestFor: 'Bars, parties, the walk home',
+    description: 'A bright flash-lit subject, a background that falls away to black, crushed shadows and a little noise.',
     before: require('@/assets/images/looks/night-flash-before.jpg'),
     after: require('@/assets/images/looks/night-flash-after.jpg'),
   },
   {
     id: 'day-flash',
-    name: 'Day Flash',
+    name: 'Noon Flash',
     group: 'flash',
     tagline: 'Daylight with the flash forced on.',
-    description: 'The compact camera daytime look: fill flash on the subject, punchy colour, crisp detail, background a touch darker.',
-    colors: ['#F7D9A8', '#8A5A2B'],
+    bestFor: 'Street, lunch, holiday afternoons',
+    description: 'Fill flash on the subject, punchy colour, crisp detail and a background a touch darker than real life.',
     before: require('@/assets/images/looks/day-flash-before.jpg'),
     after: require('@/assets/images/looks/day-flash-after.jpg'),
   },
   {
     id: 'red-flash',
-    name: 'Red Flash',
+    name: 'Red Room',
     group: 'flash',
-    tagline: 'Red gel over the flash. Teal everywhere else.',
-    description: 'A saturated red flash on the subject with cool teal shadows behind. Built for going-out photos.',
-    colors: ['#FF3B3B', '#2A0A0F'],
+    tagline: 'A red gel over the flash.',
+    bestFor: 'Going-out photos you want to feel loud',
+    description: 'Saturated red flash on the subject with cool teal shadows behind.',
     before: require('@/assets/images/looks/red-flash-before.jpg'),
     after: require('@/assets/images/looks/red-flash-after.jpg'),
   },
   {
-    id: 'paparazzi',
-    name: 'Paparazzi',
-    group: 'flash',
-    tagline: 'Caught leaving. Blown-out flash, deep blacks.',
-    description: 'Overexposed press-camera flash with crushed shadows. Looks like someone shouted your name.',
-    colors: ['#FFFFFF', '#111111'],
-    before: require('@/assets/images/looks/paparazzi-before.jpg'),
-    after: require('@/assets/images/looks/paparazzi-after.jpg'),
-  },
-  {
     id: 'digicam',
-    name: 'Digicam',
-    group: 'digicam',
-    tagline: 'The restaurant photo everyone asks about.',
-    description: 'A modern 1-inch compact with its flash in Auto: glossy clean skin, rich colour, warm lamps behind.',
-    colors: ['#E8C9A0', '#5A3A24'],
+    name: 'Pocket Compact',
+    group: 'compact',
+    tagline: 'A modern 1-inch compact, flash on Auto.',
+    bestFor: 'Dinner, friends, anything indoors',
+    description: 'Glossy clean skin, rich colour and warm lamps glowing behind.',
     before: require('@/assets/images/looks/digicam-before.jpg'),
     after: require('@/assets/images/looks/digicam-after.jpg'),
   },
   {
     id: 'y2k-digicam',
-    name: 'Y2K Digicam',
-    group: 'digicam',
-    tagline: '2003 memory stick. Flash on.',
-    description: 'Three-megapixel CCD compact: blown flash highlights, sharpening halos, colour speckle, cool-magenta cast.',
-    colors: ['#F5A3C7', '#4A2140'],
+    name: '2003 Compact',
+    group: 'compact',
+    tagline: 'Three megapixels and a memory stick.',
+    bestFor: 'Friends, nights in, photo dumps',
+    description: 'A small CCD sensor: blown flash highlights, sharpening halos, colour speckle and a cool-magenta cast.',
     before: require('@/assets/images/looks/y2k-digicam-before.jpg'),
     after: require('@/assets/images/looks/y2k-digicam-after.jpg'),
   },
@@ -97,8 +84,8 @@ export const LOOKS: Look[] = [
     name: 'Sunny 200',
     group: 'film',
     tagline: 'Warm consumer negative, lab scanned.',
-    description: 'The warm yellow-leaning 35mm stock: peach skin, olive greens, creamy highlights, soft organic grain.',
-    colors: ['#E8B65A', '#5A3A14'],
+    bestFor: 'Weekends, trips, whole days out',
+    description: 'Peach skin, olive greens, creamy highlights and soft organic grain.',
     before: require('@/assets/images/looks/gold-200-before.jpg'),
     after: require('@/assets/images/looks/gold-200-after.jpg'),
   },
@@ -106,82 +93,51 @@ export const LOOKS: Look[] = [
     id: 'superia-400',
     name: 'Vibrant 400',
     group: 'film',
-    tagline: 'Cooler, greener, punchier 35mm.',
-    description: 'The drugstore 400 roll: vivid greens, deep cyan blues, pink skin, coarser grain, lifted green shadows.',
-    colors: ['#6FAE7A', '#1F3A2A'],
+    tagline: 'The cooler, greener drugstore roll.',
+    bestFor: 'Outdoors, parks, overcast days',
+    description: 'Vivid greens, deep cyan blues, pink skin, coarser grain and lifted green shadows.',
     before: require('@/assets/images/looks/superia-400-before.jpg'),
     after: require('@/assets/images/looks/superia-400-after.jpg'),
   },
   {
     id: 'film-35',
-    name: '35mm',
+    name: 'Shoebox 35',
     group: 'film',
-    tagline: 'Expired roll, shoebox print.',
-    description: 'Faded vintage film: milky lifted blacks, muted warm colour, soft grain, a cheap lens.',
-    colors: ['#D9A066', '#3B2A1A'],
+    tagline: 'An expired roll, found years later.',
+    bestFor: 'Sets you want to feel like a memory',
+    description: 'Milky lifted blacks, muted warm colour, soft grain and a cheap lens.',
     before: require('@/assets/images/looks/film-35-before.jpg'),
     after: require('@/assets/images/looks/film-35-after.jpg'),
   },
   {
     id: 'golden-hour',
-    name: 'Golden Hour',
+    name: 'Last Light',
     group: 'light',
     tagline: 'Flat daylight becomes the last hour of sun.',
-    description: 'Relights the scene with low, warm sunset light. Long soft shadows, glowing hair edges, warm sky.',
-    colors: ['#FFC46B', '#B5541C'],
+    bestFor: 'Beaches, rooftops, anything outside',
+    description: 'Low, warm sunset light with long soft shadows and glowing hair edges.',
     before: require('@/assets/images/looks/golden-hour-before.jpg'),
     after: require('@/assets/images/looks/golden-hour-after.jpg'),
   },
   {
     id: 'blue-hour',
-    name: 'Blue Hour',
+    name: 'After Sunset',
     group: 'light',
-    tagline: 'Dusk tones, city glow, soft contrast.',
-    description: 'The twenty minutes after sunset. Cool blue ambient light with warm points of artificial light.',
-    colors: ['#5C7CFA', '#0E1230'],
+    tagline: 'The twenty minutes after the sun goes.',
+    bestFor: 'City evenings',
+    description: 'Cool blue ambient light with warm points of artificial light.',
     before: require('@/assets/images/looks/blue-hour-before.jpg'),
     after: require('@/assets/images/looks/blue-hour-after.jpg'),
   },
   {
     id: 'window-light',
-    name: 'Window Light',
+    name: 'North Window',
     group: 'light',
-    tagline: 'Soft, directional, editorial.',
-    description: 'Large soft window light from one side. Clean skin, gentle falloff, the look of a studio apartment shoot.',
-    colors: ['#EDE6DA', '#6B6459'],
+    tagline: 'One big soft window to the side.',
+    bestFor: 'Portraits and slow mornings',
+    description: 'Clean skin, gentle falloff and the quiet of a studio apartment shoot.',
     before: require('@/assets/images/looks/window-light-before.jpg'),
     after: require('@/assets/images/looks/window-light-after.jpg'),
-  },
-  {
-    id: 'glow',
-    name: 'Glow',
-    group: 'light',
-    tagline: 'Warm haze and star sparkles.',
-    description: 'A golden haze over the frame with soft bloom and tiny star sparkles on every highlight. Dreamy, still sharp.',
-    colors: ['#FFE3A3', '#C98A3A'],
-    before: require('@/assets/images/looks/glow-before.jpg'),
-    after: require('@/assets/images/looks/glow-after.jpg'),
-  },
-  {
-    id: 'booth-strip',
-    name: 'Photobooth',
-    group: 'booth',
-    tagline: 'Four frames, one curtain, sepia.',
-    description: 'A vintage photobooth strip. Four poses generated from your one photo, curtain backdrop, paper texture.',
-    colors: ['#C8B59A', '#2E2419'],
-    before: require('@/assets/images/looks/booth-strip-before.jpg'),
-    after: require('@/assets/images/looks/booth-strip-after.jpg'),
-    framing: 'free',
-  },
-  {
-    id: 'webcam',
-    name: 'Webcam',
-    group: 'booth',
-    tagline: '2010 laptop camera, lamp light, low-res.',
-    description: 'The Photo Booth look: warm lamp light, 640 by 480 detail, video noise, cosy bedroom tones.',
-    colors: ['#F2B8A0', '#3A1E1A'],
-    before: require('@/assets/images/looks/webcam-before.jpg'),
-    after: require('@/assets/images/looks/webcam-after.jpg'),
   },
 ];
 

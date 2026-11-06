@@ -10,8 +10,7 @@ Exposure is not directed to children. Minimum age: 13 in the US and 16 in the EU
 
 ## 2. What Exposure does
 
-- **Studio and Filters**: on-device filters, photobooth strips and adjustments. No AI; your photo is not transmitted.
-- **Looks**: your selected photo is securely forwarded to Google LLC (Gemini API) to create AI-generated relighting and camera looks. We do not store your photos, prompts or outputs on our servers. Your gallery is kept on your device. Images created with Looks are produced by artificial intelligence and may be labelled as such where the law requires.
+- **Rolls**: each photo in a roll is securely forwarded to Google LLC (Gemini API) to create AI-generated relighting and camera looks. We do not store your photos, prompts or outputs on our servers. Your gallery is kept on your device. Images created with Looks are produced by artificial intelligence and may be labelled as such where the law requires.
 
 ## 3. Your content and permissions
 
@@ -58,3 +57,7 @@ AI can be inaccurate and outputs may not meet expectations. Exposure is provided
 ## 12. Termination, governing law, changes
 
 You may stop using Exposure at any time. We may suspend or terminate access for violations. These Terms are governed by the laws of the developer's country of residence; consumers keep their mandatory local rights. We may update these Terms and will notify you of material changes in the app or store listing.
+
+## Prints
+
+Prints are physical goods, paid for through Stripe rather than through Apple or Google, and are made and mailed by our print lab. Prices and shipping are shown before you pay. Prints are currently available only where the app says they ship. Because each order is made from your own photos, we cannot accept returns for a change of mind. If prints arrive damaged, misprinted or do not arrive, email tarekmoumane@gmail.com within 30 days and we will reprint or refund them. You confirm you have the right to print the photos you order. We may refuse an order that appears to break the law or these terms.

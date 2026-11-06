@@ -10,7 +10,7 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
 import { Radius, Spacing } from '@/constants/theme';
-import { getLook } from '@/data/looks';
+import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { dismiss } from '@/lib/navigation';
 import { FALLBACK_PRICES, LEGAL_URLS, PLAN_PRODUCTS } from '@/data/products';
 import { useTheme } from '@/hooks/use-theme';
@@ -30,22 +30,19 @@ const TIERS: Tier[] = [
   { id: 'yearly', name: 'Yearly', price: 'year', perDay: 10, note: 'About 300 photos a month', badge: 'Best value' },
   { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'About 35 photos a week · cancel any time' },
 ];
-const TEASER_LOOKS = ['golden-hour', 'after-dark', 'film-35', 'rouge'];
+const TEASER_FRAMES = [SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[1], SAMPLE_ROLL.frames[8], SAMPLE_ROLL.frames[4]];
 
 /** The plan sheet. Prices come from the store when one is configured, otherwise the USD list prices. */
 export default function PaywallScreen() {
   const theme = useTheme();
-  const { buyPlan, restore, shots, plan, canBuy, purchasesLive } = useAppStore();
-  const { shotId } = useLocalSearchParams<{ intro?: string; shotId?: string }>();
-  const teaserShot = shots.find((shot) => shot.id === shotId);
-  const teaser = teaserShot ? teaserShot.thumbUri ?? teaserShot.resultUri : undefined;
-  const teaserLook = getLook(teaserShot?.lookId);
+  const { buyPlan, restore, rolls, plan, canBuy, purchasesLive } = useAppStore();
+  const { rollId } = useLocalSearchParams<{ rollId?: string }>();
+  const waiting = rolls.find((roll) => roll.id === rollId)?.frames.filter((frame) => frame.status === 'waiting').length ?? 0;
   const [selected, setSelected] = useState<Tier>(TIERS[0]);
   const [prices, setPrices] = useState<Record<string, string>>(FALLBACK_PRICES);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
   // Toasts render under native modals on iOS, so outcomes are shown inline.
   const [status, setStatus] = useState<string | null>(null);
-  const strip = TEASER_LOOKS.map(getLook).filter((look) => look !== undefined);
   /** A subscriber only sees the upgrade (weekly → yearly); yearly has nowhere to go. */
   const visibleTiers = plan === 'yearly' ? [] : plan === 'weekly' ? TIERS.filter((tier) => tier.id === 'yearly') : TIERS;
 
@@ -82,43 +79,24 @@ export default function PaywallScreen() {
         <IconButton name={{ ios: 'xmark', android: 'close', web: 'close' }} label="Close" onPress={() => dismiss()} />
       </View>
 
-      {teaser ? (
-        <View style={styles.teaserWrap}>
-          <View style={[styles.teaser, { backgroundColor: theme.surfaceRaised }]}>
-            <Image source={{ uri: teaser }} style={[StyleSheet.absoluteFill, { transform: [{ scale: 1.25 }] }]} contentFit="cover" blurRadius={28} />
-            {teaserLook ? <View style={[StyleSheet.absoluteFill, { backgroundColor: teaserLook.colors[0], opacity: 0.35 }]} /> : null}
-            <View style={[styles.teaserBadge, { backgroundColor: theme.surface }]}>
-              <ThemedText type="label">{teaserLook?.name ?? 'Your look'}</ThemedText>
-            </View>
-          </View>
-        </View>
-      ) : (
       <View style={styles.strip}>
-        {strip.map((look, index) => (
-          <View
-            key={look.id}
-            style={[
-              styles.stripItem,
-              { backgroundColor: theme.surfaceRaised, transform: [{ rotate: `${(index - 1.5) * 4}deg` }, { translateY: index % 2 ? 6 : -6 }] },
-            ]}>
-            <Image source={look.after} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+        {TEASER_FRAMES.map((frame, index) => (
+          <View key={frame.id} style={[styles.stripItem, { backgroundColor: theme.surface, transform: [{ rotate: `${(index - 1.5) * 3}deg` }] }]}>
+            <Image source={frame.resultUri} style={styles.stripPhoto} contentFit="cover" />
           </View>
         ))}
       </View>
-      )}
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : teaser ? 'Unlock to develop your photo.' : 'Every look, every day.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : waiting > 0 ? `Develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Develop whole rolls.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
-            ? 'Ten photos a day, every look, banking for three days. Manage the plan in Settings.'
+            ? 'Ten photos a day on every stock, banking for three days. Manage the plan in Settings.'
             : plan === 'weekly'
               ? 'Yearly gives you ten a day instead of five, for about a fifth of the price per photo.'
-              : teaser
-                ? 'Join a plan and Exposure develops it in this look in about 30 seconds. Then keep making new photos every day.'
-                : 'Photos every day. Unused ones bank for three days. Your photo stays exactly as it is.'}
+              : 'New photos every day, on every stock. Unused ones bank for three days.'}
         </ThemedText>
       </View>
 
@@ -131,13 +109,13 @@ export default function PaywallScreen() {
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
               onPress={() => setSelected(tier)}
-              style={[styles.tier, { backgroundColor: theme.surface, borderColor: isSelected ? theme.accent : theme.line }]}>
+              style={[styles.tier, { backgroundColor: theme.surface, borderColor: isSelected ? theme.brand : theme.line }]}>
               <View style={styles.tierText}>
                 <View style={styles.tierTitle}>
                   <ThemedText type="bodyStrong">{tier.name}</ThemedText>
                   {tier.badge ? (
-                    <View style={[styles.badge, { backgroundColor: theme.accentSoft }]}>
-                      <ThemedText type="caption" style={{ color: theme.accentDeep }}>
+                    <View style={[styles.badge, { backgroundColor: theme.accent }]}>
+                      <ThemedText type="caption" style={{ color: theme.onAccent }}>
                         {tier.badge}
                       </ThemedText>
                     </View>
@@ -162,7 +140,7 @@ export default function PaywallScreen() {
           </ThemedText>
         ) : null}
         {visibleTiers.length > 0 && canBuy ? (
-          <Button title="Continue" variant="accent" onPress={subscribe} loading={busy === 'buy'} disabled={busy !== null} />
+          <Button title="Continue" onPress={subscribe} loading={busy === 'buy'} disabled={busy !== null} />
         ) : visibleTiers.length > 0 ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
             Plans are not available in this build yet.
@@ -192,18 +170,16 @@ export default function PaywallScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.two },
-  strip: { flexDirection: 'row', justifyContent: 'center', gap: 4, paddingVertical: Spacing.four },
-  stripItem: { width: 72, aspectRatio: 4 / 5, borderRadius: Radius.sm, overflow: 'hidden' },
-  teaserWrap: { alignItems: 'center', paddingVertical: Spacing.three },
-  teaser: { width: 150, aspectRatio: 4 / 5, borderRadius: Radius.lg, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  teaserBadge: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: Radius.pill },
+  strip: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: Spacing.four },
+  stripItem: { width: 78, aspectRatio: 4 / 5, padding: 4, borderRadius: Radius.print, shadowColor: '#141A6B', shadowOpacity: 0.16, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  stripPhoto: { flex: 1 },
   copy: { gap: Spacing.two, paddingBottom: Spacing.three, paddingHorizontal: Spacing.two },
   center: { textAlign: 'center' },
   tiers: { gap: Spacing.two, paddingVertical: Spacing.two },
-  tier: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.lg, borderWidth: 1.5 },
+  tier: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.md, borderWidth: 1.5 },
   tierText: { flex: 1, gap: 2 },
   tierTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.pill },
+  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.sm },
   actions: { gap: Spacing.two, marginTop: 'auto', paddingTop: Spacing.four },
   legal: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.four, paddingTop: Spacing.one },
   underline: { textDecorationLine: 'underline' },

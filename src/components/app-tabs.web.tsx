@@ -3,6 +3,7 @@ import { type ColorValue, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Fonts, MaxContentWidth } from '@/constants/theme';
+import { useAppStore } from '@/store/app-store';
 
 const palette = Colors.light;
 
@@ -12,21 +13,22 @@ function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
 
 /** Web fallback: the standard JS tab navigator. Native platforms use app-tabs.tsx. */
 export default function AppTabs() {
+  const { printConfig, orders } = useAppStore();
   return (
     <Tabs
       initialRouteName="index"
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: palette.background },
-        tabBarActiveTintColor: palette.text,
+        tabBarActiveTintColor: palette.brand,
         tabBarInactiveTintColor: palette.textTertiary,
         tabBarStyle: styles.bar,
         tabBarLabelStyle: styles.label,
         tabBarItemStyle: styles.item,
       }}>
-      <Tabs.Screen name="studio" options={{ title: 'Studio', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
-      <Tabs.Screen name="index" options={{ title: 'Looks', tabBarIcon: ({ color }) => <TabIcon glyph="✦" color={color} /> }} />
-      <Tabs.Screen name="library" options={{ title: 'Gallery', tabBarIcon: ({ color }) => <TabIcon glyph="▣" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: 'Rolls', tabBarIcon: ({ color }) => <TabIcon glyph="▤" color={color} /> }} />
+      <Tabs.Screen name="stocks" options={{ title: 'Stocks', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
+      <Tabs.Screen name="prints" options={{ title: 'Prints', href: printConfig.enabled || orders.length > 0 ? undefined : null, tabBarIcon: ({ color }) => <TabIcon glyph="✉" color={color} /> }} />
     </Tabs>
   );
 }

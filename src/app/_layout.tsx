@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { Developer } from '@/components/developer';
 import { ToastProvider } from '@/components/toast';
 import { Colors, Fonts } from '@/constants/theme';
 import { useAppFonts } from '@/hooks/use-app-fonts';
@@ -16,12 +17,12 @@ const navigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: palette.accent,
+    primary: palette.brand,
     background: palette.background,
     card: palette.background,
     text: palette.text,
     border: palette.line,
-    notification: palette.accent,
+    notification: palette.brand,
   },
 };
 
@@ -31,6 +32,7 @@ export default function RootLayout() {
       <ThemeProvider value={navigationTheme}>
         <ToastProvider>
           <StatusBar style="dark" />
+          <Developer />
           <RootStack />
         </ToastProvider>
       </ThemeProvider>
@@ -53,18 +55,18 @@ function RootStack() {
       screenOptions={{
         headerStyle: { backgroundColor: palette.background },
         headerTintColor: palette.text,
-        headerTitleStyle: { fontFamily: Fonts.sansBold, fontSize: 16 },
+        headerTitleStyle: { fontFamily: Fonts.display, fontSize: 17 },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: palette.background },
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
-      <Stack.Screen name="look/[id]" options={{ title: '' }} />
-      <Stack.Screen name="choose-look" options={{ title: 'Pick a look', presentation: 'modal' }} />
-      <Stack.Screen name="process" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
-      <Stack.Screen name="edit" options={{ headerShown: false, animation: 'fade' }} />
-      <Stack.Screen name="strip" options={{ headerShown: false }} />
+      <Stack.Screen name="stock/[id]" options={{ title: '' }} />
+      <Stack.Screen name="new-roll" options={{ title: 'New roll', presentation: 'modal' }} />
+      <Stack.Screen name="roll/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="frame" options={{ headerShown: false, animation: 'fade' }} />
+      <Stack.Screen name="order-prints" options={{ title: 'Order prints', presentation: 'modal' }} />
       <Stack.Screen name="paywall" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="out-of-credits" options={{ presentation: 'modal', headerShown: false }} />
       <Stack.Screen name="settings" options={{ presentation: 'modal', title: 'Settings' }} />

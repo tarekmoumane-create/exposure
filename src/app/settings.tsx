@@ -16,7 +16,7 @@ const PLAN_LABEL = { free: 'Free', weekly: 'Weekly', yearly: 'Yearly' } as const
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { plan, credits, dailyCredits, packCredits, shots, strips, restore, aiConsent, setAiConsent } = useAppStore();
+  const { plan, credits, dailyCredits, packCredits, rolls, restore, aiConsent, setAiConsent } = useAppStore();
   const [restoring, setRestoring] = useState(false);
   // Toasts render under native modals on iOS, so status is shown inline here.
   const [status, setStatus] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export default function SettingsScreen() {
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan to reveal your photos and get new ones every day.'
+            ? 'Join a plan to develop whole rolls, with new photos every day.'
             : `${allowance} new photos ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''}`}
         </ThemedText>
         {plan === 'free' ? <Button title="See plans" size="md" onPress={() => router.push('/paywall')} /> : null}
@@ -71,7 +71,7 @@ export default function SettingsScreen() {
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.surface }]}>
-        <Row label="In your gallery" value={`${shots.length + strips.length}`} />
+        <Row label="Your rolls" value={`${rolls.length}`} />
         <Row label="Stored" value="On this phone only" />
         <Row label="Account" value="None needed" />
       </View>
@@ -81,8 +81,9 @@ export default function SettingsScreen() {
           Privacy
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Photos leave your phone only to make the look you asked for. They go to Google Gemini, the AI that makes
-          the look, and are never stored on our servers. No ads, no tracking, no face data kept.
+          Photos leave your phone only when you develop a roll or order prints. Developing sends them to Google Gemini
+          and nothing is stored on our servers. Print orders go to our print lab, and those files are deleted within
+          21 days. No ads, no tracking, no face data kept.
         </ThemedText>
         <Row label="Google Gemini processing" value={aiConsent ? 'Allowed' : 'Off'} />
         {aiConsent ? (
@@ -94,17 +95,17 @@ export default function SettingsScreen() {
         )}
         <View style={styles.links}>
           <ExternalLink href="https://exposure-api.vercel.app/privacy">
-            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+            <ThemedText type="small" style={{ color: theme.brand }}>
               Privacy policy
             </ThemedText>
           </ExternalLink>
           <ExternalLink href="https://exposure-api.vercel.app/terms">
-            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+            <ThemedText type="small" style={{ color: theme.brand }}>
               Terms of service
             </ThemedText>
           </ExternalLink>
           <ExternalLink href="mailto:tarekmoumane@gmail.com">
-            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+            <ThemedText type="small" style={{ color: theme.brand }}>
               Contact
             </ThemedText>
           </ExternalLink>

@@ -216,3 +216,33 @@ export function anchor(relit: Img, original: Img, { radius, edgeAmount, flatAmou
   }
   return { width: w, height: h, data: out };
 }
+
+
+/**
+ * True when the model framed the photo with a border the original does not have: a flat, pale band
+ * along at least two edges, like a print on paper. The edge scores in `verify` tolerate it, and in a
+ * roll it would spread from the match frame to every other frame.
+ */
+export function addedBorder(original: Img, candidate: Img): boolean {
+  const band = Math.max(2, Math.round(Math.min(candidate.width, candidate.height) * 0.012));
+  const pale = (img: Img, side: 'top' | 'bottom' | 'left' | 'right') => {
+    const horizontal = side === 'top' || side === 'bottom';
+    const across = horizontal ? img.width : img.height;
+    const along = Math.max(2, Math.round(band * (img.width / candidate.width)));
+    let flat = 0;
+    let count = 0;
+    for (let i = 0; i < across; i += 3) {
+      for (let j = 0; j < along; j++) {
+        const x = horizontal ? i : side === 'left' ? j : img.width - 1 - j;
+        const y = horizontal ? (side === 'top' ? j : img.height - 1 - j) : i;
+        const o = (y * img.width + x) * 3;
+        const [r, g, b] = [img.data[o], img.data[o + 1], img.data[o + 2]];
+        if (Math.min(r, g, b) > 0.8 && Math.max(r, g, b) - Math.min(r, g, b) < 0.12) flat++;
+        count++;
+      }
+    }
+    return flat / count;
+  };
+  const sides = ['top', 'bottom', 'left', 'right'] as const;
+  return sides.filter((side) => pale(candidate, side) > 0.7 && pale(original, side) < 0.35).length >= 2;
+}

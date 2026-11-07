@@ -20,7 +20,7 @@ export default function StockScreen() {
   if (!look) {
     return (
       <Screen scroll={false}>
-        <EmptyState title="Stock not found" message="This stock is no longer available. Choose another from the Stocks tab." />
+        <EmptyState title="Look not found" message="This look is no longer available. Choose another from the Looks tab." />
       </Screen>
     );
   }
@@ -51,7 +51,7 @@ export default function StockScreen() {
         </ThemedText>
       </View>
 
-      <Button title="Start a roll on this stock" onPress={() => router.push({ pathname: '/new-roll', params: { lookId: look.id } })} />
+      <Button title="Start a roll in this look" onPress={() => router.push({ pathname: '/new-roll', params: { lookId: look.id } })} />
     </Screen>
   );
 }

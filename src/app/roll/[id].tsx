@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -23,12 +24,18 @@ import { countFrames } from '@/lib/roll';
 import { useSheetFont } from '@/lib/use-sheet-font';
 import { type Frame, useAppStore } from '@/store/app-store';
 
+/** Holds the screen on while frames develop; a locked phone would pause them. */
+function StayAwake() {
+  useKeepAwake();
+  return null;
+}
+
 /** The contact sheet: every frame of a roll, developing in place, and what to do with the set. */
 export default function RollScreen() {
   const theme = useTheme();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rolls, removeRoll, updateFrame, credits, aiConsent, setAiConsent, printConfig } = useAppStore();
+  const { rolls, removeRoll, updateFrame, credits, plan, aiConsent, setAiConsent, printConfig } = useAppStore();
   const font = useSheetFont();
   const [busy, setBusy] = useState<'save' | 'sheet' | null>(null);
   const [asking, setAsking] = useState(false);
@@ -108,6 +115,7 @@ export default function RollScreen() {
 
   return (
     <Screen edges={['top', 'left', 'right', 'bottom']}>
+      {developing > 0 ? <StayAwake /> : null}
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
         {!isSample ? <IconButton name={{ ios: 'trash', android: 'delete', web: 'delete' }} label="Delete roll" onPress={onDelete} /> : null}
@@ -126,9 +134,13 @@ export default function RollScreen() {
         <View style={[styles.notice, { backgroundColor: theme.accentSoft }]}>
           <ThemedText type="bodyStrong">{done > 0 ? `${waiting} more ${waiting === 1 ? 'frame is' : 'frames are'} waiting.` : 'This roll is ready to develop.'}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Choose a plan or pack and they develop right here.
+            {plan === 'free' ? 'Choose a plan or pack and they develop right here.' : 'They develop here when your new photos arrive at midnight, or add a pack now.'}
           </ThemedText>
-          <Button title="See plans" size="md" onPress={() => router.push({ pathname: '/paywall', params: { rollId: roll.id } })} />
+          <Button
+            title={plan === 'free' ? 'See plans' : 'Add photos'}
+            size="md"
+            onPress={() => (plan === 'free' ? router.push({ pathname: '/paywall', params: { rollId: roll.id } }) : router.push('/out-of-credits'))}
+          />
         </View>
       ) : null}
 

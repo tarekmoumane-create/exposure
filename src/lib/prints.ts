@@ -54,13 +54,17 @@ async function uploadFrame(frame: Frame): Promise<string> {
   return ((await response.json()) as { token: string }).token;
 }
 
-export type CheckoutResult = { paid: false } | { paid: true; orderId: string; secret: string };
+export type StartedOrder = { orderId: string; secret: string };
 
-/** Uploads the chosen frames, then opens payment. Resolves once the payment sheet has closed. */
-export async function orderPrints(frames: Frame[], roll: string, onProgress: (done: number) => void): Promise<CheckoutResult> {
+/**
+ * Uploads the chosen frames, then opens payment. `onCreated` fires before the payment sheet opens,
+ * so an order is on record even if the app is closed while paying. Resolves true when paid.
+ */
+export async function orderPrints(frames: Frame[], roll: string, onProgress: (done: number) => void, onCreated: (order: StartedOrder) => void): Promise<boolean> {
   if (!API_URL) {
     onProgress(frames.length);
-    return { paid: true, orderId: `preview-${Date.now()}`, secret: 'preview' };
+    onCreated({ orderId: `preview-${Date.now()}`, secret: 'preview' });
+    return true;
   }
 
   const tokens: string[] = new Array(frames.length);
@@ -79,9 +83,10 @@ export async function orderPrints(frames: Frame[], roll: string, onProgress: (do
   if (!response.ok) await failure(response, 'Checkout could not start. Try again.');
   const { url, orderId, secret } = (await response.json()) as { url: string; orderId: string; secret: string };
 
-  const result = await WebBrowser.openAuthSessionAsync(url, 'exposure://prints');
-  const paid = result.type === 'success' && result.url.includes('result=paid');
-  return paid ? { paid: true, orderId, secret } : { paid: false };
+  onCreated({ orderId, secret });
+  // Ephemeral skips the iOS "wants to use stripe.com to sign in" prompt, which makes no sense for a payment.
+  const result = await WebBrowser.openAuthSessionAsync(url, 'exposure://prints', { preferEphemeralSession: true });
+  return result.type === 'success' && result.url.includes('result=paid');
 }
 
 export async function fetchPrintStatus(orderId: string, secret: string): Promise<PrintStatus | null> {

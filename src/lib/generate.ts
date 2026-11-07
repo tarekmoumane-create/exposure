@@ -19,6 +19,8 @@ const BUSY_RETRY_DELAY_MS = 3_000;
 /** Enough for a sharp 4x6 print; a request must also stay under the server's 4.5 MB body limit. */
 const UPLOAD_EDGE = 2048;
 const MATCH_EDGE = 640;
+/** Sharp in grids and on the contact sheet. */
+const THUMB_EDGE = 720;
 
 export type GenerateStage = 'preparing' | 'uploading' | 'generating' | 'retrying' | 'finishing';
 
@@ -112,7 +114,7 @@ export async function generateLook({ uri, lookId, matchUri, strength, onStage, s
   const name = `exposure-${lookId}-${Date.now()}`;
   // The model only outputs a few fixed ratios; trim any slack so the framing matches the photo picked.
   const resultUri = await matchFraming(await persistEncoded(payload.image, name), image.width, image.height);
-  const thumbUri = await makeThumbnail(resultUri, `${name}-thumb`);
+  const thumbUri = await makeThumbnail(resultUri, `${name}-thumb`, THUMB_EDGE);
   return { resultUri, thumbUri, credits: payload.credits };
 }
 

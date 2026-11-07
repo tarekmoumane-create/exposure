@@ -1,5 +1,5 @@
 /**
- * The film stocks. Each maps to a real camera, film or light. The prompts live server-side in
+ * The looks. Each maps to a real camera, film or light. The prompts live server-side in
  * server/lib/relight.ts so they can be tuned without an app release. Ids must match the server.
  */
 

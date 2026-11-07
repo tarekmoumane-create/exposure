@@ -27,7 +27,7 @@ export default function AppTabs() {
         tabBarItemStyle: styles.item,
       }}>
       <Tabs.Screen name="index" options={{ title: 'Rolls', tabBarIcon: ({ color }) => <TabIcon glyph="▤" color={color} /> }} />
-      <Tabs.Screen name="stocks" options={{ title: 'Stocks', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
+      <Tabs.Screen name="stocks" options={{ title: 'Looks', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
       <Tabs.Screen name="prints" options={{ title: 'Prints', href: printConfig.enabled || orders.length > 0 ? undefined : null, tabBarIcon: ({ color }) => <TabIcon glyph="✉" color={color} /> }} />
     </Tabs>
   );

@@ -20,7 +20,7 @@ export default function AppTabs() {
 
       <NativeTabs.Trigger name="stocks">
         <NativeTabs.Trigger.Icon sf={{ default: 'camera.aperture', selected: 'camera.aperture' }} md="camera" />
-        <NativeTabs.Trigger.Label>Stocks</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Looks</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="prints" hidden={!printConfig.enabled && orders.length === 0}>

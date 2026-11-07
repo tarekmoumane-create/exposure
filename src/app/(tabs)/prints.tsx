@@ -13,7 +13,7 @@ import { fetchPrintStatus, formatCents, type PrintStage } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
 
 const STAGE_LABEL: Record<PrintStage, string> = {
-  payment: 'Waiting for payment',
+  payment: 'Payment not finished',
   printing: 'At the print lab',
   shipped: 'On its way',
   cancelled: 'Cancelled',

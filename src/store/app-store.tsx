@@ -109,6 +109,7 @@ type Action =
   | { type: 'updateFrame'; rollId: string; frameId: string; patch: Partial<Frame> }
   | { type: 'addOrder'; order: PrintOrder }
   | { type: 'updateOrder'; id: string; patch: Partial<PrintOrder> }
+  | { type: 'removeOrder'; id: string }
   | { type: 'spendCredit' }
   | { type: 'syncCredits'; daily: number; pack: number }
   | { type: 'setAiConsent'; value: boolean }
@@ -232,6 +233,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, orders: [action.order, ...state.orders] };
     case 'updateOrder':
       return { ...state, orders: state.orders.map((order) => (order.id === action.id ? { ...order, ...action.patch } : order)) };
+    case 'removeOrder':
+      return { ...state, orders: state.orders.filter((order) => order.id !== action.id) };
     case 'spendCredit':
       if (state.dailyCredits > 0) return { ...state, dailyCredits: state.dailyCredits - 1 };
       return { ...state, packCredits: Math.max(0, state.packCredits - 1) };
@@ -278,6 +281,7 @@ type AppStore = State & {
   updateFrame: (rollId: string, frameId: string, patch: Partial<Frame>) => void;
   addOrder: (order: Omit<PrintOrder, 'createdAt'>) => void;
   updateOrder: (id: string, patch: Partial<PrintOrder>) => void;
+  removeOrder: (id: string) => void;
   spendCredit: () => void;
   syncCredits: (credits: { daily: number; pack: number }) => void;
   setAiConsent: (value: boolean) => void;
@@ -395,6 +399,11 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const updateFrame = useCallback((rollId: string, frameId: string, patch: Partial<Frame>) => dispatch({ type: 'updateFrame', rollId, frameId, patch }), []);
   const addOrder = useCallback((order: Omit<PrintOrder, 'createdAt'>) => dispatch({ type: 'addOrder', order: { ...order, createdAt: Date.now() } }), []);
   const updateOrder = useCallback((id: string, patch: Partial<PrintOrder>) => dispatch({ type: 'updateOrder', id, patch }), []);
+  const removeOrder = useCallback((id: string) => {
+    const order = stateRef.current.orders.find((item) => item.id === id);
+    dispatch({ type: 'removeOrder', id });
+    if (typeof order?.coverUri === 'string') deleteMedia(order.coverUri);
+  }, []);
   const spendCredit = useCallback(() => dispatch({ type: 'spendCredit' }), []);
   const syncCredits = useCallback((credits: { daily: number; pack: number }) => dispatch({ type: 'syncCredits', ...credits }), []);
   const setAiConsent = useCallback((value: boolean) => dispatch({ type: 'setAiConsent', value }), []);
@@ -471,6 +480,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       updateFrame,
       addOrder,
       updateOrder,
+      removeOrder,
       spendCredit,
       syncCredits,
       setAiConsent,
@@ -480,7 +490,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       buyPack,
       restore,
     }),
-    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, addOrder, updateOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
+    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, addOrder, updateOrder, removeOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

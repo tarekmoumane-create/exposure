@@ -38,7 +38,7 @@ export async function persistEncoded({ mimeType, data }: EncodedImage): Promise<
   return `data:${mimeType};base64,${data}`;
 }
 
-export function persistToGallery(uri: string): string {
+export function persistToGallery(uri: string, _name?: string): string {
   return uri;
 }
 

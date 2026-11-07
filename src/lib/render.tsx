@@ -59,19 +59,28 @@ export type SheetOptions = { frames: Frame[]; title: string; subtitle: string; f
 export async function renderContactSheet({ frames, title, subtitle, font }: SheetOptions): Promise<string> {
   const { width, height, cellHeight } = sheetSize(frames.length);
   // Decode one at a time: a whole roll at once is a memory spike on older phones.
-  const images: SkImage[] = [];
-  for (const frame of frames) images.push(await loadImage(frame.thumbUri ?? frame.resultUri ?? frame.sourceUri));
+  const images: { top: SkImage; base: SkImage | null; strength: number }[] = [];
+  for (const frame of frames) {
+    images.push({
+      top: await loadImage(frame.thumbUri ?? frame.resultUri ?? frame.sourceUri),
+      base: frame.strength < 0.995 ? await loadImage(frame.sourceUri) : null,
+      strength: frame.strength,
+    });
+  }
   const element = (
     <Group>
       <Rect x={0} y={0} width={width} height={height} color={PAPER} />
       {font ? <SkiaText x={SHEET.margin} y={84} text={title} font={font} color={INK} /> : null}
       {font ? <SkiaText x={SHEET.margin} y={128} text={subtitle} font={font} color={INK} opacity={0.65} /> : null}
-      {images.map((image, index) => {
+      {images.map(({ top, base, strength }, index) => {
         const x = SHEET.margin + (index % SHEET.columns) * (SHEET.cell + SHEET.gap);
         const y = SHEET.header + Math.floor(index / SHEET.columns) * (cellHeight + SHEET.label + SHEET.gap);
         return (
           <Group key={index}>
-            <SkiaImage image={image} x={x} y={y} width={SHEET.cell} height={cellHeight} fit="cover" />
+            {base ? <SkiaImage image={base} x={x} y={y} width={SHEET.cell} height={cellHeight} fit="cover" /> : null}
+            <Group opacity={base ? strength : 1}>
+              <SkiaImage image={top} x={x} y={y} width={SHEET.cell} height={cellHeight} fit="cover" />
+            </Group>
             {font ? <SkiaText x={x} y={y + cellHeight + 42} text={String(index + 1)} font={font} color={INK} /> : null}
           </Group>
         );

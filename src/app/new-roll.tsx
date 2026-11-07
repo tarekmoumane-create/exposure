@@ -15,7 +15,7 @@ import { persistTemporary } from '@/lib/media';
 import { defaultRollName } from '@/lib/roll';
 import { MAX_FRAMES, useAppStore } from '@/store/app-store';
 
-/** Load a roll: one stock, up to 12 photos, a name. */
+/** Load a roll: one look, up to 12 photos, a name. */
 export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
@@ -33,6 +33,8 @@ export default function NewRollScreen() {
       selectionLimit: MAX_FRAMES - photos.length,
       orderedSelection: true,
       quality: 1,
+      // HEIC photos arrive as JPEG, which every later step can read.
+      preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (result.canceled) return;
     const added = result.assets.map((asset) => persistTemporary(asset.uri));
@@ -72,9 +74,9 @@ export default function NewRollScreen() {
   return (
     <Screen edges={['left', 'right', 'bottom']} scroll={false} contentStyle={styles.root}>
       <Stack.Screen options={{ headerRight: () => <Button title="Cancel" variant="ghost" size="md" onPress={() => router.back()} /> }} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <View style={styles.section}>
-          <ThemedText type="subtitle">Stock</ThemedText>
+          <ThemedText type="subtitle">Look</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stocks} style={styles.bleed}>
             {LOOKS.map((item) => {
               const selected = item.id === lookId;

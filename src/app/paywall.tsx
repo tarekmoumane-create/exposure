@@ -93,10 +93,10 @@ export default function PaywallScreen() {
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
-            ? 'Ten photos a day on every stock, banking for three days. Manage the plan in Settings.'
+            ? 'Ten photos a day in every look, banking for three days. Manage the plan in Settings.'
             : plan === 'weekly'
               ? 'Yearly gives you ten a day instead of five, for about a fifth of the price per photo.'
-              : 'New photos every day, on every stock. Unused ones bank for three days.'}
+              : 'New photos every day, in every look. Unused ones bank for three days.'}
         </ThemedText>
       </View>
 

@@ -9,6 +9,7 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { persistToGallery } from '@/lib/image-io';
 import { formatCents, orderPrints, PrintError } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
 
@@ -16,7 +17,7 @@ import { useAppStore } from '@/store/app-store';
 export default function OrderPrintsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ roll: string }>();
-  const { rolls, printConfig, addOrder } = useAppStore();
+  const { rolls, printConfig, addOrder, updateOrder, removeOrder } = useAppStore();
   const roll = rolls.find((item) => item.id === params.roll);
   const frames = roll?.frames.filter((frame) => frame.status === 'done') ?? [];
   const [off, setOff] = useState<Set<string>>(new Set());
@@ -49,9 +50,18 @@ export default function OrderPrintsScreen() {
     setError(null);
     setUploaded(0);
     try {
-      const result = await orderPrints(chosen, roll.name, setUploaded);
-      if (!result.paid) return;
-      addOrder({ id: result.orderId, secret: result.secret, rollName: roll.name, count, totalCents, coverUri: chosen[0].thumbUri ?? chosen[0].resultUri, stage: 'printing' });
+      let started: string | undefined;
+      const cover = chosen[0].thumbUri ?? chosen[0].resultUri;
+      const paid = await orderPrints(chosen, roll.name, setUploaded, ({ orderId, secret }) => {
+        started = orderId;
+        // The order keeps its own picture, so deleting the roll later does not break it.
+        addOrder({ id: orderId, secret, rollName: roll.name, count, totalCents, coverUri: typeof cover === 'string' ? persistToGallery(cover, `order-${orderId}`) : cover, stage: 'payment' });
+      });
+      if (!paid) {
+        if (started) removeOrder(started);
+        return;
+      }
+      if (started) updateOrder(started, { stage: 'printing' });
       router.dismissAll();
       router.navigate('/prints');
     } catch (caught) {

@@ -8,16 +8,16 @@ import { Radius, Spacing } from '@/constants/theme';
 import { LOOK_GROUPS, LOOKS } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Every film and camera a roll can be loaded with. */
-export default function StocksScreen() {
+/** Every film, camera and light a roll can be developed in. */
+export default function LooksScreen() {
   const theme = useTheme();
   return (
     <Screen withTabBar>
       <View style={styles.header}>
         <ThemedText type="display" accessibilityRole="header">
-          Stocks
+          Looks
         </ThemedText>
-        <ThemedText themeColor="textSecondary">Each roll is shot on one. Choose by where your photos were taken.</ThemedText>
+        <ThemedText themeColor="textSecondary">Each roll is developed in one look. Choose by where your photos were taken.</ThemedText>
       </View>
       {LOOK_GROUPS.map((group) => (
         <View key={group.id} style={styles.group}>

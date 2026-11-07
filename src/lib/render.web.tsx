@@ -54,7 +54,11 @@ export async function renderContactSheet({ frames, title, subtitle }: { frames: 
   for (let index = 0; index < frames.length; index++) {
     const x = SHEET.margin + (index % SHEET.columns) * (SHEET.cell + SHEET.gap);
     const y = SHEET.header + Math.floor(index / SHEET.columns) * (cellHeight + SHEET.label + SHEET.gap);
-    cover(ctx, await load(frames[index].resultUri ?? frames[index].sourceUri), x, y, SHEET.cell, cellHeight);
+    const frame = frames[index];
+    if (frame.strength < 0.995) cover(ctx, await load(frame.sourceUri), x, y, SHEET.cell, cellHeight);
+    ctx.globalAlpha = frame.strength;
+    cover(ctx, await load(frame.resultUri ?? frame.sourceUri), x, y, SHEET.cell, cellHeight);
+    ctx.globalAlpha = 1;
     ctx.fillText(String(index + 1), x, y + cellHeight + 42);
   }
   return canvas.toDataURL('image/jpeg', 0.92);

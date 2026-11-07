@@ -126,7 +126,7 @@ export default function SettingsScreen() {
 }
 
 /** "tonight at midnight" before 6pm, "at midnight" after: the refresh is always local midnight. */
-export function refreshCopy(): string {
+function refreshCopy(): string {
   return new Date().getHours() < 18 ? 'tonight at midnight' : 'at midnight';
 }
 

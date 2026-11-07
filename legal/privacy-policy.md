@@ -25,7 +25,7 @@ Exposure is a mobile app that restyles your photos. It has two kinds of features
 3. **Device and network metadata (minimal).** Standard request data (IP address, user agent, timestamps) processed temporarily by our hosting provider for security and abuse prevention, and an application token that confirms requests come from the Exposure app.
 4. **Analytics and diagnostics.** Exposure does not run third-party analytics or crash reporting. Apple and Google may provide us aggregated, anonymous install and crash statistics through their developer tools under their own policies. We never receive your photos through these channels.
 
-We do not collect your name, email, contacts, precise location or payment card details. If you email us, we receive your email address and message.
+We do not collect your contacts, precise location or payment card details. We do not collect your name or email unless you order prints, when Stripe and Prodigi receive them to fulfil the order, or email us, when we receive your address and message.
 
 ## Face data
 

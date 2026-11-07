@@ -37,6 +37,8 @@ type Body = {
   image?: { mimeType?: string; data?: string; width?: number; height?: number };
   match?: { mimeType?: string; data?: string };
   strength?: number;
+  /** The frame's id in the app, so a retry after a dropped download is not charged again. */
+  frameId?: string;
 };
 
 function reject(res: VercelResponse, status: number, code: string, message: string) {
@@ -83,7 +85,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const strength = typeof body?.strength === 'number' ? Math.min(1, Math.max(0, body.strength)) : undefined;
 
-  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day'], req.headers['x-exposure-device']);
+  const reservation = await reserve(req.headers['x-exposure-user'], req.headers['x-exposure-day'], req.headers['x-exposure-device'], body?.frameId);
   if (!reservation.ok) {
     return res.status(reservation.status).json({ error: { code: reservation.code, message: reservation.message }, credits: reservation.balance });
   }
@@ -102,8 +104,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       match: matchData ? { mimeType: body!.match!.mimeType!, data: Buffer.from(matchData, 'base64') } : undefined,
     });
     const image = await fitResponse(result.jpeg);
-    // The app's Cancel promises no charge: if it already hung up, refund.
-    const credits = (await release(!req.socket?.destroyed)) ?? undefined;
+    // No charge if the app already hung up, or if the model's render was rejected and the frame is
+    // only the basic fallback: the user paid for an AI frame.
+    const credits = (await release(!req.socket?.destroyed && !result.fallback)) ?? undefined;
     console.log('[generate]', lookId, result.model, `${result.ms}ms`, `${Math.round(image.data.length / 1024)}kB`, result.stages.join(' | '));
     return res.status(200).json({
       image,

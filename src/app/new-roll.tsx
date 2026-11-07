@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { AiConsent } from '@/components/ai-consent';
@@ -41,7 +41,10 @@ export default function NewRollScreen() {
     setPhotos((current) => [...current, ...added].slice(0, MAX_FRAMES));
   };
 
+  const started = useRef(false);
   const develop = () => {
+    if (started.current) return;
+    started.current = true;
     const roll = addRoll({ name: name.trim() || defaultRollName(), lookId, sourceUris: photos });
     router.replace({ pathname: '/roll/[id]', params: { id: roll.id } });
     if (credits === 0) setTimeout(() => router.push({ pathname: '/paywall', params: { rollId: roll.id } }), 350);
@@ -66,9 +69,9 @@ export default function NewRollScreen() {
     count === 0
       ? `Add up to ${MAX_FRAMES} photos. People, places, anything.`
       : covered === count
-        ? `Uses ${count} of your ${credits} ${credits === 1 ? 'photo' : 'photos'}. Only frames that come back count.`
+        ? `Uses ${count} of your ${credits} ${credits === 1 ? 'frame' : 'frames'}. Only frames that come back count.`
         : covered > 0
-          ? `You have ${covered} ${covered === 1 ? 'photo' : 'photos'} left, so ${count - covered} ${count - covered === 1 ? 'frame' : 'frames'} will wait until you add more.`
+          ? `You have ${covered} ${covered === 1 ? 'frame' : 'frames'} left, so ${count - covered} ${count - covered === 1 ? 'frame' : 'frames'} will wait until you add more.`
           : 'Your frames will wait until you choose a plan or pack.';
 
   return (

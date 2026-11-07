@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-import { type CheckoutSession, loadOrder, saveOrder, submitToLab, verifyStripeSignature } from '../../lib/prints.js';
+import { type CheckoutSession, loadOrder, type PrintOrder, refundPayment, saveOrder, submitToLab, verifyStripeSignature } from '../../lib/prints.js';
+
+const MAX_LAB_ATTEMPTS = 4;
 
 /** Signature checks need the exact bytes Stripe sent. */
 export const config = { api: { bodyParser: false } };
@@ -28,17 +30,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[prints/webhook] unknown order', session.id);
     return res.status(200).json({ unknown: true });
   }
-  if (order.prodigiId) return res.status(200).json({ duplicate: true });
+  if (order.prodigiId || order.status === 'failed') return res.status(200).json({ duplicate: true });
+
+  // Recorded first, so the app shows the order as paid while the lab call runs.
+  const paid: PrintOrder = { ...order, status: 'paid' };
+  await saveOrder(paid);
 
   try {
     const shipping = session.collected_information?.shipping_details ?? {};
-    const prodigiId = await submitToLab(order, shipping, session.customer_details?.email);
-    await saveOrder({ ...order, status: 'at_lab', prodigiId });
+    const prodigiId = await submitToLab(paid, shipping, session.customer_details?.email);
+    await saveOrder({ ...paid, status: 'at_lab', prodigiId });
     return res.status(200).json({ ok: true });
   } catch (error) {
-    // A non-2xx makes Stripe retry for days, which rides out a lab outage. The order stays paid.
-    console.error('[prints/webhook] lab rejected', order.id, (error as Error).message.slice(0, 300));
-    await saveOrder({ ...order, status: 'paid' });
-    return res.status(502).end();
+    const labAttempts = (order.labAttempts ?? 0) + 1;
+    console.error('[prints/webhook] lab rejected', order.id, labAttempts, (error as Error).message.slice(0, 300));
+    if (labAttempts < MAX_LAB_ATTEMPTS) {
+      // A non-2xx makes Stripe retry, which rides out a lab outage.
+      await saveOrder({ ...paid, labAttempts });
+      return res.status(502).end();
+    }
+    // The lab will not take this order: the customer gets their money back and the app says so.
+    try {
+      if (session.payment_intent) await refundPayment(session.payment_intent, order.id);
+      await saveOrder({ ...paid, labAttempts, status: 'failed' });
+      return res.status(200).json({ refunded: true });
+    } catch (refundError) {
+      console.error('[prints/webhook] REFUND FAILED', order.id, (refundError as Error).message.slice(0, 200));
+      await saveOrder({ ...paid, labAttempts });
+      return res.status(502).end();
+    }
   }
 }

@@ -5,6 +5,7 @@ import { Asset } from 'expo-asset';
 import { File, Paths } from 'expo-file-system';
 
 import { newMediaFile } from '@/lib/files';
+import { makeThumbnail } from '@/lib/image-io';
 import { SHEET, sheetSize } from '@/lib/sheet';
 import type { Frame, MediaRef } from '@/store/app-store';
 
@@ -63,7 +64,8 @@ export async function renderContactSheet({ frames, title, subtitle, font }: Shee
   for (const frame of frames) {
     images.push({
       top: await loadImage(frame.thumbUri ?? frame.resultUri ?? frame.sourceUri),
-      base: frame.strength < 0.995 ? await loadImage(frame.sourceUri) : null,
+      // Small copies only: a dozen full-size originals at once would run an older phone out of memory.
+      base: frame.strength < 0.995 ? await loadImage(await makeThumbnail(await fileUri(frame.sourceUri), `sheet-base-${frame.id}`, 720)) : null,
       strength: frame.strength,
     });
   }

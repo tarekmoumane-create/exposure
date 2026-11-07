@@ -7,6 +7,7 @@
 import { Platform } from 'react-native';
 import Purchases, { type CustomerInfo, LOG_LEVEL, type PurchasesStoreProduct } from 'react-native-purchases';
 
+import { getDeviceId } from '@/lib/device';
 import { ENTITLEMENT_ID, FALLBACK_PRICES, PACK_PRODUCTS, type PackId, PLAN_PRODUCTS, type PlanId, packForProduct, planForProduct } from '@/data/products';
 
 export type CustomerState = {
@@ -46,7 +47,9 @@ export async function configurePurchases(): Promise<void> {
   const key = apiKey();
   if (!key || configured) return;
   Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR);
-  Purchases.configure({ apiKey: key });
+  // The keychain id usually survives a reinstall, so plans and unused packs stay with the phone.
+  const appUserID = (await getDeviceId()) ?? undefined;
+  Purchases.configure({ apiKey: key, appUserID });
   configured = true;
 }
 

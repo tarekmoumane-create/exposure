@@ -54,6 +54,8 @@ export type PrintOrder = {
   tokens: string[];
   roll: string;
   status: 'awaiting_payment' | 'paid' | 'at_lab' | 'failed';
+  /** How many times the lab has refused this paid order. */
+  labAttempts?: number;
   stripeSession?: string;
   prodigiId?: string;
   createdAt: number;
@@ -148,13 +150,14 @@ export function breakEvenCents(labCents: number, customerCents: number): number 
 
 type ShippingDetails = { name?: string; address?: { line1?: string; line2?: string | null; city?: string; state?: string | null; postal_code?: string; country?: string } };
 
-/** Sends a paid order to the lab. The webhook checks prodigiId first, so a repeated event does not print twice. */
+/** Sends a paid order to the lab. A repeated idempotencyKey returns the existing order, so a retry cannot print twice. */
 export async function submitToLab(order: PrintOrder, shipping: ShippingDetails, email: string | undefined): Promise<string> {
   const address = shipping.address ?? {};
   const created = await prodigi<{ outcome: string; order?: { id: string } }>('/orders', {
     method: 'POST',
     body: {
       merchantReference: order.id,
+      idempotencyKey: order.id,
       shippingMethod: 'Budget',
       recipient: {
         name: shipping.name ?? 'Exposure customer',
@@ -247,8 +250,20 @@ export function verifyStripeSignature(rawBody: string, header: string | undefine
   return signatures.some((signature) => sameSecret(signature, expected));
 }
 
+/** Gives the customer their money back, for an order the lab would not take. */
+export async function refundPayment(paymentIntent: string, order: string): Promise<void> {
+  const response = await fetch(`${STRIPE_BASE}/refunds`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded', 'Idempotency-Key': `refund-${order}` },
+    body: form({ payment_intent: paymentIntent, 'metadata[order]': order }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!response.ok) throw new Error(`stripe refund ${response.status}`);
+}
+
 export type CheckoutSession = {
   id: string;
+  payment_intent?: string;
   payment_status?: string;
   metadata?: { order?: string };
   customer_details?: { email?: string };

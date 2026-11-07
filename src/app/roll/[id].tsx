@@ -35,7 +35,7 @@ export default function RollScreen() {
   const theme = useTheme();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rolls, removeRoll, updateFrame, credits, plan, aiConsent, setAiConsent, printConfig } = useAppStore();
+  const { rolls, removeRoll, updateFrame, removeFrames, credits, plan, aiConsent, setAiConsent, printConfig } = useAppStore();
   const font = useSheetFont();
   const [busy, setBusy] = useState<'save' | 'sheet' | null>(null);
   const [asking, setAsking] = useState(false);
@@ -182,9 +182,17 @@ export default function RollScreen() {
       {failed > 0 ? (
         <View style={styles.failNote}>
           <ThemedText type="small" themeColor="mark">
-            {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A frame did not develop.'} No photos were used.
+            {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A frame did not develop.'} Trying again won’t charge you twice.
           </ThemedText>
           <Button title={failed === 1 ? 'Try this frame again' : `Try ${failed} frames again`} variant="secondary" size="md" onPress={retryFailed} />
+          {failed < total ? (
+            <Button
+              title={failed === 1 ? 'Remove this frame' : 'Remove these frames'}
+              variant="ghost"
+              size="md"
+              onPress={() => removeFrames(roll.id, roll.frames.filter((frame) => frame.status === 'failed').map((frame) => frame.id))}
+            />
+          ) : null}
         </View>
       ) : null}
 

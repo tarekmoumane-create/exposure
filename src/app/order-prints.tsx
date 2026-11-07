@@ -10,14 +10,14 @@ import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { persistToGallery } from '@/lib/image-io';
-import { formatCents, orderPrints, PrintError } from '@/lib/prints';
+import { fetchPrintStatus, formatCents, orderPrints, PrintError } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
 
 /** Pick frames, see the price, pay on the hosted page. The address is entered there too. */
 export default function OrderPrintsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ roll: string }>();
-  const { rolls, printConfig, addOrder, updateOrder, removeOrder } = useAppStore();
+  const { rolls, orders, printConfig, addOrder, updateOrder, removeOrder } = useAppStore();
   const roll = rolls.find((item) => item.id === params.roll);
   const frames = roll?.frames.filter((frame) => frame.status === 'done') ?? [];
   const [off, setOff] = useState<Set<string>>(new Set());
@@ -51,17 +51,23 @@ export default function OrderPrintsScreen() {
     setUploaded(0);
     try {
       let started: string | undefined;
+      let startedSecret = '';
       const cover = chosen[0].thumbUri ?? chosen[0].resultUri;
       const paid = await orderPrints(chosen, roll.name, setUploaded, ({ orderId, secret }) => {
         started = orderId;
+        startedSecret = secret;
         // The order keeps its own picture, so deleting the roll later does not break it.
         addOrder({ id: orderId, secret, rollName: roll.name, count, totalCents, coverUri: typeof cover === 'string' ? persistToGallery(cover, `order-${orderId}`) : cover, stage: 'payment' });
       });
       if (!paid) {
-        if (started) removeOrder(started);
-        return;
+        // Closing the sheet does not prove the payment failed, so ask before dropping the order.
+        const order = started ? orders.find((item) => item.id === started) : undefined;
+        const status = started ? await fetchPrintStatus(started, order?.secret ?? startedSecret) : null;
+        if (started && status?.stage === 'payment') removeOrder(started);
+        else if (started && status) updateOrder(started, status);
+        if (!status || status.stage === 'payment') return;
       }
-      if (started) updateOrder(started, { stage: 'printing' });
+      if (paid && started) updateOrder(started, { stage: 'printing' });
       router.dismissAll();
       router.navigate('/prints');
     } catch (caught) {

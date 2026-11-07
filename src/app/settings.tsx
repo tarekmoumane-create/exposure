@@ -46,15 +46,15 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.planRight}>
             <ThemedText type="label" themeColor="textTertiary">
-              Photos left
+              Frames left
             </ThemedText>
             <ThemedText type="title">{credits}</ThemedText>
           </View>
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan to develop whole rolls, with new photos every day.'
-            : `${allowance} new photos ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''}`}
+            ? 'Join a plan to develop whole rolls, with new frames every day.'
+            : `${allowance} new frames ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''}`}
         </ThemedText>
         {plan === 'free' ? <Button title="See plans" size="md" onPress={() => router.push('/paywall')} /> : null}
         {plan !== 'free' ? (
@@ -90,7 +90,7 @@ export default function SettingsScreen() {
           <Button title="Turn off" variant="secondary" size="md" onPress={() => setAiConsent(false)} />
         ) : (
           <ThemedText type="caption" themeColor="textTertiary">
-            You’ll be asked again before your next photo is made.
+            You’ll be asked again before your next roll develops.
           </ThemedText>
         )}
         <View style={styles.links}>

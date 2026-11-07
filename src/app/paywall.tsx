@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -27,8 +27,8 @@ type Tier = {
 };
 
 const TIERS: Tier[] = [
-  { id: 'yearly', name: 'Yearly', price: 'year', perDay: 10, note: 'About 300 photos a month', badge: 'Best value' },
-  { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'About 35 photos a week · cancel any time' },
+  { id: 'yearly', name: 'Yearly', price: 'year', perDay: 10, note: 'About 300 frames a month', badge: 'Best value' },
+  { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'About 35 frames a week · cancel any time' },
 ];
 const TEASER_FRAMES = [SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[1], SAMPLE_ROLL.frames[8], SAMPLE_ROLL.frames[4]];
 
@@ -89,14 +89,14 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : waiting > 0 ? `Develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Develop whole rolls.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : waiting > 0 ? `Develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Develop whole rolls.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
-            ? 'Ten photos a day in every look, banking for three days. Manage the plan in Settings.'
+            ? 'Ten frames a day in every look, banking for three days. Manage the plan in Settings.'
             : plan === 'weekly'
-              ? 'Yearly gives you ten a day instead of five, for about a fifth of the price per photo.'
-              : 'New photos every day, in every look. Unused ones bank for three days.'}
+              ? 'Yearly gives you ten a day instead of five, for about a tenth of the price per frame.'
+              : 'New frames every day, in every look. Unused ones bank for three days.'}
         </ThemedText>
       </View>
 
@@ -122,7 +122,7 @@ export default function PaywallScreen() {
                   ) : null}
                 </View>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {tier.perDay} photos a day · {tier.note}
+                  {tier.perDay} frames a day · {tier.note}
                 </ThemedText>
               </View>
               <ThemedText type="bodyStrong">
@@ -146,6 +146,7 @@ export default function PaywallScreen() {
             Plans are not available in this build yet.
           </ThemedText>
         ) : null}
+        {plan === 'free' ? <Button title="Buy a one-time pack instead" variant="secondary" size="md" onPress={() => router.replace('/out-of-credits')} disabled={busy !== null} /> : null}
         <Button title="Not now" variant="ghost" size="md" onPress={() => dismiss()} disabled={busy !== null} />
         <Button title="Restore purchases" variant="ghost" size="md" onPress={onRestore} loading={busy === 'restore'} disabled={busy !== null} />
         <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>

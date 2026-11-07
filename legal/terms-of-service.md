@@ -28,13 +28,15 @@ Looks require photos (credits), available through auto-renewing subscriptions an
 - **Yearly**: US$59.99 per year (or local equivalent), 10 photos per day.
 - **Packs**: one-time purchases of 10, 30 or 80 photos that never expire and are available to everyone.
 
-Daily photos refresh at local midnight. Unused daily photos bank up to three days' worth and then stop accumulating. Pack photos are kept in a separate balance and are used after daily photos. AI looks require an active plan or a photo pack; the app shows plans before any photo is processed. Prices may vary by region; the store shows the exact price before purchase. Billing, renewal, cancellation and refunds are handled by Apple or Google under their policies; manage or cancel in your device settings. If you cancel, access continues until the end of the current period.
+Daily photos refresh at local midnight. Unused daily photos bank up to three days' worth and then stop accumulating. Pack photos are kept in a separate balance and are used after daily photos. The app shows photos as frames: one photo develops one frame. The first frame on a device is free; further frames need a plan or a pack. Prices may vary by region; the store shows the exact price before purchase. Billing, renewal, cancellation and refunds are handled by Apple or Google under their policies; manage or cancel in your device settings. If you cancel, access continues until the end of the current period.
 
 ## 6. Entitlement checks
 
 To verify subscriptions and enforce daily limits we validate signed transaction data through RevenueCat and our backend, and may use an anonymous app identifier and network metadata.
 
 ## 7. Third-party services
+
+Print payments are handled by Stripe, Inc. and printing and delivery by Prodigi Group Ltd.
 
 Apple and Google (billing), RevenueCat (entitlements), Vercel, Inc. (backend hosting), Google LLC (Gemini API) (AI images). Each has its own terms.
 

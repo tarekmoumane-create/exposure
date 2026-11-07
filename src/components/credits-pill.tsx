@@ -14,11 +14,11 @@ export function CreditsPill() {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${credits} photos left. ${plan === 'free' ? 'See plans.' : 'Add photos.'}`}
+      accessibilityLabel={`${credits} frames left. ${plan === 'free' ? 'See plans.' : 'Add frames.'}`}
       hitSlop={6}
       onPress={() => router.push(plan === 'free' ? '/paywall' : '/out-of-credits')}
       style={({ pressed }) => [styles.pill, { backgroundColor: theme.accent, opacity: pressed ? 0.8 : 1 }]}>
-      <ThemedText type="caption">{credits === 1 ? '1 photo' : `${credits} photos`}</ThemedText>
+      <ThemedText type="caption">{credits === 1 ? '1 frame' : `${credits} frames`}</ThemedText>
     </Pressable>
   );
 }

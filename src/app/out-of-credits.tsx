@@ -57,8 +57,8 @@ export default function OutOfCreditsScreen() {
         <ThemedText type="title">{plan === 'free' ? 'Keep developing.' : 'That’s all for today.'}</ThemedText>
         <ThemedText type="body" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan for new photos every day, or buy a pack and finish your roll.'
-            : `${allowance} more arrive ${refresh}. Add a few now, or ${plan === 'weekly' ? 'double your daily photos with Yearly' : 'keep going with a pack'}.`}
+            ? 'Join a plan for new frames every day, or buy a pack and finish your roll.'
+            : `${allowance} more arrive ${refresh}. Add a few now, or ${plan === 'weekly' ? 'double your daily frames with Yearly' : 'keep going with a pack'}.`}
         </ThemedText>
       </View>
 
@@ -72,7 +72,7 @@ export default function OutOfCreditsScreen() {
             style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.brand : theme.line, opacity: pressed || (busy && busy !== pack.id) ? 0.7 : 1 }]}>
             <View style={styles.packText}>
               <View style={styles.packTitle}>
-                <ThemedText type="bodyStrong">{PACK_PRODUCTS[pack.id].credits} photos</ThemedText>
+                <ThemedText type="bodyStrong">{PACK_PRODUCTS[pack.id].credits} frames</ThemedText>
                 {pack.badge ? (
                   <View style={[styles.badge, { backgroundColor: theme.accent }]}>
                     <ThemedText type="caption" style={{ color: theme.onAccent }}>

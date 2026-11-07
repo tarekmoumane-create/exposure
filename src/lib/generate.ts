@@ -27,6 +27,8 @@ export type GenerateStage = 'preparing' | 'uploading' | 'generating' | 'retrying
 export type GenerateOptions = {
   uri: string;
   lookId: string;
+  /** The frame's id, so a retry after a dropped download is not charged twice. */
+  frameId?: string;
   /** A finished frame from the same roll, so this one is rendered to sit beside it. */
   matchUri?: string;
   strength?: number;
@@ -74,8 +76,11 @@ function isAbort(error: unknown): boolean {
   return (error as Error)?.name === 'AbortError';
 }
 
-export async function generateLook({ uri, lookId, matchUri, strength, onStage, signal, day }: GenerateOptions): Promise<GenerateResult> {
-  if (!API_URL) return simulate(uri, lookId, onStage, signal);
+export async function generateLook({ uri, lookId, frameId, matchUri, strength, onStage, signal, day }: GenerateOptions): Promise<GenerateResult> {
+  if (!API_URL) {
+    if (__DEV__) return simulate(uri, lookId, onStage, signal);
+    throw new GenerateError('config', FRIENDLY.config);
+  }
 
   onStage?.('preparing');
   let image;
@@ -91,7 +96,7 @@ export async function generateLook({ uri, lookId, matchUri, strength, onStage, s
 
   const timeout = AbortSignal.timeout(CLIENT_TIMEOUT_MS);
   const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  const body = JSON.stringify({ lookId, image: { mimeType: image.mimeType, data: image.data, width: image.width, height: image.height }, match: match ? { mimeType: match.mimeType, data: match.data } : undefined, strength });
+  const body = JSON.stringify({ lookId, image: { mimeType: image.mimeType, data: image.data, width: image.width, height: image.height }, match: match ? { mimeType: match.mimeType, data: match.data } : undefined, strength, frameId });
 
   const [userId, deviceId] = await Promise.all([getUserId(), getDeviceId()]);
   const identity: Record<string, string> = {
@@ -105,7 +110,7 @@ export async function generateLook({ uri, lookId, matchUri, strength, onStage, s
     payload = await post(body, identity, combined, onStage, true);
   } catch (error) {
     if (isAbort(error) && timeout.aborted && !signal?.aborted) {
-      throw new GenerateError('timeout', 'That took too long. Try again, nothing was charged.');
+      throw new GenerateError('timeout', 'That took too long. Try again. You won’t be charged twice.');
     }
     throw error;
   }
@@ -174,7 +179,7 @@ async function post(
   try {
     return (await response.json()) as Payload;
   } catch {
-    throw new GenerateError('upstream', 'The look came back damaged. Try again, nothing was charged.');
+    throw new GenerateError('upstream', 'The frame came back damaged. Try again. You won’t be charged twice.');
   }
 }
 

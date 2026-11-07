@@ -66,4 +66,22 @@ assert.ok(!overflow.ok && overflow.code === 'inflight', 'a fifth at once waits')
 await Promise.all(results.map((r, i) => (r.ok && r.enforced ? r.release(i !== 0) : null)));
 assert.equal(balance('user-ffffffff').daily, 2, 'one refund, three kept');
 assert.equal(kv.get('inflight:user-ffffffff'), '0');
+// A frame that was charged but lost on the way back retries for free; a refunded one pays again.
+plan = 'app.exposure.yearly';
+const u = 'user-gggggggg';
+const once = await reserve(u, day, device(5), 'frame-abc123');
+assert.ok(once.ok && once.enforced);
+await once.release(true);
+const before = balance(u).daily;
+const retry = await reserve(u, day, device(5), 'frame-abc123');
+assert.ok(retry.ok && retry.enforced);
+assert.equal(balance(u).daily, before, 'retry must not charge');
+await retry.release(true);
+assert.equal(balance(u).daily, before);
+assert.equal(kv.get(`inflight:${u}`), '0');
+const other = await reserve(u, day, device(5), 'frame-def456');
+assert.ok(other.ok && other.enforced);
+await other.release(false);
+assert.equal(kv.has(`framepaid:${u}:frame-def456`), false, 'a refunded frame stays payable');
+assert.equal(balance(u).daily, before);
 console.log('ledger: all checks passed');

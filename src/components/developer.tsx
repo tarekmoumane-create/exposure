@@ -36,6 +36,7 @@ export function Developer() {
       generateLook({
         uri: frame.sourceUri,
         lookId: roll.lookId,
+        frameId: frame.id,
         matchUri: typeof matchSource === 'string' ? matchSource : undefined,
         day: localDay(),
         signal: controller.signal,

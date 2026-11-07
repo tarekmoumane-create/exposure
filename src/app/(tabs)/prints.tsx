@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -12,30 +12,38 @@ import { useTheme } from '@/hooks/use-theme';
 import { fetchPrintStatus, formatCents, type PrintStage } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
 
+const ABANDONED_MS = 26 * 3_600_000;
+
 const STAGE_LABEL: Record<PrintStage, string> = {
   payment: 'Payment not finished',
   printing: 'At the print lab',
   shipped: 'On its way',
   cancelled: 'Cancelled',
-  problem: 'Needs attention. Email support.',
+  problem: 'The lab couldn’t print this order, so it was refunded.',
 };
 
 export default function PrintsScreen() {
   const theme = useTheme();
-  const { orders, updateOrder } = useAppStore();
+  const { orders, updateOrder, removeOrder } = useAppStore();
+
+  const latest = useRef(orders);
+  useEffect(() => {
+    latest.current = orders;
+  }, [orders]);
 
   useFocusEffect(
     useCallback(() => {
-      orders
+      latest.current
         .filter((order) => order.stage === 'printing' || order.stage === 'payment')
         .forEach((order) => {
           fetchPrintStatus(order.id, order.secret).then((status) => {
-            if (status) updateOrder(order.id, status);
+            if (!status) return;
+            if (status.stage !== 'payment') updateOrder(order.id, status);
+            // Stripe closes an unpaid checkout after a day, so this one was abandoned.
+            else if (order.stage === 'payment' && Date.now() - order.createdAt > ABANDONED_MS) removeOrder(order.id);
           });
         });
-      // Status is read once per visit, not on every change it causes.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [updateOrder])
+    }, [updateOrder, removeOrder])
   );
 
   if (orders.length === 0) {

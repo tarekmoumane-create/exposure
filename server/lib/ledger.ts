@@ -149,6 +149,8 @@ const balanceOf = (ledger: Ledger): Balance => ({ daily: ledger.daily, pack: led
 
 const USER_ID = /^[A-Za-z0-9$:._-]{8,128}$/;
 const DEVICE_ID = /^[A-Za-z0-9-]{16,64}$/;
+const FRAME_ID = /^[A-Za-z0-9-]{6,48}$/;
+const FRAME_PAID_TTL_S = 7 * 86_400;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -187,7 +189,7 @@ async function grantWelcome(ledger: Ledger, deviceId: unknown): Promise<Ledger> 
  * refunds it. Infrastructure errors fail open so an outage of Redis or RevenueCat never blocks
  * paying users.
  */
-export async function reserve(userId: unknown, clientDay: unknown, deviceId?: unknown): Promise<Reservation> {
+export async function reserve(userId: unknown, clientDay: unknown, deviceId?: unknown, frameId?: unknown): Promise<Reservation> {
   if (!isLedgerEnabled()) return { ok: true, enforced: false };
   if (typeof userId !== 'string' || !USER_ID.test(userId)) {
     return { ok: false, status: 426, code: 'update', message: 'Update Exposure to keep making photos.' };
@@ -209,6 +211,24 @@ export async function reserve(userId: unknown, clientDay: unknown, deviceId?: un
     return { ok: true, enforced: false };
   }
   const land = () => redis('DECR', flightKey).catch(() => {});
+
+  // The charge lands before the frame reaches the phone, so a dropped download retries for free.
+  const paidKey = typeof frameId === 'string' && FRAME_ID.test(frameId) ? `framepaid:${userId}:${frameId}` : null;
+  try {
+    if (paidKey && (await redis<string | null>('GET', paidKey))) {
+      const raw = await redis<string | null>('GET', ledgerKey);
+      const current = raw ? (JSON.parse(raw) as Ledger) : { day: today, daily: 0, pack: 0, plan: 'free' as Plan, granted: [] };
+      let landed = false;
+      const release = async (): Promise<Balance | null> => {
+        if (!landed) await land();
+        landed = true;
+        return balanceOf(current);
+      };
+      return { ok: true, enforced: true, userId, balance: balanceOf(current), release };
+    }
+  } catch (error) {
+    console.error('[ledger] retry check failed', (error as Error).message);
+  }
 
   try {
     const customer = await fetchCustomer(userId);
@@ -242,7 +262,10 @@ export async function reserve(userId: unknown, clientDay: unknown, deviceId?: un
         return await withLock(userId, async () => {
           const raw = await redis<string | null>('GET', ledgerKey);
           const current = raw ? (JSON.parse(raw) as Ledger) : outcome.ledger;
-          if (keep) return balanceOf(current);
+          if (keep) {
+            if (paidKey) await redis('SET', paidKey, '1', 'EX', FRAME_PAID_TTL_S);
+            return balanceOf(current);
+          }
           // Other frames may have changed the balance since, so only this frame's unit goes back.
           const refunded: Ledger = { ...current, [outcome.bucket!]: current[outcome.bucket!] + 1 };
           await redis('SET', ledgerKey, JSON.stringify(refunded), 'EX', LEDGER_TTL_S);

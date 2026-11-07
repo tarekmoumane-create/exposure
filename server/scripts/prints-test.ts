@@ -12,6 +12,8 @@ const kv = new Map<string, string>();
 const calls: { url: string; body?: string }[] = [];
 let labCost = '6.00';
 let labOrders = 0;
+let labDown = false;
+let refunds = 0;
 globalThis.fetch = (async (input: string, init?: RequestInit) => {
   const url = String(input);
   const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status });
@@ -24,7 +26,8 @@ globalThis.fetch = (async (input: string, init?: RequestInit) => {
   }
   if (url.includes('/quotes')) return json({ outcome: 'Created', quotes: [{ shipmentMethod: 'Budget', costSummary: { items: { amount: '3.00', currency: 'USD' }, shipping: { amount: '3.00', currency: 'USD' }, totalCost: { amount: labCost, currency: 'USD' } } }] });
   if (url.includes('/checkout/sessions')) return json({ id: 'cs_1', url: 'https://checkout.stripe.test/x' });
-  if (url.endsWith('/orders') && init?.method === 'POST') { labOrders++; return json({ outcome: 'Created', order: { id: 'ord_lab1' } }); }
+  if (url.endsWith('/refunds')) { refunds++; return json({ id: 're_1' }); }
+  if (url.endsWith('/orders') && init?.method === 'POST') { if (labDown) return json({ outcome: 'ValidationFailed' }, 400); labOrders++; return json({ outcome: 'Created', order: { id: 'ord_lab1' } }); }
   if (url.includes('/orders/ord_lab1')) return json({ order: { status: { stage: 'InProgress' }, shipments: [{ status: 'Shipped', carrier: { name: 'USPS' }, tracking: { url: 'https://track.test/1' } }] } });
   throw new Error(`unexpected ${url}`);
 }) as typeof fetch;
@@ -76,6 +79,23 @@ assert.equal(labBody.items.length, 6);
 assert.equal(labBody.items[0].attributes.finish, 'lustre');
 assert.equal(labBody.recipient.address.postalOrZipCode, '10001');
 assert.match(labBody.items[0].assets[0].url, /\/api\/prints\/file\?token=/);
+assert.equal(labBody.idempotencyKey, orderId);
+
+// A lab that keeps refusing: retried, then refunded and shown as a problem. Never left hanging.
+labDown = true;
+const { res: res2, out: out2 } = mockRes();
+await checkout(appReq({ tokens, roll: 'Refused' }), res2);
+const badOrder = out2.json!.orderId as string;
+const badSecret = out2.json!.secret as string;
+const badEvent = event.replace(orderId, badOrder).replace('"id":"cs_1"', '"id":"cs_2","payment_intent":"pi_2"');
+const badHook = () => Object.assign(Readable.from([Buffer.from(badEvent)]), { method: 'POST', headers: { 'stripe-signature': signed(badEvent) } }) as never;
+for (let attempt = 1; attempt <= 3; attempt++) { const { res, out } = mockRes(); await webhook(badHook(), res); assert.equal(out.status, 502, `attempt ${attempt} asks Stripe to retry`); }
+assert.equal((await P.loadOrder(badOrder))!.status, 'paid', 'shown as paid while retrying');
+{ const { res, out } = mockRes(); await webhook(badHook(), res); assert.equal(out.status, 200); }
+assert.equal(refunds, 1);
+{ const { res, out } = mockRes(); await webhook(badHook(), res); assert.equal(out.status, 200); assert.equal(refunds, 1, 'refund happens once'); }
+{ const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: badOrder, secret: badSecret } } as never, res); assert.equal(out.json!.stage, 'problem'); }
+labDown = false;
 
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret: 'nope'.repeat(8) } } as never, res); assert.equal(out.status, 404); }
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret } } as never, res); assert.equal(out.json!.stage, 'shipped'); assert.equal(out.json!.trackingUrl, 'https://track.test/1'); }

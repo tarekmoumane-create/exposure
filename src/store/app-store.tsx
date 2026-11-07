@@ -107,6 +107,7 @@ type Action =
   | { type: 'addRoll'; roll: Roll }
   | { type: 'removeRoll'; id: string }
   | { type: 'updateFrame'; rollId: string; frameId: string; patch: Partial<Frame> }
+  | { type: 'removeFrames'; rollId: string; frameIds: string[] }
   | { type: 'addOrder'; order: PrintOrder }
   | { type: 'updateOrder'; id: string; patch: Partial<PrintOrder> }
   | { type: 'removeOrder'; id: string }
@@ -229,6 +230,8 @@ function reducer(state: State, action: Action): State {
           roll.id !== action.rollId ? roll : { ...roll, frames: roll.frames.map((frame) => (frame.id === action.frameId ? { ...frame, ...action.patch } : frame)) }
         ),
       };
+    case 'removeFrames':
+      return { ...state, rolls: state.rolls.map((roll) => (roll.id !== action.rollId ? roll : { ...roll, frames: roll.frames.filter((frame) => !action.frameIds.includes(frame.id)) })) };
     case 'addOrder':
       return { ...state, orders: [action.order, ...state.orders] };
     case 'updateOrder':
@@ -279,6 +282,7 @@ type AppStore = State & {
   addRoll: (roll: { name: string; lookId: string; sourceUris: string[] }) => Roll;
   removeRoll: (id: string) => void;
   updateFrame: (rollId: string, frameId: string, patch: Partial<Frame>) => void;
+  removeFrames: (rollId: string, frameIds: string[]) => void;
   addOrder: (order: Omit<PrintOrder, 'createdAt'>) => void;
   updateOrder: (id: string, patch: Partial<PrintOrder>) => void;
   removeOrder: (id: string) => void;
@@ -374,7 +378,10 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   // Daily refresh when the app comes back to the foreground on a new day.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (status) => {
-      if (status === 'active') dispatch({ type: 'refresh', today: localDay() });
+      if (status !== 'active') return;
+      dispatch({ type: 'refresh', today: localDay() });
+      // One failed check must not hide prints until the next launch.
+      fetchPrintConfig().then(setPrintConfig);
     });
     return () => subscription.remove();
   }, []);
@@ -397,6 +404,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     roll?.frames.forEach((frame) => [frame.sourceUri, frame.resultUri, frame.thumbUri].forEach((uri) => typeof uri === 'string' && deleteMedia(uri)));
   }, []);
   const updateFrame = useCallback((rollId: string, frameId: string, patch: Partial<Frame>) => dispatch({ type: 'updateFrame', rollId, frameId, patch }), []);
+  const removeFrames = useCallback((rollId: string, frameIds: string[]) => dispatch({ type: 'removeFrames', rollId, frameIds }), []);
   const addOrder = useCallback((order: Omit<PrintOrder, 'createdAt'>) => dispatch({ type: 'addOrder', order: { ...order, createdAt: Date.now() } }), []);
   const updateOrder = useCallback((id: string, patch: Partial<PrintOrder>) => dispatch({ type: 'updateOrder', id, patch }), []);
   const removeOrder = useCallback((id: string) => {
@@ -432,12 +440,12 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       const credits = PACK_PRODUCTS[pack].credits;
       if (!purchasesLive) {
         dispatch({ type: 'addPack', amount: credits });
-        return { ok: true, message: `${credits} photos added` };
+        return { ok: true, message: `${credits} frames added` };
       }
       const outcome = await purchasePack(pack);
       if (!outcome.ok) return { ok: false, message: outcome.cancelled ? '' : outcome.message };
       dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay() });
-      return { ok: true, message: `${credits} photos added` };
+      return { ok: true, message: `${credits} frames added` };
     },
     [purchasesLive]
   );
@@ -478,6 +486,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       addRoll,
       removeRoll,
       updateFrame,
+      removeFrames,
       addOrder,
       updateOrder,
       removeOrder,
@@ -490,7 +499,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       buyPack,
       restore,
     }),
-    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, addOrder, updateOrder, removeOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
+    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, removeFrames, addOrder, updateOrder, removeOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

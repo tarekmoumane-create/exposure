@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,42 +30,23 @@ function Envelope() {
   return <RollEnvelope roll={SAMPLE_ROLL} />;
 }
 
-/** Press and hold swaps the developed frame for the phone photo it came from. */
-function BeforeAfter() {
-  const theme = useTheme();
-  const [original, setOriginal] = useState(false);
-  const frame = FRAMES[1];
-  return (
-    <Pressable accessibilityRole="imagebutton" accessibilityLabel="Hold to see the original" onPressIn={() => setOriginal(true)} onPressOut={() => setOriginal(false)} style={styles.single}>
-      <Image source={original ? frame.sourceUri : frame.resultUri} style={StyleSheet.absoluteFill} contentFit="cover" />
-      <View style={[styles.hint, { backgroundColor: theme.scrim }]}>
-        <ThemedText type="caption" themeColor="onPhoto">
-          {original ? 'Original' : 'Hold to see the original'}
-        </ThemedText>
-      </View>
-    </Pressable>
-  );
-}
-
 export default function OnboardingScreen() {
   const theme = useTheme();
   const [page, setPage] = useState(0);
-  const { setOnboarded, printConfig } = useAppStore();
+  const { setOnboarded } = useAppStore();
 
   const pages = [
-    { key: 'roll', title: 'Your favorite days, on film.', line: 'The night out. The weekend away. Choose up to 12 photos and one camera to give them a look you love.', art: <ContactSheet /> },
-    { key: 'same', title: 'Same photo. Better camera.', line: 'Exposure changes the light and the camera. It checks every frame so people and places stay as you shot them.', art: <BeforeAfter /> },
-    printConfig.enabled
-      ? { key: 'print', title: 'Then hold them.', line: 'Order your roll as real 4x6 prints, mailed to your door. Your first frame is free to develop.', art: <Envelope /> }
-      : { key: 'print', title: 'Keep the whole roll.', line: 'Save every frame, or share the contact sheet. Your first frame is free to develop.', art: <Envelope /> },
+    { key: 'roll', title: 'Your favorite days, on film.', line: 'Give the night out, the weekend away, or just a favorite selfie a camera look you love.', art: <ContactSheet /> },
+    { key: 'choose', title: 'One look. Your whole roll.', line: 'Pick a camera look, then add 1–12 photos. Not sure? Start with Sunny 200 for a warm, everyday film feel.', art: <Envelope /> },
+    { key: 'develop', title: 'Make it yours.', line: 'Add your photos first, then choose a plan to develop them. Your finished roll stays together, ready to save and share.', art: <Envelope /> },
   ];
   const current = pages[page];
   const last = page === pages.length - 1;
 
-  const finish = (path: '/new-roll' | '/roll/sample') => {
+  const finish = () => {
     setOnboarded();
     router.replace('/');
-    setTimeout(() => router.push(path), 250);
+    setTimeout(() => router.push('/new-roll'), 250);
   };
 
   return (
@@ -81,14 +62,10 @@ export default function OnboardingScreen() {
         </View>
       </Animated.View>
       <View style={styles.footer}>
-        {last ? (
-          <>
-            <Button title="Start my first roll" onPress={() => finish('/new-roll')} />
-            <Button title="Look at a sample roll" variant="secondary" onPress={() => finish('/roll/sample')} />
-          </>
-        ) : (
-          <Button title="Continue" onPress={() => setPage(page + 1)} />
-        )}
+        <ThemedText type="caption" themeColor="textTertiary" style={{ textAlign: 'center' }}>
+          {`${page + 1} of ${pages.length}`}
+        </ThemedText>
+        <Button title={last ? 'Choose my photos' : 'Continue'} onPress={() => last ? finish() : setPage(page + 1)} />
       </View>
     </SafeAreaView>
   );
@@ -103,6 +80,4 @@ const styles = StyleSheet.create({
   footer: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.two },
   sheet: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', alignSelf: 'center', aspectRatio: 0.82, height: '100%', maxWidth: '100%' },
   sheetFrame: { width: '31.5%', aspectRatio: 4 / 5, borderRadius: Radius.print },
-  single: { height: '100%', maxWidth: '100%', aspectRatio: 4 / 5, alignSelf: 'center', borderRadius: Radius.print, overflow: 'hidden', justifyContent: 'flex-end' },
-  hint: { margin: Spacing.two, alignSelf: 'flex-start', paddingVertical: 5, paddingHorizontal: 10, borderRadius: Radius.sm },
 });

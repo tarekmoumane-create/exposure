@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   cell: { width: '31.8%', gap: 3 },
   photo: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  veil: { backgroundColor: 'rgba(20,26,107,0.45)' },
+  veil: { backgroundColor: 'rgba(68,51,71,0.5)' },
   center: { textAlign: 'center', paddingHorizontal: Spacing.one },
   failNote: { gap: Spacing.two, paddingTop: Spacing.three },
   actions: { gap: Spacing.two, paddingTop: Spacing.four },

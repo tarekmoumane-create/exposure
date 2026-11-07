@@ -89,7 +89,7 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : waiting > 0 ? `Develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Develop whole rolls.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : waiting > 0 ? `Develop your ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Your photos. A whole new feel.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'

@@ -43,9 +43,9 @@ export async function renderContactSheet({ frames, title, subtitle }: { frames: 
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#FFFFFF';
+  ctx.fillStyle = '#FFFCF7';
   ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#141A6B';
+  ctx.fillStyle = '#443347';
   ctx.font = '700 40px "BricolageGrotesque_700Bold", system-ui';
   ctx.fillText(title, SHEET.margin, 84);
   ctx.globalAlpha = 0.65;

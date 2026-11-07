@@ -9,7 +9,6 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
 import { Spacing } from '@/constants/theme';
-import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { useAppStore } from '@/store/app-store';
 
 export default function RollsScreen() {
@@ -40,7 +39,6 @@ export default function RollsScreen() {
         {rolls.map((roll) => (
           <RollEnvelope key={roll.id} roll={roll} onPress={() => router.push({ pathname: '/roll/[id]', params: { id: roll.id } })} />
         ))}
-        <RollEnvelope roll={SAMPLE_ROLL} onPress={() => router.push({ pathname: '/roll/[id]', params: { id: SAMPLE_ROLL.id } })} />
       </View>
     </Screen>
   );

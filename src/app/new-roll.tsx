@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { AiConsent } from '@/components/ai-consent';
@@ -19,7 +19,7 @@ import { MAX_FRAMES, useAppStore } from '@/store/app-store';
 export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
-  const { addRoll, credits, aiConsent, setAiConsent } = useAppStore();
+  const { addRoll, credits, plan, hasPurchased, aiConsent, setAiConsent } = useAppStore();
   const [lookId, setLookId] = useState(getLook(params.lookId)?.id ?? 'gold-200');
   const [photos, setPhotos] = useState<string[]>([]);
   const [name, setName] = useState('');
@@ -42,12 +42,32 @@ export default function NewRollScreen() {
   };
 
   const started = useRef(false);
-  const develop = () => {
+  const pendingPurchase = useRef(false);
+  const paid = plan !== 'free' || hasPurchased;
+  const develop = useCallback(() => {
     if (started.current) return;
     started.current = true;
     const roll = addRoll({ name: name.trim() || defaultRollName(), lookId, sourceUris: photos });
     router.replace({ pathname: '/roll/[id]', params: { id: roll.id } });
     if (credits === 0) setTimeout(() => router.push({ pathname: '/paywall', params: { rollId: roll.id } }), 350);
+  }, [addRoll, name, lookId, photos, credits]);
+
+  useFocusEffect(useCallback(() => {
+    if (!pendingPurchase.current) return;
+    pendingPurchase.current = false;
+    if (!paid) return;
+    if (aiConsent) develop();
+    else setAsking(true);
+  }, [paid, aiConsent, develop]));
+
+  const continueToDevelop = () => {
+    if (!paid) {
+      pendingPurchase.current = true;
+      router.push('/paywall');
+      return;
+    }
+    if (aiConsent) develop();
+    else setAsking(true);
   };
 
   if (asking) {
@@ -66,10 +86,12 @@ export default function NewRollScreen() {
   const count = photos.length;
   const covered = Math.min(count, credits);
   const note =
-    count === 0
-      ? `Add up to ${MAX_FRAMES} photos. People, places, anything.`
-      : covered === count
-        ? `Uses ${count} of your ${credits} ${credits === 1 ? 'frame' : 'frames'}. Only frames that come back count.`
+    !paid && count > 0
+      ? 'Next: choose a plan to develop your photos. Your selection stays here if you go back.'
+      : count === 0
+        ? `Add up to ${MAX_FRAMES} photos. People, places, anything.`
+        : covered === count
+          ? `Uses ${count} of your ${credits} ${credits === 1 ? 'frame' : 'frames'}. Only frames that come back count.`
         : covered > 0
           ? `You have ${covered} ${covered === 1 ? 'frame' : 'frames'} left, so ${count - covered} ${count - covered === 1 ? 'frame' : 'frames'} will wait until you add more.`
           : 'Your frames will wait until you choose a plan or pack.';
@@ -79,7 +101,7 @@ export default function NewRollScreen() {
       <Stack.Screen options={{ headerRight: () => <Button title="Cancel" variant="ghost" size="md" onPress={() => router.back()} /> }} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <View style={styles.section}>
-          <ThemedText type="subtitle">Look</ThemedText>
+          <ThemedText type="subtitle">1. Choose your look</ThemedText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stocks} style={styles.bleed}>
             {LOOKS.map((item) => {
               const selected = item.id === lookId;
@@ -107,7 +129,7 @@ export default function NewRollScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText type="subtitle">{count === 0 ? 'Photos' : `Photos (${count} of ${MAX_FRAMES})`}</ThemedText>
+          <ThemedText type="subtitle">{count === 0 ? '2. Add your photos' : `2. Your photos (${count} of ${MAX_FRAMES})`}</ThemedText>
           <View style={styles.grid}>
             {photos.map((uri, index) => (
               <Pressable
@@ -138,7 +160,7 @@ export default function NewRollScreen() {
         </View>
 
         <View style={styles.section}>
-          <ThemedText type="subtitle">Name</ThemedText>
+          <ThemedText type="subtitle">Name your roll (optional)</ThemedText>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -157,9 +179,9 @@ export default function NewRollScreen() {
           {note}
         </ThemedText>
         <Button
-          title={count === 0 ? 'Develop roll' : `Develop ${count} ${count === 1 ? 'photo' : 'photos'}`}
+          title={count === 0 ? 'Add photos to continue' : !paid ? 'Continue with my photos' : `Develop ${count} ${count === 1 ? 'photo' : 'photos'}`}
           disabled={count === 0}
-          onPress={() => (aiConsent ? develop() : setAsking(true))}
+          onPress={continueToDevelop}
         />
       </View>
     </Screen>

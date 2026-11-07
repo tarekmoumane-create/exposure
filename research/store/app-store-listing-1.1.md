@@ -17,13 +17,13 @@ A SET, NOT A SINGLE PHOTO
 Frames are rendered by AI as that camera would have shot them. The first frame develops first, and the rest are rendered against it so the set belongs together.
 
 YOUR PHOTOS STAY YOURS
-Each frame is checked against your original. If something was added or moved, Exposure tries again, and if it still can't pass it returns a simple render of your original at no charge, so people and places stay as you shot them. Hold any frame to see the original, and set the strength yourself.
+Each frame is checked against your original. If something was added or moved, Exposure tries again, and if it still can't pass it returns a simple render of your original at no charge, so people and places stay as you shot them. Hold any frame to see the original, and slide the strength of the look from subtle to full, for one frame or the whole roll.
 
-ELEVEN LOOKS
+TEN LOOKS
 Flash: Night Out, Noon Flash, Red Room
 Compact cameras: Pocket Compact, 2003 Compact
 Film: Sunny 200, Vibrant 400, Shoebox 35
-Light: Last Light, After Sunset, North Window
+Light: Last Light, After Sunset
 
 REAL PRINTS
 Order your roll as 4x6 prints on real silver-halide photo paper, mailed to your door. US only for now.

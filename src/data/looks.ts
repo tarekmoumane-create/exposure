@@ -129,16 +129,6 @@ export const LOOKS: Look[] = [
     before: require('@/assets/images/looks/blue-hour-before.jpg'),
     after: require('@/assets/images/looks/blue-hour-after.jpg'),
   },
-  {
-    id: 'window-light',
-    name: 'North Window',
-    group: 'light',
-    tagline: 'One big soft window to the side.',
-    bestFor: 'Portraits and slow mornings',
-    description: 'Clean skin, gentle falloff and the quiet of a studio apartment shoot.',
-    before: require('@/assets/images/looks/window-light-before.jpg'),
-    after: require('@/assets/images/looks/window-light-after.jpg'),
-  },
 ];
 
 export function getLook(id: string | undefined): Look | undefined {

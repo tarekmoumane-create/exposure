@@ -96,7 +96,8 @@ export default function OrderPrintsScreen() {
                 onPress={() => toggle(frame.id)}
                 disabled={working}
                 style={[styles.cell, { opacity: selected ? 1 : 0.35, borderColor: selected ? theme.brand : 'transparent' }]}>
-                <Image source={frame.thumbUri ?? frame.resultUri} style={StyleSheet.absoluteFill} contentFit="cover" />
+                {frame.strength < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+                <Image source={frame.thumbUri ?? frame.resultUri} style={[StyleSheet.absoluteFill, { opacity: frame.strength }]} contentFit="cover" />
               </Pressable>
             );
           })}

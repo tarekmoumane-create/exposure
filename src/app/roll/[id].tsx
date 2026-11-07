@@ -10,6 +10,7 @@ import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
+import { SliderRow } from '@/components/slider-row';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast';
 import { Radius, Spacing } from '@/constants/theme';
@@ -39,6 +40,8 @@ export default function RollScreen() {
   const font = useSheetFont();
   const [busy, setBusy] = useState<'save' | 'sheet' | null>(null);
   const [asking, setAsking] = useState(false);
+  /** The look's strength while the meter is being dragged; the sample roll keeps it here. */
+  const [liveStrength, setLiveStrength] = useState<number | null>(null);
   const isSample = id === SAMPLE_ROLL_ID;
   const roll = isSample ? SAMPLE_ROLL : rolls.find((item) => item.id === id);
 
@@ -53,6 +56,7 @@ export default function RollScreen() {
   const look = getLook(roll.lookId);
   const { total, done, developing, waiting, failed } = countFrames(roll);
   const finished = roll.frames.filter((frame) => frame.status === 'done');
+  const rollStrength = liveStrength ?? (finished.length ? finished.reduce((sum, frame) => sum + frame.strength, 0) / finished.length : 1);
   const blocked = waiting > 0 && developing === 0 && credits === 0;
   const needsConsent = waiting > 0 && !aiConsent;
 
@@ -154,6 +158,21 @@ export default function RollScreen() {
         </View>
       ) : null}
 
+      {done > 0 ? (
+        <View style={styles.meter}>
+          <SliderRow
+            label={`Strength of ${look?.name ?? 'the look'}`}
+            value={rollStrength}
+            onChange={setLiveStrength}
+            onComplete={(value) => {
+              if (isSample) return;
+              finished.forEach((frame) => updateFrame(roll.id, frame.id, { strength: value }));
+              setLiveStrength(null);
+            }}
+          />
+        </View>
+      ) : null}
+
       <View style={styles.grid}>
         {roll.frames.map((frame, index) => (
           <View key={frame.id} style={styles.cell}>
@@ -163,7 +182,13 @@ export default function RollScreen() {
               disabled={frame.status === 'developing' || frame.status === 'waiting'}
               onPress={() => openFrame(frame, index)}
               style={[styles.photo, { backgroundColor: theme.surfaceRaised }]}>
-              <Image source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" transition={frame.status === 'done' ? 500 : 0} />
+              {frame.status === 'done' && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+              <Image
+                source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
+                style={[StyleSheet.absoluteFill, frame.status === 'done' ? { opacity: liveStrength ?? frame.strength } : null]}
+                contentFit="cover"
+                transition={frame.status === 'done' ? 500 : 0}
+              />
               {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
               {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
               {frame.status === 'failed' ? (
@@ -219,6 +244,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.two },
   title: { gap: Spacing.one, paddingBottom: Spacing.three },
   notice: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.sm, marginBottom: Spacing.three },
+  meter: { paddingBottom: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   cell: { width: '31.8%', gap: 3 },
   photo: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },

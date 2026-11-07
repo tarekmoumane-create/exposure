@@ -16,55 +16,36 @@ type Props = {
   onDecline: () => void;
 };
 
-const POINTS = [
-  'Sent only when you develop a roll, and only the photos in it.',
-  'Not stored on Exposure’s servers after your frame comes back.',
-  'Never sold, and not shared with anyone besides Google for this.',
-];
-
-/**
- * Asked once, before the first photo leaves the device. Apple requires apps to say which
- * third-party AI receives personal data and to get explicit permission first (guideline 5.1.2(i)).
- */
+/** Explicit permission before processing, with a neutral title and a readable inline disclosure. */
 export function AiConsent({ uri, onAgree, onDecline }: Props) {
   const theme = useTheme();
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={styles.screen}>
       <View style={styles.body}>
         <View style={[styles.thumb, { backgroundColor: theme.surfaceRaised }]}>
           <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
         </View>
-
         <View style={styles.copy}>
-          <ThemedText type="title">Your photos go to Google’s AI</ThemedText>
-          <ThemedText type="body" themeColor="textSecondary">
-            To develop a roll, Exposure sends your photos to Google Gemini, an AI service run by Google LLC. Google uses them
-            to make your developed frames and may keep them for a short time to prevent abuse, under its own terms.
-          </ThemedText>
+          <ThemedText type="title" accessibilityRole="header">Ready to develop?</ThemedText>
+          <ThemedText themeColor="textSecondary">One quick permission before we create your new camera look.</ThemedText>
         </View>
-
-        <View style={[styles.points, { borderColor: theme.line }]}>
-          {POINTS.map((point) => (
-            <View key={point} style={styles.point}>
-              <View style={[styles.dot, { backgroundColor: theme.brand }]} />
-              <ThemedText type="small" style={styles.pointText}>
-                {point}
-              </ThemedText>
-            </View>
-          ))}
-        </View>
-
-        <ExternalLink href={LEGAL_URLS.privacy}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.link}>
-            Read the privacy policy
-          </ThemedText>
-        </ExternalLink>
       </View>
 
       <View style={styles.actions}>
-        <Button title="Agree and continue" onPress={onAgree} />
+        <View style={[styles.disclosure, { borderColor: theme.line }]}>
+          <ThemedText type="small" themeColor="textSecondary">
+            With your permission, Exposure sends the photos you select to Google Gemini, Google’s AI service, to develop your roll.
+          </ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.detail}>
+            Exposure doesn’t keep these photos on its servers after processing. Google may retain them temporarily for abuse prevention.
+          </ThemedText>
+          <ExternalLink href={LEGAL_URLS.privacy}>
+            <ThemedText type="caption" themeColor="brand" style={styles.link}>Privacy policy</ThemedText>
+          </ExternalLink>
+        </View>
+        <Button title="Allow and develop" onPress={onAgree} />
         <Button title="Not now" variant="ghost" size="md" onPress={onDecline} />
-        <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
+        <ThemedText type="caption" themeColor="textSecondary" style={styles.center}>
           You can turn this off any time in Settings.
         </ThemedText>
       </View>
@@ -73,14 +54,13 @@ export function AiConsent({ uri, onAgree, onDecline }: Props) {
 }
 
 const styles = StyleSheet.create({
-  body: { flex: 1, gap: Spacing.four, paddingTop: Spacing.four },
-  thumb: { width: 72, height: 90, borderRadius: Radius.md, overflow: 'hidden' },
+  screen: { paddingHorizontal: 24 },
+  body: { gap: Spacing.four, paddingTop: Spacing.four, paddingBottom: Spacing.four },
+  thumb: { width: 104, height: 130, borderRadius: Radius.md, overflow: 'hidden' },
   copy: { gap: Spacing.two },
-  points: { gap: Spacing.two, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: Spacing.three },
-  point: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
-  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 7 },
-  pointText: { flex: 1 },
-  link: { textDecorationLine: 'underline' },
-  actions: { gap: Spacing.two, paddingBottom: Spacing.two },
-  center: { textAlign: 'center' },
+  disclosure: { gap: 10, paddingVertical: 16, borderTopWidth: StyleSheet.hairlineWidth },
+  detail: { lineHeight: 19 },
+  link: { textDecorationLine: 'underline', paddingVertical: 8 },
+  actions: { marginTop: 'auto', gap: Spacing.two, paddingBottom: Spacing.two },
+  center: { textAlign: 'center', fontSize: 12, lineHeight: 18 },
 });

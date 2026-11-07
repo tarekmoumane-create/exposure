@@ -9,7 +9,7 @@ import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
-import { Radius, Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
 import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { dismiss } from '@/lib/navigation';
 import { FALLBACK_PRICES, LEGAL_URLS, PLAN_PRODUCTS } from '@/data/products';
@@ -30,7 +30,7 @@ const TIERS: Tier[] = [
   { id: 'yearly', name: 'Yearly', price: 'year', perDay: 10, note: 'About 300 frames a month', badge: 'Best value' },
   { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'About 35 frames a week · cancel any time' },
 ];
-const TEASER_FRAMES = [SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[1], SAMPLE_ROLL.frames[8], SAMPLE_ROLL.frames[4]];
+const TEASER_FRAMES = [SAMPLE_ROLL.frames[8], SAMPLE_ROLL.frames[2], SAMPLE_ROLL.frames[3]];
 
 /** The plan sheet. Prices come from the store when one is configured, otherwise the USD list prices. */
 export default function PaywallScreen() {
@@ -72,30 +72,30 @@ export default function PaywallScreen() {
   };
 
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={styles.content}>
       <View style={styles.header}>
-        <Wordmark size={22} />
+        <Wordmark size={17} />
         <IconButton name={{ ios: 'xmark', android: 'close', web: 'close' }} label="Close" onPress={() => dismiss()} />
       </View>
 
       <View style={styles.strip}>
-        {TEASER_FRAMES.map((frame, index) => (
-          <View key={frame.id} style={[styles.stripItem, { backgroundColor: theme.surface, transform: [{ rotate: `${(index - 1.5) * 3}deg` }] }]}>
+        {TEASER_FRAMES.map((frame) => (
+          <View key={frame.id} style={[styles.stripItem, { backgroundColor: theme.surface }]}>
             <Image source={frame.resultUri} style={styles.stripPhoto} contentFit="cover" />
           </View>
         ))}
       </View>
 
       <View style={styles.copy}>
-        <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Finish developing your roll.' : 'Your photos. A whole new feel.'}
+        <ThemedText type="title" style={styles.headline}>
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Finish developing your roll.' : 'Your photos, worth keeping.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'
             ? 'Ten frames a day in every look, banking for three days. Manage the plan in Settings.'
             : plan === 'weekly'
-              ? 'Yearly gives you ten a day instead of five, for about a tenth of the price per frame.'
-              : 'New frames every day, in every look. Unused ones bank for three days.'}
+              ? 'Ten frames a day instead of five. More room for every night out and weekend away.'
+              : 'Every camera look. New frames every day. Make your whole camera roll feel like you.'}
         </ThemedText>
       </View>
 
@@ -108,12 +108,12 @@ export default function PaywallScreen() {
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
               onPress={() => setSelected(tier)}
-              style={[styles.tier, { backgroundColor: theme.surface, borderColor: isSelected ? theme.brand : theme.line }]}>
+              style={[styles.tier, { backgroundColor: 'transparent', borderColor: isSelected ? theme.text : theme.line }]}>
               <View style={styles.tierText}>
                 <View style={styles.tierTitle}>
                   <ThemedText type="bodyStrong">{tier.name}</ThemedText>
                   {tier.badge ? (
-                    <View style={[styles.badge, { backgroundColor: theme.accent }]}>
+                    <View style={[styles.badge, { backgroundColor: 'transparent' }]}>
                       <ThemedText type="caption" style={{ color: theme.onAccent }}>
                         {tier.badge}
                       </ThemedText>
@@ -139,13 +139,13 @@ export default function PaywallScreen() {
           </ThemedText>
         ) : null}
         {visibleTiers.length > 0 && canBuy ? (
-          <Button title="Continue" onPress={subscribe} loading={busy === 'buy'} disabled={busy !== null} />
+          <Button title="Unlock Exposure" onPress={subscribe} loading={busy === 'buy'} disabled={busy !== null} />
         ) : visibleTiers.length > 0 ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
             Plans are not available in this build yet.
           </ThemedText>
         ) : null}
-        {plan === 'free' ? <Button title="Buy a one-time pack instead" variant="secondary" size="md" onPress={() => router.replace('/out-of-credits')} disabled={busy !== null} /> : null}
+        {plan === 'free' ? <Button title="Prefer a one-time photo pack?" variant="ghost" size="md" onPress={() => router.replace('/out-of-credits')} disabled={busy !== null} /> : null}
         <Button title="Not now" variant="ghost" size="md" onPress={() => dismiss()} disabled={busy !== null} />
         <Button title="Restore purchases" variant="ghost" size="md" onPress={onRestore} loading={busy === 'restore'} disabled={busy !== null} />
         <ThemedText type="caption" themeColor="textTertiary" style={styles.center}>
@@ -169,18 +169,20 @@ export default function PaywallScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: { paddingHorizontal: 24 },
+  headline: { textAlign: 'center', fontFamily: Fonts.display, fontSize: 29, lineHeight: 35, letterSpacing: -0.6 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.two },
-  strip: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: Spacing.four },
-  stripItem: { width: 78, aspectRatio: 4 / 5, padding: 4, borderRadius: Radius.print, shadowColor: '#443347', shadowOpacity: 0.16, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  strip: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 16, paddingBottom: 24 },
+  stripItem: { flex: 1, aspectRatio: 0.65, borderRadius: 2, overflow: 'hidden' },
   stripPhoto: { flex: 1 },
   copy: { gap: Spacing.two, paddingBottom: Spacing.three, paddingHorizontal: Spacing.two },
   center: { textAlign: 'center' },
   tiers: { gap: Spacing.two, paddingVertical: Spacing.two },
-  tier: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.three, padding: Spacing.three, borderRadius: Radius.md, borderWidth: 1.5 },
+  tier: { flexWrap: 'wrap', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: 14, borderRadius: 6, borderWidth: 1 },
   tierText: { flex: 1, gap: 2 },
   tierTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.sm },
-  actions: { gap: Spacing.two, marginTop: 'auto', paddingTop: Spacing.four },
+  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: 0 },
+  actions: { gap: 4, marginTop: 'auto', paddingTop: 16 },
   legal: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.four, paddingTop: Spacing.one },
   underline: { textDecorationLine: 'underline' },
 });

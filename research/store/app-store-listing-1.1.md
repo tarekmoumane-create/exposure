@@ -56,11 +56,11 @@ WHAT CHANGED SINCE THE REJECTION
 This is a new concept. We removed single-photo looks, the photobooth and the filter editor. Exposure now develops a whole roll of a user's photos on one camera, delivers a contact sheet, and can mail real prints.
 
 HOW TO TEST
-1. Tap Continue through the three intro screens, then "Choose my photos".
-2. Choose a look, add 4 or more photos and tap "Start developing".
-3. Exposure asks permission to send photos to Google Gemini. Tap "Agree and continue".
-4. The first frame develops in about 30 seconds and shows its top half as a free preview. Tap "Finish developing" and use a sandbox account. The full frame appears and the others develop on the same screen.
-5. On a finished roll: the strength meter, Order prints, Save all and Contact sheet.
+1. Tap Continue, then "Choose a look".
+2. Choose any look and tap "Use" (its name). Choose one photo and tap "Start developing". New users start with one photo.
+3. Exposure asks permission to send the photo to Google Gemini. Tap "Allow and develop".
+4. The frame develops in about 30 seconds and shows its top half as a free preview. Tap "Finish developing", then "Unlock Exposure", and use a sandbox account. The full frame appears.
+5. Tap "Start a new roll", add 4 or more photos and develop them. On the finished roll, try the strength meter, Order prints, Save all and Contact sheet.
 
 PRINTS
 Prints are physical goods, so payment uses Stripe Checkout rather than in-app purchase (guideline 3.1.3(e)). Stripe is in live mode, so a card would really be charged. To review the flow, go as far as the Stripe page; no payment is needed. Prints ship to the US only.

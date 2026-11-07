@@ -16,10 +16,10 @@ export function ThemedText({ style, type = 'body', themeColor, ...rest }: Themed
 }
 
 const styles = StyleSheet.create({
-  wordmark: { fontFamily: Fonts.displayHeavy, fontSize: 24, lineHeight: 28, letterSpacing: -0.6 },
-  display: { fontFamily: Fonts.display, fontSize: 34, lineHeight: 39, letterSpacing: -0.8 },
-  title: { fontFamily: Fonts.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.5 },
-  subtitle: { fontFamily: Fonts.display, fontSize: 19, lineHeight: 24, letterSpacing: -0.2 },
+  wordmark: { fontFamily: Fonts.sansSemi, fontSize: 24, lineHeight: 28, letterSpacing: -0.6 },
+  display: { fontFamily: Fonts.display, fontSize: 32, lineHeight: 37, letterSpacing: -0.7 },
+  title: { fontFamily: Fonts.display, fontSize: 25, lineHeight: 30, letterSpacing: -0.5 },
+  subtitle: { fontFamily: Fonts.display, fontSize: 18, lineHeight: 24, letterSpacing: -0.2 },
   body: { fontFamily: Fonts.sans, fontSize: 16, lineHeight: 23 },
   bodyStrong: { fontFamily: Fonts.sansSemi, fontSize: 16, lineHeight: 23 },
   small: { fontFamily: Fonts.sans, fontSize: 14, lineHeight: 20 },

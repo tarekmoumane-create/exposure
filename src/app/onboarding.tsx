@@ -1,49 +1,51 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { RollEnvelope } from '@/components/roll-envelope';
+import { LookPreview } from '@/components/look-preview';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
-import { SAMPLE_ROLL } from '@/data/sample-roll';
+import { Fonts, MaxContentWidth } from '@/constants/theme';
+import { getLook } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { useAppStore } from '@/store/app-store';
 
-const FRAMES = SAMPLE_ROLL.frames;
-
-function ContactSheet() {
-  return (
-    <View style={styles.sheet}>
-      {FRAMES.map((frame) => (
-        <Image key={frame.id} source={frame.resultUri} style={styles.sheetFrame} contentFit="cover" />
-      ))}
-    </View>
-  );
-}
-
-function Envelope() {
-  return <RollEnvelope roll={SAMPLE_ROLL} />;
-}
+const PAGES = [
+  {
+    id: 'y2k-digicam',
+    label: 'Digi',
+    title: 'Same night.',
+    accent: 'Different camera.',
+    description: 'Bright flash. Rich color. Give your going-out photos that little-digicam feeling.',
+  },
+  {
+    id: 'film-35',
+    label: '35 mm film',
+    title: 'A little grain.',
+    accent: 'A lot of feeling.',
+    description: 'Soft color, warm light, and a little 35 mm grain. For the days you want to keep.',
+  },
+] as const;
+const GUIDE = [
+  { title: 'Find your look', detail: 'Flash, film, or a little digicam nostalgia.' },
+  { title: 'Add a photo', detail: 'Start with one favorite.' },
+  { title: 'Watch it develop', detail: 'It develops halfway for free. A plan finishes it and unlocks rolls of up to 12.' },
+];
 
 export default function OnboardingScreen() {
   const theme = useTheme();
-  const [page, setPage] = useState(0);
   const { setOnboarded } = useAppStore();
-
-  const pages = [
-    { key: 'roll', title: 'Your favorite days, on film.', line: 'Give the night out, the weekend away, or just a favorite selfie a camera look you love.', art: <ContactSheet /> },
-    { key: 'choose', title: 'One look. Your whole roll.', line: 'Pick a camera look, then add 1–12 photos. Not sure? Start with Sunny 200 for a warm, everyday film feel.', art: <Envelope /> },
-    { key: 'develop', title: 'Make it yours.', line: 'Your first photo develops halfway for free. Choose a plan to finish it, develop the whole roll, and save it.', art: <Envelope /> },
-  ];
-  const current = pages[page];
-  const last = page === pages.length - 1;
+  const [page, setPage] = useState(0);
+  const finishing = useRef(false);
+  const current = PAGES[page];
+  const look = getLook(current.id)!;
 
   const finish = () => {
+    if (finishing.current) return;
+    finishing.current = true;
     setOnboarded();
     router.replace('/');
     setTimeout(() => router.push('/new-roll'), 250);
@@ -52,20 +54,46 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Wordmark />
-      </View>
-      <Animated.View key={current.key} entering={FadeIn.duration(260)} style={styles.stage}>
-        <View style={styles.art}>{current.art}</View>
-        <View style={styles.copy}>
-          <ThemedText type="display">{current.title}</ThemedText>
-          <ThemedText themeColor="textSecondary">{current.line}</ThemedText>
+        {page === 1 ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Previous introduction screen" onPress={() => setPage(0)} style={styles.back}>
+            <ThemedText style={styles.backArrow}>←</ThemedText>
+          </Pressable>
+        ) : <Wordmark size={19} />}
+        <View style={styles.progress} accessibilityLabel={`Introduction, ${page + 1} of 2`}>
+          {[0, 1].map((step) => <View key={step} style={[styles.progressDot, { backgroundColor: step === page ? theme.brand : theme.line, width: step === page ? 22 : 6 }]} />)}
         </View>
-      </Animated.View>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <Animated.View key={page} entering={FadeIn.duration(220)} style={styles.stage}>
+          <View style={styles.copy}>
+            <ThemedText accessibilityRole="header" style={styles.headline}>
+              {current.title}{`\n`}<ThemedText style={styles.headline}>{current.accent}</ThemedText>
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={styles.description}>{current.description}</ThemedText>
+          </View>
+          <LookPreview key={look.id} look={look} label={current.label} />
+          {page === 1 ? (
+            <View style={styles.guide}>
+              {GUIDE.map((step, index) => (
+                <View key={step.title} style={[styles.guideRow, { borderBottomColor: theme.line }]}>
+                  <View style={[styles.stepNumber, { backgroundColor: 'transparent' }]}>
+                    <ThemedText type="label" themeColor="brand">{`0${index + 1}`}</ThemedText>
+                  </View>
+                  <View style={styles.guideText}>
+                    <ThemedText type="bodyStrong">{step.title}</ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">{step.detail}</ThemedText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Animated.View>
+      </ScrollView>
+
       <View style={styles.footer}>
-        <ThemedText type="caption" themeColor="textTertiary" style={{ textAlign: 'center' }}>
-          {`${page + 1} of ${pages.length}`}
-        </ThemedText>
-        <Button title={last ? 'Choose my photos' : 'Continue'} onPress={() => last ? finish() : setPage(page + 1)} />
+        <Button title={page === 0 ? 'Continue' : 'Choose a look'} onPress={() => page === 0 ? setPage(1) : finish()} />
+        <ThemedText type="caption" themeColor="textSecondary" style={styles.footerNote}>{page === 0 ? 'Your photos. A different camera.' : 'Your first photo develops halfway for free.'}</ThemedText>
       </View>
     </SafeAreaView>
   );
@@ -73,11 +101,20 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  stage: { flex: 1, width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, gap: Spacing.four },
-  art: { flex: 1, justifyContent: 'center', minHeight: 200 },
-  copy: { gap: Spacing.two },
-  footer: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, paddingVertical: Spacing.three, gap: Spacing.two },
-  sheet: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', alignSelf: 'center', aspectRatio: 0.82, height: '100%', maxWidth: '100%' },
-  sheetFrame: { width: '31.5%', aspectRatio: 4 / 5, borderRadius: Radius.print },
+  header: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', minHeight: 64, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  back: { minWidth: 44, minHeight: 44, justifyContent: 'center' },
+  backArrow: { fontSize: 25, lineHeight: 30 },
+  progress: { flexDirection: 'row', gap: 5, alignItems: 'center' },
+  progressDot: { height: 6, borderRadius: 3 },
+  scroll: { flexGrow: 1, justifyContent: 'center' },
+  stage: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, gap: 24 },
+  copy: { gap: 10 },
+  headline: { fontFamily: Fonts.display, fontSize: 34, lineHeight: 39, letterSpacing: -1 },
+  description: { fontSize: 15, lineHeight: 22, maxWidth: 310 },
+  footer: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: 24, paddingTop: 12, paddingBottom: 16, gap: 12 },
+  footerNote: { textAlign: 'center', fontSize: 11, lineHeight: 16 },
+  guide: { gap: 0 },
+  guideRow: { flexDirection: 'row', gap: 14, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, alignItems: 'center' },
+  stepNumber: { width: 24, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 0 },
+  guideText: { flex: 1, gap: 3 },
 });

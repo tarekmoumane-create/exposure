@@ -40,7 +40,7 @@ export function Button({
   const isDisabled = disabled || loading;
 
   const background = {
-    primary: theme.brand,
+    primary: theme.text,
     accent: theme.accent,
     secondary: theme.surfaceRaised,
     ghost: 'transparent',
@@ -91,9 +91,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.pill,
+    borderRadius: Radius.md,
   },
-  lg: { paddingVertical: 16, paddingHorizontal: Spacing.four, minHeight: 54 },
+  lg: { paddingVertical: 16, paddingHorizontal: Spacing.four, minHeight: 56 },
   md: { paddingVertical: 10, paddingHorizontal: Spacing.three, minHeight: 42 },
   ghost: { paddingHorizontal: Spacing.two },
 });

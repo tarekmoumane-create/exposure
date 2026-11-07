@@ -9,8 +9,8 @@ import { makeThumbnail } from '@/lib/image-io';
 import { SHEET, sheetSize } from '@/lib/sheet';
 import type { Frame, MediaRef } from '@/store/app-store';
 
-const PAPER = '#FFFCF7';
-const INK = '#443347';
+const PAPER = '#FFFDFA';
+const INK = '#342A26';
 
 async function fileUri(source: MediaRef): Promise<string> {
   if (typeof source === 'string') return source;

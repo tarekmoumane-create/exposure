@@ -1,30 +1,26 @@
-/**
- * Exposure feels like a personal photo keepsake: vanilla paper, plum ink,
- * apricot envelopes and lilac details. Photos keep their printed edges;
- * controls are soft and rounded. The app is light-only.
- */
+/** Warm paper, cocoa type and a restrained terracotta accent. Photography leads the UI. */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
 const palette = {
-  background: '#FBF5EB',
-  surface: '#FFFCF7',
-  surfaceRaised: '#F0E6F0',
-  line: '#DFD2D9',
-  text: '#443347',
-  textSecondary: '#716173',
-  textTertiary: '#7D6D7E',
-  brand: '#705278',
-  onBrand: '#FFFCF7',
-  accent: '#F5D5B8',
-  accentSoft: '#FAE9D8',
-  onAccent: '#443347',
+  background: '#FAF6EF',
+  surface: '#FFFDFA',
+  surfaceRaised: '#F0E8DF',
+  line: '#E1D8CE',
+  text: '#342A26',
+  textSecondary: '#776B62',
+  textTertiary: '#7A6C62',
+  brand: '#A14E3B',
+  onBrand: '#FFFDFA',
+  accent: '#F0C5AC',
+  accentSoft: '#F7E6D9',
+  onAccent: '#342A26',
   /** A warm red reserved for marks and errors. */
   mark: '#AE4048',
-  onPhoto: '#FFFCF7',
-  scrim: 'rgba(49,34,52,0.62)',
+  onPhoto: '#FFFFFF',
+  scrim: 'rgba(36,27,23,0.60)',
 } as const;
 
 export const Colors = {
@@ -36,8 +32,8 @@ export type ThemeColor = keyof typeof palette;
 
 /** Font family names registered by useAppFonts(). */
 export const Fonts = {
-  display: 'BricolageGrotesque_700Bold',
-  displayHeavy: 'BricolageGrotesque_800ExtraBold',
+  display: 'InstrumentSans_500Medium',
+  displayHeavy: 'InstrumentSans_600SemiBold',
   sans: 'InstrumentSans_400Regular',
   sansMedium: 'InstrumentSans_500Medium',
   sansSemi: 'InstrumentSans_600SemiBold',
@@ -55,10 +51,10 @@ export const Spacing = {
 } as const;
 
 export const Radius = {
-  print: 3,
-  sm: 10,
-  md: 18,
-  lg: 24,
+  print: 2,
+  sm: 6,
+  md: 8,
+  lg: 10,
   pill: 999,
 } as const;
 

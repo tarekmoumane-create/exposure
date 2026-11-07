@@ -1,12 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useKeepAwake } from 'expo-keep-awake';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
+import { DevelopingPhoto } from '@/components/developing-photo';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
@@ -36,12 +37,30 @@ export default function RollScreen() {
   const theme = useTheme();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { rolls, removeRoll, updateFrame, removeFrames, credits, plan, aiConsent, setAiConsent, printConfig } = useAppStore();
+  const { rolls, removeRoll, updateFrame, removeFrames, credits, plan, paid, aiConsent, setAiConsent, printConfig } = useAppStore();
   const font = useSheetFont();
   const [busy, setBusy] = useState<'save' | 'sheet' | null>(null);
   const [asking, setAsking] = useState(false);
   /** The look's strength while the meter is being dragged; the sample roll keeps it here. */
   const [liveStrength, setLiveStrength] = useState<number | null>(null);
+  const wasLocked = useRef(!paid);
+  const [revealing, setRevealing] = useState(false);
+
+  // Coming back from the paywall: the rest of the free frame drops into view.
+  useFocusEffect(
+    useCallback(() => {
+      if (!paid) {
+        wasLocked.current = true;
+        return;
+      }
+      if (!wasLocked.current) return;
+      wasLocked.current = false;
+      setRevealing(true);
+      const timer = setTimeout(() => setRevealing(false), 2200);
+      return () => clearTimeout(timer);
+    }, [paid])
+  );
+
   const isSample = id === SAMPLE_ROLL_ID;
   const roll = isSample ? SAMPLE_ROLL : rolls.find((item) => item.id === id);
 
@@ -57,7 +76,10 @@ export default function RollScreen() {
   const { total, done, developing, waiting, failed } = countFrames(roll);
   const finished = roll.frames.filter((frame) => frame.status === 'done');
   const rollStrength = liveStrength ?? (finished.length ? finished.reduce((sum, frame) => sum + frame.strength, 0) / finished.length : 1);
-  const blocked = waiting > 0 && developing === 0 && credits === 0;
+  /** Before any purchase a finished frame shows only its top half, and nothing can leave the app. */
+  const locked = !paid && !isSample;
+  const teaser = locked || revealing ? finished[0] : undefined;
+  const blocked = waiting > 0 && developing === 0 && credits === 0 && !(locked && done > 0);
   const needsConsent = waiting > 0 && !aiConsent;
 
   if (asking) {
@@ -66,7 +88,8 @@ export default function RollScreen() {
   }
 
   const openFrame = (frame: Frame, index: number) => {
-    if (frame.status === 'done') router.push({ pathname: '/frame', params: { roll: roll.id, index } });
+    if (locked && frame.status === 'done') router.push({ pathname: '/paywall', params: { rollId: roll.id } });
+    else if (frame.status === 'done') router.push({ pathname: '/frame', params: { roll: roll.id, index } });
     else if (frame.status === 'failed') updateFrame(roll.id, frame.id, { status: 'waiting', error: undefined });
   };
 
@@ -158,7 +181,24 @@ export default function RollScreen() {
         </View>
       ) : null}
 
-      {done > 0 ? (
+      {teaser ? (
+        <View style={styles.teaser}>
+          <View style={[styles.teaserPhoto, { backgroundColor: theme.surfaceRaised }]} accessibilityLabel="Your first frame, half developed">
+            <DevelopingPhoto source={teaser.resultUri} amount={locked ? 0.5 : 1} />
+          </View>
+          {locked ? (
+            <>
+              <ThemedText type="subtitle">Your first frame is halfway there.</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {waiting > 0 ? `Choose a plan to finish it and develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Choose a plan to finish it and save it.'}
+              </ThemedText>
+              <Button title="Finish developing" onPress={() => router.push({ pathname: '/paywall', params: { rollId: roll.id } })} />
+            </>
+          ) : null}
+        </View>
+      ) : null}
+
+      {done > 0 && !locked ? (
         <View style={styles.meter}>
           <SliderRow
             label={`Strength of ${look?.name ?? 'the look'}`}
@@ -182,13 +222,17 @@ export default function RollScreen() {
               disabled={frame.status === 'developing' || frame.status === 'waiting'}
               onPress={() => openFrame(frame, index)}
               style={[styles.photo, { backgroundColor: theme.surfaceRaised }]}>
-              {frame.status === 'done' && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-              <Image
-                source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
-                style={[StyleSheet.absoluteFill, frame.status === 'done' ? { opacity: liveStrength ?? frame.strength } : null]}
-                contentFit="cover"
-                transition={frame.status === 'done' ? 500 : 0}
-              />
+              {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+              {frame.status === 'done' && locked ? (
+                <DevelopingPhoto source={frame.thumbUri ?? frame.resultUri} amount={0.5} />
+              ) : (
+                <Image
+                  source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
+                  style={[StyleSheet.absoluteFill, frame.status === 'done' ? { opacity: liveStrength ?? frame.strength } : null]}
+                  contentFit="cover"
+                  transition={frame.status === 'done' ? 500 : 0}
+                />
+              )}
               {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
               {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
               {frame.status === 'failed' ? (
@@ -225,7 +269,7 @@ export default function RollScreen() {
         <View style={styles.actions}>
           <Button title="Start your own roll" onPress={() => router.push('/new-roll')} />
         </View>
-      ) : done > 0 ? (
+      ) : done > 0 && !locked ? (
         <View style={styles.actions}>
           {printConfig.enabled && done >= printConfig.minPrints ? (
             <Button title="Order prints" onPress={() => router.push({ pathname: '/order-prints', params: { roll: roll.id } })} />
@@ -244,6 +288,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.two },
   title: { gap: Spacing.one, paddingBottom: Spacing.three },
   notice: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.sm, marginBottom: Spacing.three },
+  teaser: { gap: Spacing.two, paddingBottom: Spacing.three },
+  teaserPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
   meter: { paddingBottom: Spacing.two },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   cell: { width: '31.8%', gap: 3 },

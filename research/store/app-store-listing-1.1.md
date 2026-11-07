@@ -29,7 +29,7 @@ REAL PRINTS
 Order your roll as 4x6 prints on real silver-halide photo paper, mailed to your door. US only for now.
 
 TRY IT FIRST
-Explore a finished sample roll, and develop your first frame free.
+Your first frame develops halfway for free, so you can see the look on your own photo. A plan or pack finishes it and develops the rest.
 
 PRIVATE BY DESIGN
 No account needed. Your rolls live on your phone. Frames are developed with Google's Gemini AI, and Exposure asks before any photo leaves your device.
@@ -56,11 +56,11 @@ WHAT CHANGED SINCE THE REJECTION
 This is a new concept. We removed single-photo looks, the photobooth and the filter editor. Exposure now develops a whole roll of a user's photos on one camera, delivers a contact sheet, and can mail real prints.
 
 HOW TO TEST
-1. Tap Continue through the three intro screens, then "Look at a sample roll". This finished roll needs no purchase. Tap a frame and hold it to see the original.
-2. Go back, tap "Start a new roll", choose a look and add 4 or more photos. Tap Develop.
+1. Tap Continue through the three intro screens, then "Choose my photos".
+2. Choose a look, add 4 or more photos and tap "Start developing".
 3. Exposure asks permission to send photos to Google Gemini. Tap "Agree and continue".
-4. The first frame develops free in about 30 seconds. Remaining frames wait for a plan or pack; use a sandbox account and they develop on the same screen.
-5. On a finished roll: Order prints, Save all and Contact sheet.
+4. The first frame develops in about 30 seconds and shows its top half as a free preview. Tap "Finish developing" and use a sandbox account. The full frame appears and the others develop on the same screen.
+5. On a finished roll: the strength meter, Order prints, Save all and Contact sheet.
 
 PRINTS
 Prints are physical goods, so payment uses Stripe Checkout rather than in-app purchase (guideline 3.1.3(e)). Stripe is in live mode, so a card would really be charged. To review the flow, go as far as the Stripe page; no payment is needed. Prints ship to the US only.
@@ -75,4 +75,4 @@ Exposure is no longer a single-photo filter app. Its concept is now the roll: a 
 
 (Delete the mention of printed copies if prints are off when you resubmit.)
 
-Anyone can now explore a finished sample roll and develop a first frame without paying. We would welcome any further guidance if something still falls short.
+Anyone can now see the app work on their own photo before paying: the first frame develops halfway for free. We would welcome any further guidance if something still falls short.

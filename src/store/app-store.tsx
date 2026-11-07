@@ -97,7 +97,7 @@ type State = {
   grantedTransactions: string[];
   /** The user agreed to their photos being sent to Google Gemini for processing. */
   aiConsent: boolean;
-  /** Ever bought a pack (a plan is tracked by `plan`). */
+  /** Ever bought a plan or a pack. Until then the free frame stays half developed. */
   hasPurchased: boolean;
 };
 
@@ -180,7 +180,8 @@ function applyPlan(state: State, plan: Plan, today: string): State {
   // a lapsed plan keeps what it banked.
   const dailyCredits =
     plan === 'free' ? state.dailyCredits : Math.min(allowance * ROLLOVER_DAYS, Math.max(state.dailyCredits, allowance));
-  return { ...state, plan, dailyCredits, lastRefreshDay: today };
+  // Once paid, always paid for what they made: a lapsed plan must not take finished frames back.
+  return { ...state, plan, dailyCredits, lastRefreshDay: today, hasPurchased: state.hasPurchased || plan !== 'free' };
 }
 
 type SavedShot = { id: string; lookId: string; sourceUri: string; resultUri: string; thumbUri?: string; createdAt: number; pending?: boolean };
@@ -272,6 +273,8 @@ export type PurchaseFeedback = { ok: boolean; message: string };
 
 type AppStore = State & {
   credits: number;
+  /** Has bought a plan or a pack, now or in the past. */
+  paid: boolean;
   /** True when a store (RevenueCat) is configured and purchases are real. */
   purchasesLive: boolean;
   /** False in a release build with no store configured: buying is hidden rather than mocked. */
@@ -479,6 +482,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       rolls,
       orders,
       credits: state.dailyCredits + state.packCredits,
+      paid: state.hasPurchased || state.plan !== 'free',
       purchasesLive,
       canBuy,
       printConfig,

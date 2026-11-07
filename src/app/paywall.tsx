@@ -35,9 +35,8 @@ const TEASER_FRAMES = [SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[1], SAMPLE_ROLL
 /** The plan sheet. Prices come from the store when one is configured, otherwise the USD list prices. */
 export default function PaywallScreen() {
   const theme = useTheme();
-  const { buyPlan, restore, rolls, plan, canBuy, purchasesLive } = useAppStore();
+  const { buyPlan, restore, plan, canBuy, purchasesLive } = useAppStore();
   const { rollId } = useLocalSearchParams<{ rollId?: string }>();
-  const waiting = rolls.find((roll) => roll.id === rollId)?.frames.filter((frame) => frame.status === 'waiting').length ?? 0;
   const [selected, setSelected] = useState<Tier>(TIERS[0]);
   const [prices, setPrices] = useState<Record<string, string>>(FALLBACK_PRICES);
   const [busy, setBusy] = useState<'buy' | 'restore' | null>(null);
@@ -89,7 +88,7 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.center}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : waiting > 0 ? `Develop your ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Your photos. A whole new feel.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Finish developing your roll.' : 'Your photos. A whole new feel.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'

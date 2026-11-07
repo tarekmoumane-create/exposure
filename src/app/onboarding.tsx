@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
   const pages = [
     { key: 'roll', title: 'Your favorite days, on film.', line: 'Give the night out, the weekend away, or just a favorite selfie a camera look you love.', art: <ContactSheet /> },
     { key: 'choose', title: 'One look. Your whole roll.', line: 'Pick a camera look, then add 1–12 photos. Not sure? Start with Sunny 200 for a warm, everyday film feel.', art: <Envelope /> },
-    { key: 'develop', title: 'Make it yours.', line: 'Add your photos first, then choose a plan to develop them. Your finished roll stays together, ready to save and share.', art: <Envelope /> },
+    { key: 'develop', title: 'Make it yours.', line: 'Your first photo develops halfway for free. Choose a plan to finish it, develop the whole roll, and save it.', art: <Envelope /> },
   ];
   const current = pages[page];
   const last = page === pages.length - 1;

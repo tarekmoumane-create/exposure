@@ -6,7 +6,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { rollSummary } from '@/lib/roll';
-import { type Roll } from '@/store/app-store';
+import { type Roll, useAppStore } from '@/store/app-store';
 
 const FAN = [
   { rotate: '-7deg', left: '10%', top: 14 },
@@ -17,6 +17,7 @@ const FAN = [
 /** A roll as the lab hands it back: prints sticking out of an apricot envelope with its details on the front. */
 export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => void }) {
   const theme = useTheme();
+  const { paid } = useAppStore();
   const shown = roll.frames.slice(0, FAN.length);
   return (
     <Pressable
@@ -28,7 +29,7 @@ export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => vo
       <View style={styles.fan}>
         {shown.map((frame, index) => (
           <View key={frame.id} style={[styles.print, { backgroundColor: theme.surface, left: FAN[index].left, top: FAN[index].top, transform: [{ rotate: FAN[index].rotate }] }]}>
-            <Image source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri} style={styles.photo} contentFit="cover" />
+            <Image source={paid || typeof frame.sourceUri !== 'string' ? frame.thumbUri ?? frame.resultUri ?? frame.sourceUri : frame.sourceUri} style={styles.photo} contentFit="cover" />
           </View>
         ))}
       </View>

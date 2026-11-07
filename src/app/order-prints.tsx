@@ -17,14 +17,14 @@ import { useAppStore } from '@/store/app-store';
 export default function OrderPrintsScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ roll: string }>();
-  const { rolls, orders, printConfig, addOrder, updateOrder, removeOrder } = useAppStore();
+  const { rolls, orders, paid, printConfig, addOrder, updateOrder, removeOrder } = useAppStore();
   const roll = rolls.find((item) => item.id === params.roll);
   const frames = roll?.frames.filter((frame) => frame.status === 'done') ?? [];
   const [off, setOff] = useState<Set<string>>(new Set());
   const [uploaded, setUploaded] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (!roll || !printConfig.enabled) {
+  if (!roll || !printConfig.enabled || !paid) {
     return (
       <Screen scroll={false}>
         <EmptyState title="Prints are not available" message="Try again later, or save your frames to Photos." action={<Button title="Back" onPress={() => router.back()} />} />

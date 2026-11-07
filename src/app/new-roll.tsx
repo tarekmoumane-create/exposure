@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
@@ -19,7 +19,7 @@ import { MAX_FRAMES, useAppStore } from '@/store/app-store';
 export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
-  const { addRoll, credits, plan, hasPurchased, aiConsent, setAiConsent } = useAppStore();
+  const { addRoll, credits, paid, aiConsent, setAiConsent } = useAppStore();
   const [lookId, setLookId] = useState(getLook(params.lookId)?.id ?? 'gold-200');
   const [photos, setPhotos] = useState<string[]>([]);
   const [name, setName] = useState('');
@@ -42,8 +42,6 @@ export default function NewRollScreen() {
   };
 
   const started = useRef(false);
-  const pendingPurchase = useRef(false);
-  const paid = plan !== 'free' || hasPurchased;
   const develop = useCallback(() => {
     if (started.current) return;
     started.current = true;
@@ -52,20 +50,7 @@ export default function NewRollScreen() {
     if (credits === 0) setTimeout(() => router.push({ pathname: '/paywall', params: { rollId: roll.id } }), 350);
   }, [addRoll, name, lookId, photos, credits]);
 
-  useFocusEffect(useCallback(() => {
-    if (!pendingPurchase.current) return;
-    pendingPurchase.current = false;
-    if (!paid) return;
-    if (aiConsent) develop();
-    else setAsking(true);
-  }, [paid, aiConsent, develop]));
-
   const continueToDevelop = () => {
-    if (!paid) {
-      pendingPurchase.current = true;
-      router.push('/paywall');
-      return;
-    }
     if (aiConsent) develop();
     else setAsking(true);
   };
@@ -87,7 +72,7 @@ export default function NewRollScreen() {
   const covered = Math.min(count, credits);
   const note =
     !paid && count > 0
-      ? 'Next: choose a plan to develop your photos. Your selection stays here if you go back.'
+      ? 'Your first frame develops halfway for free. Choose a plan to finish it and develop the rest.'
       : count === 0
         ? `Add up to ${MAX_FRAMES} photos. People, places, anything.`
         : covered === count
@@ -179,7 +164,7 @@ export default function NewRollScreen() {
           {note}
         </ThemedText>
         <Button
-          title={count === 0 ? 'Add photos to continue' : !paid ? 'Continue with my photos' : `Develop ${count} ${count === 1 ? 'photo' : 'photos'}`}
+          title={count === 0 ? 'Add photos to continue' : !paid ? 'Start developing' : `Develop ${count} ${count === 1 ? 'photo' : 'photos'}`}
           disabled={count === 0}
           onPress={continueToDevelop}
         />

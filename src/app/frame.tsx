@@ -24,7 +24,7 @@ export default function FrameScreen() {
   const theme = useTheme();
   const toast = useToast();
   const params = useLocalSearchParams<{ roll: string; index?: string }>();
-  const { rolls, updateFrame } = useAppStore();
+  const { rolls, updateFrame, paid } = useAppStore();
   const isSample = params.roll === SAMPLE_ROLL_ID;
   const roll = isSample ? SAMPLE_ROLL : rolls.find((item) => item.id === params.roll);
   const frames = roll?.frames.filter((frame) => frame.status === 'done') ?? [];
@@ -36,7 +36,7 @@ export default function FrameScreen() {
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
   const list = useRef<FlatList<Frame>>(null);
 
-  if (!roll || frames.length === 0) {
+  if (!roll || frames.length === 0 || (!paid && !isSample)) {
     return (
       <Screen scroll={false}>
         <EmptyState title="Frame not found" message="Go back to the roll to see what has developed." action={<Button title="Back" onPress={() => dismiss()} />} />

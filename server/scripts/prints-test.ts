@@ -75,7 +75,7 @@ const labBody = JSON.parse(calls.filter((c) => c.url.endsWith('/orders')).at(-1)
 assert.equal(labBody.items.length, 6);
 assert.equal(labBody.items[0].attributes.finish, 'lustre');
 assert.equal(labBody.recipient.address.postalOrZipCode, '10001');
-assert.match(labBody.items[0].assets[0].url, /\/api\/prints\/file\//);
+assert.match(labBody.items[0].assets[0].url, /\/api\/prints\/file\?token=/);
 
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret: 'nope'.repeat(8) } } as never, res); assert.equal(out.status, 404); }
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret } } as never, res); assert.equal(out.json!.stage, 'shipped'); assert.equal(out.json!.trackingUrl, 'https://track.test/1'); }

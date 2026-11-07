@@ -174,7 +174,7 @@ export async function submitToLab(order: PrintOrder, shipping: ShippingDetails, 
         copies: 1,
         attributes: PRINT_ATTRIBUTES,
         sizing: 'fillPrintArea',
-        assets: [{ printArea: 'default', url: `${publicBase()}/api/prints/file/${file}` }],
+        assets: [{ printArea: 'default', url: `${publicBase()}/api/prints/file?token=${file}` }],
       })),
     },
   });

@@ -29,7 +29,7 @@ REAL PRINTS
 Order your roll as 4x6 prints on real silver-halide photo paper, mailed to your door. US only for now.
 
 TRY IT FIRST
-Your first frame develops halfway for free, so you can see the look on your own photo. A plan or pack finishes it and develops the rest.
+Your first frame develops for free on your own photo. A plan or pack unlocks it and develops the rest.
 
 PRIVATE BY DESIGN
 No account needed. Your rolls live on your phone. Frames are developed with Google's Gemini AI, and Exposure asks before any photo leaves your device.
@@ -59,7 +59,7 @@ HOW TO TEST
 1. Tap Continue, then "Choose a look".
 2. Choose any look and tap "Use" (its name). Choose one photo and tap "Start developing". New users start with one photo.
 3. Exposure asks permission to send the photo to Google Gemini. Tap "Allow and develop".
-4. The frame develops in about 30 seconds and shows its top half as a free preview. Tap "Finish developing", then "Unlock Exposure", and use a sandbox account. The full frame appears.
+4. The frame develops in about 30 seconds and shows as a blurred preview, and the plans screen opens. Tap "Unlock Exposure" and use a sandbox account. The full frame appears.
 5. Tap "Start a new roll", add 4 or more photos and develop them. On the finished roll, try the strength meter, Order prints, Save all and Contact sheet.
 
 PRINTS
@@ -75,4 +75,4 @@ Exposure is no longer a single-photo filter app. Its concept is now the roll: a 
 
 (Delete the mention of printed copies if prints are off when you resubmit.)
 
-Anyone can now see the app work on their own photo before paying: the first frame develops halfway for free. We would welcome any further guidance if something still falls short.
+Anyone can now see the app work on their own photo before paying: the first frame develops for free on their own photo, shown as a blurred preview until they choose a plan. We would welcome any further guidance if something still falls short.

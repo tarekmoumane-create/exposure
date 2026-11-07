@@ -32,7 +32,7 @@ const PAGES = [
 const GUIDE = [
   { title: 'Find your look', detail: 'Flash, film, or a little digicam nostalgia.' },
   { title: 'Add a photo', detail: 'Start with one favorite.' },
-  { title: 'Watch it develop', detail: 'It develops halfway for free. A plan finishes it and unlocks rolls of up to 12.' },
+  { title: 'Watch it develop', detail: 'It develops for free. A plan unlocks it to save and share, and opens rolls of up to 12.' },
 ];
 
 export default function OnboardingScreen() {
@@ -93,7 +93,7 @@ export default function OnboardingScreen() {
 
       <View style={styles.footer}>
         <Button title={page === 0 ? 'Continue' : 'Choose a look'} onPress={() => page === 0 ? setPage(1) : finish()} />
-        <ThemedText type="caption" themeColor="textSecondary" style={styles.footerNote}>{page === 0 ? 'Your photos. A different camera.' : 'Your first photo develops halfway for free.'}</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary" style={styles.footerNote}>{page === 0 ? 'Your photos. A different camera.' : 'Your first photo develops for free.'}</ThemedText>
       </View>
     </SafeAreaView>
   );

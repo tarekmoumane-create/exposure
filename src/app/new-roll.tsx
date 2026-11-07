@@ -16,7 +16,7 @@ import { persistTemporary } from '@/lib/media';
 import { defaultRollName } from '@/lib/roll';
 import { MAX_FRAMES, useAppStore } from '@/store/app-store';
 
-/** Load a roll: one look, up to 12 photos, a name. Before any purchase it is one look and one photo, which develops halfway. */
+/** Load a roll: one look, up to 12 photos, a name. Before any purchase it is one look and one photo, which develops behind a blur until a plan unlocks it. */
 export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
@@ -77,7 +77,7 @@ export default function NewRollScreen() {
     count === 0
       ? 'Your photos stay on your phone until you agree to processing.'
       : !paid
-        ? 'It develops halfway for free. A plan finishes it and unlocks rolls of up to 12.'
+        ? 'It develops for free. A plan unlocks it to save and share, and opens rolls of up to 12.'
         : covered === count
           ? `Uses ${count} of your ${credits} ${credits === 1 ? 'frame' : 'frames'}.`
           : covered > 0

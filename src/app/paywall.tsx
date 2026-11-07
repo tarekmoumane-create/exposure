@@ -88,7 +88,7 @@ export default function PaywallScreen() {
 
       <View style={styles.copy}>
         <ThemedText type="title" style={styles.headline}>
-          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Finish developing your roll.' : 'Your photos, worth keeping.'}
+          {plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Unlock your roll.' : 'Your photos, worth keeping.'}
         </ThemedText>
         <ThemedText type="body" themeColor="textSecondary" style={styles.center}>
           {plan === 'yearly'

@@ -66,7 +66,7 @@ export default function OrderPrintsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.intro}>
           <ThemedText type="title">Your roll, on paper.</ThemedText>
-          <ThemedText themeColor="textSecondary">4x6 prints, made by our print lab and mailed to you. Tap a frame to leave it out.</ThemedText>
+          <ThemedText themeColor="textSecondary">4x6 prints on real silver-halide photo paper, mailed to you. Your whole photo is printed, with a thin white edge if needed. Tap a frame to leave it out.</ThemedText>
         </View>
         <View style={styles.grid}>
           {frames.map((frame, index) => {

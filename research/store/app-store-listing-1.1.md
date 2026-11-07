@@ -26,7 +26,7 @@ Film: Sunny 200, Vibrant 400, Shoebox 35
 Light: Last Light, After Sunset, North Window
 
 REAL PRINTS
-Order your roll as 4x6 prints, printed by our lab and mailed to your door. US only for now.
+Order your roll as 4x6 prints on real silver-halide photo paper, mailed to your door. US only for now.
 
 TRY IT FIRST
 Explore a finished sample roll, and develop your first frame free.

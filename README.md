@@ -28,7 +28,7 @@ Web preview with a phone frame: http://localhost:8081/phone.html. Move `.env.loc
 
 Vercel env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PRODIGI_API_KEY`; `PRODIGI_ENV=live` when ready. Optional: `PRODIGI_SKU`, `PRINT_PRICE_CENTS`, `PRINT_SHIPPING_CENTS`, `PRINT_COUNTRY`, `STRIPE_AUTOMATIC_TAX=on`.
 Stripe webhook URL: `https://exposure-api.vercel.app/api/prints/webhook`, events `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
-Confirm the 4x6 SKU with `GET /v4.0/products/{sku}` before going live.
+Prints refuse to run with `sk_test` Stripe keys and `PRODIGI_ENV=live` together, because test payments would create real orders. Sandbox Prodigi is the default.
 
 ## Services
 

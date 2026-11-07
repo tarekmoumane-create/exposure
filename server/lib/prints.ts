@@ -21,14 +21,25 @@ const WEBHOOK_TOLERANCE_S = 300;
 
 export const MIN_PRINTS = 4;
 export const MAX_PRINTS = 36;
-/** The SKU must be confirmed against the live Prodigi catalogue (GET /products/{sku}) at setup. */
+/** C-Type silver halide photo paper, confirmed in the live catalogue on 7 Nov 2026 at $0.25 a print. */
 export const PRINT_SKU = process.env.PRODIGI_SKU ?? 'GLOBAL-PHO-4X6';
+/** Required by this SKU: gloss or lustre. */
+const PRINT_ATTRIBUTES = { finish: process.env.PRODIGI_FINISH ?? 'lustre' };
+/** The SKU's print area in pixels, portrait. */
+export const PRINT_WIDTH = 1223;
+export const PRINT_HEIGHT = 1783;
 export const PRICE_PER_PRINT_CENTS = Number(process.env.PRINT_PRICE_CENTS ?? 99);
-export const SHIPPING_CENTS = Number(process.env.PRINT_SHIPPING_CENTS ?? 499);
+export const SHIPPING_CENTS = Number(process.env.PRINT_SHIPPING_CENTS ?? 699);
 export const COUNTRY = process.env.PRINT_COUNTRY ?? 'US';
 const CURRENCY = 'usd';
 
+/** A test payment must never reach the live lab: it would print and bill a real order. */
+function testPaymentsOnLiveLab(): boolean {
+  return process.env.PRODIGI_ENV === 'live' && Boolean(process.env.STRIPE_SECRET_KEY?.startsWith('sk_test'));
+}
+
 export function printsEnabled(): boolean {
+  if (testPaymentsOnLiveLab()) return false;
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.PRODIGI_API_KEY && isRedisConfigured());
 }
 
@@ -115,7 +126,7 @@ export async function labCostCents(count: number): Promise<number> {
       shippingMethod: 'budget',
       destinationCountryCode: COUNTRY,
       currencyCode: CURRENCY.toUpperCase(),
-      items: [{ sku: PRINT_SKU, copies: count, attributes: {}, assets: [{ printArea: 'default' }] }],
+      items: [{ sku: PRINT_SKU, copies: count, attributes: PRINT_ATTRIBUTES, assets: [{ printArea: 'default' }] }],
     },
   });
   const cost = quote.quotes?.[0]?.costSummary;
@@ -126,6 +137,14 @@ export async function labCostCents(count: number): Promise<number> {
 }
 
 export const customerTotalCents = (count: number) => count * PRICE_PER_PRINT_CENTS + SHIPPING_CENTS;
+
+/**
+ * What an order must bring in to not lose money: the lab's price, 10% for the US sales tax its quotes
+ * leave out, and Stripe's 2.9% + 30c.
+ */
+export function breakEvenCents(labCents: number, customerCents: number): number {
+  return Math.ceil(labCents * 1.1 + customerCents * 0.029 + 30);
+}
 
 type ShippingDetails = { name?: string; address?: { line1?: string; line2?: string | null; city?: string; state?: string | null; postal_code?: string; country?: string } };
 
@@ -153,6 +172,7 @@ export async function submitToLab(order: PrintOrder, shipping: ShippingDetails, 
         merchantReference: `${order.id}-${index + 1}`,
         sku: PRINT_SKU,
         copies: 1,
+        attributes: PRINT_ATTRIBUTES,
         sizing: 'fillPrintArea',
         assets: [{ printArea: 'default', url: `${publicBase()}/api/prints/file/${file}` }],
       })),

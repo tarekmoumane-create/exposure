@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sharp from 'sharp';
 
 import { authorized, reject } from '../../lib/http.js';
+import { composePrint } from '../../lib/print-file.js';
 import { printsEnabled, storeFile } from '../../lib/prints.js';
 
 const MAX_BASE64_CHARS = 4_000_000;
@@ -19,7 +20,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const meta = await sharp(Buffer.from(data, 'base64')).metadata();
     if (meta.format !== 'jpeg') return reject(res, 400, 'image', 'JPEG only');
     if (Math.max(meta.width ?? 0, meta.height ?? 0) < MIN_LONG_EDGE) return reject(res, 422, 'small', 'This photo is too small to print sharply.');
-    return res.status(200).json({ token: await storeFile(data) });
+    const file = await composePrint(Buffer.from(data, 'base64'));
+    return res.status(200).json({ token: await storeFile(file.toString('base64')) });
   } catch (error) {
     console.error('[prints/upload]', (error as Error).message.slice(0, 200));
     return reject(res, 400, 'image', 'This photo could not be read.');

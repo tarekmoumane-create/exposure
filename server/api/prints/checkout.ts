@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 import { authorized, reject } from '../../lib/http.js';
-import { createCheckout, customerTotalCents, hasFile, labCostCents, MAX_PRINTS, MIN_PRINTS, newOrder, printsEnabled, saveOrder, TOKEN_PATTERN } from '../../lib/prints.js';
+import { breakEvenCents, createCheckout, customerTotalCents, hasFile, labCostCents, MAX_PRINTS, MIN_PRINTS, newOrder, printsEnabled, saveOrder, TOKEN_PATTERN } from '../../lib/prints.js';
 
 /** POST /api/prints/checkout { tokens: string[], roll: string } -> { url, orderId, secret } */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -18,9 +18,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const present = await Promise.all(tokens.map(hasFile));
     if (present.includes(false)) return reject(res, 410, 'expired', 'Your photos expired. Start the order again.');
 
-    // Never sell below what the lab charges, whatever the configured prices say.
-    const cost = await labCostCents(tokens.length);
-    if (customerTotalCents(tokens.length) < cost) {
+    // Never sell at a loss, whatever the configured prices say.
+    const total = customerTotalCents(tokens.length);
+    const cost = breakEvenCents(await labCostCents(tokens.length), total);
+    if (total < cost) {
       console.error('[prints/checkout] price below lab cost', { prints: tokens.length, cost });
       return reject(res, 503, 'pricing', 'Prints are not available right now.');
     }

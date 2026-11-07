@@ -73,10 +73,40 @@ const hook = (signature: string) => Object.assign(Readable.from([Buffer.from(eve
 
 const labBody = JSON.parse(calls.filter((c) => c.url.endsWith('/orders')).at(-1)!.body!);
 assert.equal(labBody.items.length, 6);
+assert.equal(labBody.items[0].attributes.finish, 'lustre');
 assert.equal(labBody.recipient.address.postalOrZipCode, '10001');
 assert.match(labBody.items[0].assets[0].url, /\/api\/prints\/file\//);
 
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret: 'nope'.repeat(8) } } as never, res); assert.equal(out.status, 404); }
 { const { res, out } = mockRes(); await orderStatus({ headers: { 'x-exposure-app': 'app' }, query: { id: orderId, secret } } as never, res); assert.equal(out.json!.stage, 'shipped'); assert.equal(out.json!.trackingUrl, 'https://track.test/1'); }
+
+// Print files: exact print size, whole photo kept, landscape turned to fit.
+const sharp = (await import('sharp')).default;
+const { composePrint } = await import('../lib/print-file.js');
+const red = (width: number, height: number) => sharp({ create: { width, height, channels: 3, background: '#ff0000' } }).jpeg().toBuffer();
+const redShare = async (file: Buffer) => {
+  const { data, info } = await sharp(file).raw().toBuffer({ resolveWithObject: true });
+  let count = 0;
+  for (let i = 0; i < data.length; i += info.channels) if (data[i + 1] < 60) count++;
+  return { width: info.width, height: info.height, share: count / (info.width * info.height) };
+};
+for (const [w, h, label, expected] of [[1638, 2048, '4:5 portrait', 0.83], [2048, 1638, '4:5 landscape', 0.83], [1365, 2048, '2:3', 1]] as const) {
+  const out = await redShare(await composePrint(await red(w, h)));
+  assert.deepEqual([out.width, out.height], [P.PRINT_WIDTH, P.PRINT_HEIGHT], label);
+  assert.ok(Math.abs(out.share - expected) < 0.03, `${label}: photo covers ${out.share.toFixed(3)}, nothing cropped`);
+}
+
+// Test payments must never reach the live lab.
+process.env.PRODIGI_ENV = 'live';
+assert.equal(P.printsEnabled(), false);
+process.env.STRIPE_SECRET_KEY = 'sk_live_x';
+assert.equal(P.printsEnabled(), true);
+
+// Real prices from the live catalogue: every order size must clear costs.
+for (const [count, lab] of [[4, 804], [6, 854], [12, 1004], [36, 1604]] as const) {
+  const total = P.customerTotalCents(count);
+  assert.ok(total >= P.breakEvenCents(lab, total), `${count} prints lose money`);
+  console.log(`${count} prints: customer ${total}c, margin ${total - P.breakEvenCents(lab, total)}c`);
+}
 
 console.log('prints flow: all checks passed');

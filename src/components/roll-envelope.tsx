@@ -14,7 +14,7 @@ const FAN = [
   { rotate: '-2deg', left: '60%', top: 12 },
 ] as const;
 
-/** A roll as the lab hands it back: prints sticking out of a yellow envelope with its details on the front. */
+/** A roll as the lab hands it back: prints sticking out of an apricot envelope with its details on the front. */
 export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => void }) {
   const theme = useTheme();
   const shown = roll.frames.slice(0, FAN.length);
@@ -50,9 +50,9 @@ export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => vo
 const styles = StyleSheet.create({
   root: { height: 236 },
   fan: { position: 'absolute', left: 0, right: 0, top: 0, height: 170 },
-  print: { position: 'absolute', width: '32%', aspectRatio: 4 / 5, padding: 5, borderRadius: Radius.print, shadowColor: '#141A6B', shadowOpacity: 0.16, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  print: { position: 'absolute', width: '32%', aspectRatio: 4 / 5, padding: 5, borderRadius: Radius.print, shadowColor: '#443347', shadowOpacity: 0.10, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   photo: { flex: 1 },
-  envelope: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 104, borderRadius: Radius.sm, paddingHorizontal: Spacing.three, paddingVertical: 14, justifyContent: 'space-between' },
+  envelope: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 104, borderRadius: Radius.lg, borderTopWidth: 1, borderTopColor: 'rgba(112,82,120,0.12)', paddingHorizontal: Spacing.three, paddingVertical: 14, justifyContent: 'space-between' },
   meta: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.two },
   grow: { flex: 1 },
 });

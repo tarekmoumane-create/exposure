@@ -17,7 +17,7 @@ export function ThemedText({ style, type = 'body', themeColor, ...rest }: Themed
 
 const styles = StyleSheet.create({
   wordmark: { fontFamily: Fonts.displayHeavy, fontSize: 24, lineHeight: 28, letterSpacing: -0.6 },
-  display: { fontFamily: Fonts.displayHeavy, fontSize: 38, lineHeight: 41, letterSpacing: -1 },
+  display: { fontFamily: Fonts.display, fontSize: 34, lineHeight: 39, letterSpacing: -0.8 },
   title: { fontFamily: Fonts.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.5 },
   subtitle: { fontFamily: Fonts.display, fontSize: 19, lineHeight: 24, letterSpacing: -0.2 },
   body: { fontFamily: Fonts.sans, fontSize: 16, lineHeight: 23 },

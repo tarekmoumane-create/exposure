@@ -24,5 +24,5 @@ export function CreditsPill() {
 }
 
 const styles = StyleSheet.create({
-  pill: { alignItems: 'center', justifyContent: 'center', minHeight: 36, paddingHorizontal: 12, borderRadius: Radius.md },
+  pill: { alignItems: 'center', justifyContent: 'center', minHeight: 36, paddingHorizontal: 12, borderRadius: Radius.pill },
 });

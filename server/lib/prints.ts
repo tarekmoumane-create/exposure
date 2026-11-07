@@ -28,7 +28,7 @@ const PRINT_ATTRIBUTES = { finish: process.env.PRODIGI_FINISH ?? 'lustre' };
 /** The SKU's print area in pixels, portrait. */
 export const PRINT_WIDTH = 1223;
 export const PRINT_HEIGHT = 1783;
-export const PRICE_PER_PRINT_CENTS = Number(process.env.PRINT_PRICE_CENTS ?? 99);
+export const PRICE_PER_PRINT_CENTS = Number(process.env.PRINT_PRICE_CENTS ?? 149);
 export const SHIPPING_CENTS = Number(process.env.PRINT_SHIPPING_CENTS ?? 699);
 export const COUNTRY = process.env.PRINT_COUNTRY ?? 'US';
 const CURRENCY = 'usd';

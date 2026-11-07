@@ -1,7 +1,7 @@
 /**
- * Exposure design tokens. The app borrows from the one-hour photo lab: white print paper, ballpoint
- * blue ink, and the butter yellow of a drugstore film envelope. Photos have near-square corners
- * because they are prints; controls are softer. The app is light-only.
+ * Exposure feels like a personal photo keepsake: vanilla paper, plum ink,
+ * apricot envelopes and lilac details. Photos keep their printed edges;
+ * controls are soft and rounded. The app is light-only.
  */
 
 import '@/global.css';
@@ -9,22 +9,22 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 const palette = {
-  background: '#F5F6F1',
-  surface: '#FFFFFF',
-  surfaceRaised: '#E8EAE1',
-  line: '#D5D8CC',
-  text: '#141A6B',
-  textSecondary: '#454B86',
-  textTertiary: '#666CA3',
-  brand: '#1F2BD8',
-  onBrand: '#FFFFFF',
-  accent: '#FFD84D',
-  accentSoft: '#FFF1BD',
-  onAccent: '#141A6B',
-  /** The grease pencil on a contact sheet. Used for marks and errors only. */
-  mark: '#D92D20',
-  onPhoto: '#FFFFFF',
-  scrim: 'rgba(20,26,107,0.55)',
+  background: '#FBF5EB',
+  surface: '#FFFCF7',
+  surfaceRaised: '#F0E6F0',
+  line: '#DFD2D9',
+  text: '#443347',
+  textSecondary: '#716173',
+  textTertiary: '#7D6D7E',
+  brand: '#705278',
+  onBrand: '#FFFCF7',
+  accent: '#F5D5B8',
+  accentSoft: '#FAE9D8',
+  onAccent: '#443347',
+  /** A warm red reserved for marks and errors. */
+  mark: '#AE4048',
+  onPhoto: '#FFFCF7',
+  scrim: 'rgba(49,34,52,0.62)',
 } as const;
 
 export const Colors = {
@@ -56,9 +56,9 @@ export const Spacing = {
 
 export const Radius = {
   print: 3,
-  sm: 6,
-  md: 10,
-  lg: 14,
+  sm: 10,
+  md: 18,
+  lg: 24,
   pill: 999,
 } as const;
 

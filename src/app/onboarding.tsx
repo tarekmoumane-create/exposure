@@ -53,7 +53,7 @@ export default function OnboardingScreen() {
   const { setOnboarded, printConfig } = useAppStore();
 
   const pages = [
-    { key: 'roll', title: 'Turn your camera roll into a roll of film.', line: 'Choose up to 12 photos and one camera. They come back as a set.', art: <ContactSheet /> },
+    { key: 'roll', title: 'Your favorite days, on film.', line: 'The night out. The weekend away. Choose up to 12 photos and one camera to give them a look you love.', art: <ContactSheet /> },
     { key: 'same', title: 'Same photo. Better camera.', line: 'Exposure changes the light and the camera. It checks every frame so people and places stay as you shot them.', art: <BeforeAfter /> },
     printConfig.enabled
       ? { key: 'print', title: 'Then hold them.', line: 'Order your roll as real 4x6 prints, mailed to your door. Your first frame is free to develop.', art: <Envelope /> }

@@ -20,7 +20,7 @@ export type PrintStatus = { stage: PrintStage; trackingUrl?: string; carrier?: s
 
 export const PRINTS_OFF: PrintConfig = { enabled: false, pricePerPrintCents: 0, shippingCents: 0, country: 'US', minPrints: 4, maxPrints: 36 };
 /** With no API (web preview) the flow runs on these so it can still be seen. */
-const PREVIEW: PrintConfig = { enabled: true, pricePerPrintCents: 99, shippingCents: 499, country: 'US', minPrints: 4, maxPrints: 36 };
+const PREVIEW: PrintConfig = { enabled: true, pricePerPrintCents: 149, shippingCents: 699, country: 'US', minPrints: 4, maxPrints: 36 };
 
 const headers = { 'Content-Type': 'application/json', ...(APP_TOKEN ? { 'x-exposure-app': APP_TOKEN } : {}) };
 

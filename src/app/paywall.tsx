@@ -171,7 +171,7 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Spacing.two },
   strip: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: Spacing.four },
-  stripItem: { width: 78, aspectRatio: 4 / 5, padding: 4, borderRadius: Radius.print, shadowColor: '#141A6B', shadowOpacity: 0.16, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  stripItem: { width: 78, aspectRatio: 4 / 5, padding: 4, borderRadius: Radius.print, shadowColor: '#443347', shadowOpacity: 0.16, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
   stripPhoto: { flex: 1 },
   copy: { gap: Spacing.two, paddingBottom: Spacing.three, paddingHorizontal: Spacing.two },
   center: { textAlign: 'center' },

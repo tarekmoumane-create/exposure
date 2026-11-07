@@ -28,7 +28,7 @@ export default function StocksScreen() {
               accessibilityRole="button"
               accessibilityLabel={`${look.name}. ${look.tagline}`}
               onPress={() => router.push({ pathname: '/stock/[id]', params: { id: look.id } })}
-              style={({ pressed }) => [styles.row, { borderTopColor: theme.line, opacity: pressed ? 0.7 : 1 }]}>
+              style={({ pressed }) => [styles.row, { backgroundColor: theme.surface, borderColor: theme.line, opacity: pressed ? 0.7 : 1 }]}>
               <Image source={look.after} style={[styles.photo, { backgroundColor: theme.surfaceRaised }]} contentFit="cover" />
               <View style={styles.text}>
                 <ThemedText type="bodyStrong">{look.name}</ThemedText>
@@ -50,7 +50,7 @@ export default function StocksScreen() {
 const styles = StyleSheet.create({
   header: { gap: Spacing.two, paddingTop: Spacing.three, paddingBottom: Spacing.three },
   group: { paddingTop: Spacing.three },
-  row: { flexDirection: 'row', gap: Spacing.three, paddingVertical: 12, borderTopWidth: StyleSheet.hairlineWidth, marginTop: Spacing.two },
+  row: { flexDirection: 'row', gap: Spacing.three, padding: 12, borderWidth: StyleSheet.hairlineWidth, borderRadius: Radius.lg, marginTop: Spacing.two },
   photo: { width: 76, height: 95, borderRadius: Radius.print },
   text: { flex: 1, gap: 2, justifyContent: 'center' },
 });

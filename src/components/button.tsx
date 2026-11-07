@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.md,
+    borderRadius: Radius.pill,
   },
   lg: { paddingVertical: 16, paddingHorizontal: Spacing.four, minHeight: 54 },
   md: { paddingVertical: 10, paddingHorizontal: Spacing.three, minHeight: 42 },

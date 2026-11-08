@@ -115,9 +115,33 @@ export default function NewRollScreen() {
           <>
             <View style={styles.intro}>
               <ThemedText type="title" accessibilityRole="header">Choose a look</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">One look develops the whole roll. You can soften it afterwards.</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">{paid ? 'One look develops the whole roll. You can soften it afterwards.' : 'One look develops the whole roll. You’ll see it on your own photo.'}</ThemedText>
             </View>
-            {look ? (
+            {!paid ? (
+              <View style={styles.cards} accessibilityRole="radiogroup">
+                {choices.map((item) => {
+                  const selected = item.id === lookId;
+                  return (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`${item.name}. ${item.tagline}`}
+                      onPress={() => setLookId(item.id)}
+                      style={({ pressed }) => [styles.card, { backgroundColor: item.tint, borderColor: selected ? item.deep : 'transparent', transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
+                      <View style={styles.cardTop}>
+                        <ThemedText type="monoSmall" style={{ color: item.deep, opacity: 0.7 }}>{lookNumber(item)}</ThemedText>
+                        <View style={[styles.radio, { borderColor: item.deep }]}>{selected ? <View style={[styles.radioDot, { backgroundColor: item.deep }]} /> : null}</View>
+                      </View>
+                      <ThemedText type="subtitle" style={{ color: item.deep }}>{item.name}</ThemedText>
+                      <ThemedText type="small" style={{ color: item.deep, opacity: 0.85 }}>{item.tagline}</ThemedText>
+                      <ThemedText type="monoSmall" style={{ color: item.deep, opacity: 0.7 }}>{`Best for ${item.bestFor.toLowerCase()}`}</ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+            {paid && look ? (
               <View style={styles.figure}>
                 <Print border={7} aspectRatio={1.08}>
                   <ComparePhoto key={look.id} before={look.before} after={look.after} aspectRatio={1.08} accessibilityLabel={`${look.name} example. Press and hold to see the original.`} />
@@ -126,7 +150,7 @@ export default function NewRollScreen() {
                 <ThemedText type="small" themeColor="textSecondary">{`${look.tagline} Best for ${look.bestFor.toLowerCase()}.`}</ThemedText>
               </View>
             ) : null}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail} style={styles.bleed} accessibilityRole="radiogroup">
+            {paid ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail} style={styles.bleed} accessibilityRole="radiogroup">
               {choices.map((item) => {
                 const selected = item.id === lookId;
                 return (
@@ -143,7 +167,7 @@ export default function NewRollScreen() {
                   </Pressable>
                 );
               })}
-            </ScrollView>
+            </ScrollView> : null}
           </>
         ) : (
           <>
@@ -188,7 +212,7 @@ export default function NewRollScreen() {
             )}
             {look ? (
               <Pressable accessibilityRole="button" accessibilityLabel={`Change look. Currently ${look.name}`} onPress={() => setStep(0)} style={({ pressed }) => [styles.lookSummary, { backgroundColor: look.tint, opacity: pressed ? 0.75 : 1 }]}>
-                <Image source={look.after} style={styles.summaryPhoto} contentFit="cover" />
+                {paid ? <Image source={look.after} style={styles.summaryPhoto} contentFit="cover" /> : <View style={[styles.summaryPhoto, { backgroundColor: look.deep }]} />}
                 <View style={styles.summaryText}>
                   <ThemedText type="monoSmall" style={{ color: look.deep, opacity: 0.72 }}>{`Look  ${lookNumber(look)}`}</ThemedText>
                   <ThemedText type="bodyStrong" style={{ color: look.deep }}>{look.name}</ThemedText>
@@ -246,6 +270,11 @@ const styles = StyleSheet.create({
   summaryPhoto: { width: 44, height: 55, borderRadius: 12 },
   summaryText: { flex: 1, gap: 2 },
   input: { fontFamily: Fonts.sans, fontSize: 16, minHeight: 50, paddingHorizontal: 16, borderRadius: Radius.md, boxShadow: Shadow.card },
+  cards: { gap: 10 },
+  card: { padding: 16, paddingTop: 14, borderRadius: Radius.lg, borderWidth: 2, gap: 4 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
+  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  radioDot: { width: 10, height: 10, borderRadius: 5 },
   footer: { gap: 8, paddingTop: 10 },
   footerNote: { textAlign: 'center' },
 });

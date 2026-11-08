@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -5,10 +6,8 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { ComparePhoto } from '@/components/compare-photo';
 import { Glow } from '@/components/glow';
 import { IconButton } from '@/components/icon-button';
-import { LookCaption } from '@/components/look-caption';
 import { Print, PrintFan } from '@/components/print';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
@@ -54,10 +53,10 @@ export default function OnboardingScreen() {
         {page === 0 ? (
           <Animated.View key="intro" entering={FadeIn.duration(260)} style={styles.stage}>
             <View style={styles.figure}>
+              {/* The finished photo only: no before/after switch or look name until someone pays. */}
               <Print rotate={-1.5} aspectRatio={0.9} border={7}>
-                <ComparePhoto before={HERO.before} after={HERO.after} aspectRatio={0.9} accessibilityLabel={`${HERO.name} example. Press and hold to see the original.`} />
+                <Image source={HERO.after} style={styles.heroPhoto} contentFit="cover" accessibilityLabel="An example photo developed by Exposure" />
               </Print>
-              <LookCaption look={HERO} />
             </View>
             <View style={styles.copy}>
               <ThemedText type="display" accessibilityRole="header">
@@ -104,6 +103,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center' },
   stage: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Gutter, paddingVertical: Spacing.three, gap: 22 },
   figure: { gap: 14, paddingHorizontal: 6 },
+  heroPhoto: { width: '100%', aspectRatio: 0.9 },
   copy: { gap: 12 },
   fan: { alignItems: 'center', paddingVertical: 8 },
   step: { flexDirection: 'row', gap: 16, paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth * 2 },

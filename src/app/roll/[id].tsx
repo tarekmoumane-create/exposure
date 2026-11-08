@@ -15,6 +15,7 @@ import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
+import { UnlockSheet } from '@/components/unlock-sheet';
 import { useToast } from '@/components/toast';
 import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
@@ -47,6 +48,8 @@ export default function RollScreen() {
   const [liveStrength, setLiveStrength] = useState<number | null>(null);
   const wasLocked = useRef(!paid);
   const [revealing, setRevealing] = useState(false);
+  /** The plans sheet over a locked roll; the blurred frame stays visible above it. */
+  const [sheet, setSheet] = useState(false);
 
   // Coming back from the paywall: the rest of the free frame drops into view.
   useFocusEffect(
@@ -80,7 +83,7 @@ export default function RollScreen() {
     if (!lockedReady || !focused || offered.current || !roll) return;
     const timer = setTimeout(() => {
       offered.current = true;
-      router.push({ pathname: '/paywall', params: { rollId: roll.id } });
+      setSheet(true);
     }, 1200);
     return () => clearTimeout(timer);
   }, [lockedReady, focused, roll]);
@@ -109,7 +112,7 @@ export default function RollScreen() {
   }
 
   const openFrame = (frame: Frame, index: number) => {
-    if (locked && frame.status === 'done') router.push({ pathname: '/paywall', params: { rollId: roll.id } });
+    if (locked && frame.status === 'done') setSheet(true);
     else if (frame.status === 'done') router.push({ pathname: '/frame', params: { roll: roll.id, index } });
     else if (frame.status === 'failed') updateFrame(roll.id, frame.id, { status: 'waiting', error: undefined });
   };
@@ -161,9 +164,10 @@ export default function RollScreen() {
         ? `Developing ${done}/${total}`
         : `${done}/${total} developed`;
   const date = roll.createdAt ? new Date(roll.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-  const openPaywall = () => router.push({ pathname: '/paywall', params: { rollId: roll.id } });
+  const openPaywall = () => (locked ? setSheet(true) : router.push({ pathname: '/paywall', params: { rollId: roll.id } }));
 
   return (
+    <View style={styles.fill}>
     <Screen edges={['top', 'left', 'right', 'bottom']} glow={look?.tint ?? true} contentStyle={styles.content}>
       {developing > 0 ? <StayAwake /> : null}
       <View style={styles.header}>
@@ -329,10 +333,13 @@ export default function RollScreen() {
         </View>
       ) : null}
     </Screen>
+    <UnlockSheet visible={sheet && locked} rollId={roll.id} onClose={() => setSheet(false)} onDone={() => setSheet(false)} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1 },
   content: { paddingHorizontal: Gutter },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 52, marginHorizontal: -6 },
   spacer: { width: 44 },

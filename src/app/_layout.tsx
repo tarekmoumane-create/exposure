@@ -2,6 +2,8 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { Developer } from '@/components/developer';
 import { ToastProvider } from '@/components/toast';
@@ -28,15 +30,17 @@ const navigationTheme = {
 
 export default function RootLayout() {
   return (
-    <AppStoreProvider>
-      <ThemeProvider value={navigationTheme}>
-        <ToastProvider>
-          <StatusBar style="dark" />
-          <Developer />
-          <RootStack />
-        </ToastProvider>
-      </ThemeProvider>
-    </AppStoreProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <AppStoreProvider>
+        <ThemeProvider value={navigationTheme}>
+          <ToastProvider>
+            <StatusBar style="dark" />
+            <Developer />
+            <RootStack />
+          </ToastProvider>
+        </ThemeProvider>
+      </AppStoreProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -73,3 +77,7 @@ function RootStack() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

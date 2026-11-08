@@ -1,26 +1,32 @@
-/** Warm paper, cocoa type and a restrained terracotta accent. Photography leads the UI. */
+/**
+ * The photo lab. Oat paper and ink carry the interface; photographs bring the colour.
+ * Safelight red is a signal, not decoration: live states, selection and the sun in the mark.
+ * Monospace labels carry the technical layer (frame numbers, specs, steps); everything a
+ * person reads to decide something is set in the friendly sans.
+ */
 
 import '@/global.css';
 
 import { Platform } from 'react-native';
 
 const palette = {
-  background: '#FAF6EF',
-  surface: '#FFFDFA',
-  surfaceRaised: '#F0E8DF',
-  line: '#E1D8CE',
-  text: '#342A26',
-  textSecondary: '#776B62',
-  textTertiary: '#7A6C62',
-  brand: '#A14E3B',
-  onBrand: '#FFFDFA',
-  accent: '#F0C5AC',
-  accentSoft: '#F7E6D9',
-  onAccent: '#342A26',
-  /** A warm red reserved for marks and errors. */
-  mark: '#AE4048',
+  background: '#F3EEE6',
+  surface: '#FBF8F3',
+  surfaceRaised: '#E8E1D6',
+  line: '#DCD3C6',
+  text: '#1D1A17',
+  textSecondary: '#5F574E',
+  textTertiary: '#746B60',
+  brand: '#1D1A17',
+  onBrand: '#FBF8F3',
+  /** Safelight red. */
+  accent: '#C4462B',
+  accentSoft: '#F2DED4',
+  onAccent: '#FBF8F3',
+  /** Errors and failed frames. */
+  mark: '#B3261E',
   onPhoto: '#FFFFFF',
-  scrim: 'rgba(36,27,23,0.60)',
+  scrim: 'rgba(29,26,23,0.55)',
 } as const;
 
 export const Colors = {
@@ -38,6 +44,8 @@ export const Fonts = {
   sansMedium: 'InstrumentSans_500Medium',
   sansSemi: 'InstrumentSans_600SemiBold',
   sansBold: 'InstrumentSans_700Bold',
+  mono: 'DMMono_400Regular',
+  monoMedium: 'DMMono_500Medium',
 } as const;
 
 export const Spacing = {
@@ -50,11 +58,16 @@ export const Spacing = {
   six: 64,
 } as const;
 
+/** The page gutter. */
+export const Gutter = 20;
+
 export const Radius = {
-  print: 2,
-  sm: 6,
-  md: 8,
-  lg: 10,
+  /** Photographs stay nearly square, like prints. */
+  print: 3,
+  sm: 8,
+  md: 12,
+  /** Cards and sheets are soft. */
+  lg: 18,
   pill: 999,
 } as const;
 

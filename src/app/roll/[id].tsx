@@ -12,9 +12,10 @@ import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
+import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
 import { useTheme } from '@/hooks/use-theme';
@@ -154,39 +155,45 @@ export default function RollScreen() {
 
   const status =
     done === total
-      ? `${total} ${total === 1 ? 'frame' : 'frames'} on ${look?.name ?? 'film'}`
+      ? `${total} ${total === 1 ? 'frame' : 'frames'}`
       : developing > 0
-        ? `Developing on ${look?.name ?? 'film'}. ${done} of ${total} done.`
-        : `${done} of ${total} developed on ${look?.name ?? 'film'}`;
+        ? `Developing ${done}/${total}`
+        : `${done}/${total} developed`;
+  const date = roll.createdAt ? new Date(roll.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  const openPaywall = () => router.push({ pathname: '/paywall', params: { rollId: roll.id } });
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']}>
+    <Screen edges={['top', 'left', 'right', 'bottom']} contentStyle={styles.content}>
       {developing > 0 ? <StayAwake /> : null}
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
-        {!isSample ? <IconButton name={{ ios: 'trash', android: 'delete', web: 'delete' }} label="Delete roll" onPress={onDelete} /> : null}
+        <ThemedText type="mono" themeColor="textSecondary">{isSample ? 'Example' : date}</ThemedText>
+        {!isSample ? <IconButton name={{ ios: 'trash', android: 'delete', web: 'delete' }} label="Delete roll" onPress={onDelete} /> : <View style={styles.spacer} />}
       </View>
 
       <View style={styles.title}>
-        <ThemedText type="title" accessibilityRole="header">
+        <ThemedText type="display" accessibilityRole="header">
           {roll.name}
         </ThemedText>
-        <ThemedText themeColor="textSecondary" accessibilityLiveRegion="polite">
-          {isSample ? `A real roll, developed on ${look?.name}. Tap any frame, then hold it to see the original.` : status}
-        </ThemedText>
+        <View style={styles.meta} accessibilityLiveRegion="polite">
+          <ThemedText type="mono" themeColor="textSecondary">{`${look?.name ?? 'Film'}  ·  `}</ThemedText>
+          {developing > 0 ? <StatusDot live /> : null}
+          <ThemedText type="mono" themeColor={developing > 0 ? 'accent' : 'textSecondary'}>{status}</ThemedText>
+        </View>
+        {isSample ? (
+          <ThemedText type="small" themeColor="textSecondary" style={styles.sampleNote}>
+            {`A real roll, developed on ${look?.name}. Open any frame and switch to Before to see the original.`}
+          </ThemedText>
+        ) : null}
       </View>
 
       {blocked ? (
         <View style={[styles.notice, { backgroundColor: theme.accentSoft }]}>
           <ThemedText type="bodyStrong">{done > 0 ? `${waiting} more ${waiting === 1 ? 'frame is' : 'frames are'} waiting.` : 'This roll is ready to develop.'}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {plan === 'free' ? 'Choose a plan or pack and they develop right here.' : 'They develop here when your new photos arrive at midnight, or add a pack now.'}
+            {plan === 'free' ? 'Choose a plan or pack and they develop right here.' : 'They develop here when your new frames arrive at midnight, or add a pack now.'}
           </ThemedText>
-          <Button
-            title={plan === 'free' ? 'See plans' : 'Add photos'}
-            size="md"
-            onPress={() => (plan === 'free' ? router.push({ pathname: '/paywall', params: { rollId: roll.id } }) : router.push('/out-of-credits'))}
-          />
+          <Button title={plan === 'free' ? 'See plans' : 'Add frames'} size="md" style={styles.noticeButton} onPress={() => (plan === 'free' ? openPaywall() : router.push('/out-of-credits'))} />
         </View>
       ) : null}
 
@@ -196,28 +203,36 @@ export default function RollScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             Photo processing is off in Settings.
           </ThemedText>
-          <Button title="Review and continue" size="md" onPress={() => setAsking(true)} />
+          <Button title="Review and continue" size="md" style={styles.noticeButton} onPress={() => setAsking(true)} />
         </View>
       ) : null}
 
       {teaser ? (
-        <View style={styles.teaser}>
+        <View style={[styles.teaser, locked && { backgroundColor: theme.surface, borderColor: theme.line }]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={locked ? 'Your first frame, developed and locked. Unlock to see it.' : 'Your first frame'}
             disabled={!locked}
-            onPress={() => router.push({ pathname: '/paywall', params: { rollId: roll.id } })}
+            onPress={openPaywall}
             style={[styles.teaserPhoto, { backgroundColor: theme.surfaceRaised }]}>
             <DevelopingPhoto source={teaser.resultUri} amount={locked ? 0 : 1} locked={locked} />
+            {locked ? (
+              <View style={styles.lockWrap} pointerEvents="none">
+                <View style={[styles.lock, { backgroundColor: 'rgba(251,248,243,0.94)' }]}>
+                  <StatusDot />
+                  <ThemedText type="mono">Developed · Locked</ThemedText>
+                </View>
+              </View>
+            ) : null}
           </Pressable>
           {locked ? (
-            <>
-              <ThemedText type="subtitle">Your first frame is developed.</ThemedText>
+            <View style={styles.teaserCopy}>
+              <ThemedText type="title">Your first frame is ready.</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {waiting > 0 ? `Choose a plan to see it, save it and develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Choose a plan to see it and save it.'}
+                {waiting > 0 ? `Unlock it to see it in full, save it and develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Unlock it to see it in full and save it to your photos.'}
               </ThemedText>
-              <Button title="Unlock your frame" onPress={() => router.push({ pathname: '/paywall', params: { rollId: roll.id } })} />
-            </>
+              <Button title="Unlock your frame" onPress={openPaywall} style={styles.teaserButton} />
+            </View>
           ) : null}
         </View>
       ) : null}
@@ -225,7 +240,7 @@ export default function RollScreen() {
       {done > 0 && !locked ? (
         <View style={styles.meter}>
           <SliderRow
-            label={`Strength of ${look?.name ?? 'the look'}`}
+            label={`Strength · ${look?.name ?? 'the look'}`}
             value={rollStrength}
             onChange={setLiveStrength}
             onComplete={(value) => {
@@ -237,7 +252,8 @@ export default function RollScreen() {
         </View>
       ) : null}
 
-      <View style={styles.grid}>
+      {/* Before purchase a one-frame roll is the locked teaser above; repeating it below adds nothing. */}
+      {locked && total === 1 ? null : <View style={styles.grid}>
         {roll.frames.map((frame, index) => (
           <View key={frame.id} style={styles.cell}>
             <Pressable
@@ -245,7 +261,7 @@ export default function RollScreen() {
               accessibilityLabel={frame.status === 'done' ? `Open frame ${index + 1}` : frame.status === 'failed' ? `Frame ${index + 1} failed. Try again.` : `Frame ${index + 1}, ${frame.status}`}
               disabled={frame.status === 'developing' || frame.status === 'waiting'}
               onPress={() => openFrame(frame, index)}
-              style={[styles.photo, { backgroundColor: theme.surfaceRaised }]}>
+              style={({ pressed }) => [styles.photo, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.85 : 1 }]}>
               {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
               {frame.status === 'done' && locked ? (
                 <DevelopingPhoto source={frame.thumbUri ?? frame.resultUri} amount={0} locked />
@@ -260,32 +276,38 @@ export default function RollScreen() {
               {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
               {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
               {frame.status === 'failed' ? (
-                <ThemedText type="caption" themeColor="onPhoto" style={styles.center}>
-                  Tap to retry
-                </ThemedText>
+                <View style={[styles.retry, { backgroundColor: 'rgba(251,248,243,0.94)' }]}>
+                  <ThemedText type="monoSmall" themeColor="mark">Retry</ThemedText>
+                </View>
               ) : null}
             </Pressable>
-            <ThemedText type="caption" themeColor={frame.status === 'failed' ? 'mark' : 'textTertiary'}>
-              {index + 1}
-            </ThemedText>
+            <View style={styles.cellMeta}>
+              <ThemedText type="monoSmall" themeColor={frame.status === 'failed' ? 'mark' : 'textTertiary'}>
+                {String(index + 1).padStart(2, '0')}
+              </ThemedText>
+              {frame.status === 'developing' ? <StatusDot live size={5} /> : null}
+            </View>
           </View>
         ))}
-      </View>
+      </View>}
 
       {failed > 0 ? (
-        <View style={styles.failNote}>
+        <View style={[styles.notice, styles.failNote, { backgroundColor: theme.surface, borderColor: theme.line }]}>
           <ThemedText type="small" themeColor="mark">
             {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A frame did not develop.'} Trying again won’t charge you twice.
           </ThemedText>
-          <Button title={failed === 1 ? 'Try this frame again' : `Try ${failed} frames again`} variant="secondary" size="md" onPress={retryFailed} />
-          {failed < total ? (
-            <Button
-              title={failed === 1 ? 'Remove this frame' : 'Remove these frames'}
-              variant="ghost"
-              size="md"
-              onPress={() => removeFrames(roll.id, roll.frames.filter((frame) => frame.status === 'failed').map((frame) => frame.id))}
-            />
-          ) : null}
+          <View style={styles.row}>
+            <Button title={failed === 1 ? 'Try again' : `Try ${failed} again`} size="md" onPress={retryFailed} style={styles.grow} />
+            {failed < total ? (
+              <Button
+                title="Remove"
+                variant="secondary"
+                size="md"
+                style={styles.grow}
+                onPress={() => removeFrames(roll.id, roll.frames.filter((frame) => frame.status === 'failed').map((frame) => frame.id))}
+              />
+            ) : null}
+          </View>
         </View>
       ) : null}
 
@@ -309,19 +331,29 @@ export default function RollScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: Spacing.two },
-  title: { gap: Spacing.one, paddingBottom: Spacing.three },
-  notice: { gap: Spacing.one, padding: Spacing.three, borderRadius: Radius.sm, marginBottom: Spacing.three },
-  teaser: { gap: Spacing.two, paddingBottom: Spacing.three },
+  content: { paddingHorizontal: Gutter },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 52, marginHorizontal: -6 },
+  spacer: { width: 44 },
+  title: { gap: 8, paddingTop: Spacing.two, paddingBottom: 22 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  sampleNote: { paddingTop: 4 },
+  notice: { gap: 6, padding: 18, borderRadius: Radius.lg, marginBottom: 18 },
+  noticeButton: { alignSelf: 'flex-start', marginTop: 8 },
+  teaser: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'transparent', padding: 8, marginHorizontal: -8, marginBottom: 22, gap: 4 },
   teaserPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
-  meter: { paddingBottom: Spacing.two },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  cell: { width: '31.8%', gap: 3 },
+  lockWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  lock: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 34, paddingHorizontal: 14, borderRadius: Radius.pill },
+  teaserCopy: { gap: 6, padding: 8, paddingTop: 12 },
+  teaserButton: { marginTop: 10 },
+  meter: { paddingBottom: 14 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 12 },
+  cell: { width: '31.8%', gap: 5 },
   photo: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  veil: { backgroundColor: 'rgba(68,51,71,0.5)' },
-  center: { textAlign: 'center', paddingHorizontal: Spacing.one },
-  failNote: { gap: Spacing.two, paddingTop: Spacing.three },
-  actions: { gap: Spacing.two, paddingTop: Spacing.four },
-  row: { flexDirection: 'row', gap: Spacing.two },
+  cellMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  veil: { backgroundColor: 'rgba(29,26,23,0.45)' },
+  retry: { paddingHorizontal: 10, height: 24, borderRadius: Radius.pill, justifyContent: 'center' },
+  failNote: { borderWidth: StyleSheet.hairlineWidth * 2, marginTop: 18, marginBottom: 0 },
+  actions: { gap: 10, paddingTop: 28 },
+  row: { flexDirection: 'row', gap: 10 },
   grow: { flex: 1 },
 });

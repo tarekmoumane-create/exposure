@@ -3,7 +3,11 @@ import { StyleSheet, Text, type TextProps } from 'react-native';
 import { Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export type TextType = 'wordmark' | 'display' | 'title' | 'subtitle' | 'body' | 'bodyStrong' | 'small' | 'caption' | 'label' | 'photoLabel';
+/**
+ * display/title/subtitle: friendly headlines. body/small: reading. caption/label: UI text.
+ * mono: the technical layer (frame numbers, specs, steps), always uppercase and tracked.
+ */
+export type TextType = 'display' | 'title' | 'subtitle' | 'body' | 'bodyStrong' | 'small' | 'caption' | 'label' | 'mono' | 'monoSmall';
 
 export type ThemedTextProps = TextProps & {
   type?: TextType;
@@ -16,21 +20,14 @@ export function ThemedText({ style, type = 'body', themeColor, ...rest }: Themed
 }
 
 const styles = StyleSheet.create({
-  wordmark: { fontFamily: Fonts.sansSemi, fontSize: 24, lineHeight: 28, letterSpacing: -0.6 },
-  display: { fontFamily: Fonts.display, fontSize: 32, lineHeight: 37, letterSpacing: -0.7 },
-  title: { fontFamily: Fonts.display, fontSize: 25, lineHeight: 30, letterSpacing: -0.5 },
-  subtitle: { fontFamily: Fonts.display, fontSize: 18, lineHeight: 24, letterSpacing: -0.2 },
+  display: { fontFamily: Fonts.display, fontSize: 34, lineHeight: 38, letterSpacing: -1.1 },
+  title: { fontFamily: Fonts.display, fontSize: 26, lineHeight: 31, letterSpacing: -0.7 },
+  subtitle: { fontFamily: Fonts.display, fontSize: 18, lineHeight: 23, letterSpacing: -0.25 },
   body: { fontFamily: Fonts.sans, fontSize: 16, lineHeight: 23 },
-  bodyStrong: { fontFamily: Fonts.sansSemi, fontSize: 16, lineHeight: 23 },
+  bodyStrong: { fontFamily: Fonts.sansSemi, fontSize: 16, lineHeight: 23, letterSpacing: -0.1 },
   small: { fontFamily: Fonts.sans, fontSize: 14, lineHeight: 20 },
   caption: { fontFamily: Fonts.sansMedium, fontSize: 13, lineHeight: 17 },
   label: { fontFamily: Fonts.sansSemi, fontSize: 13, lineHeight: 17 },
-  photoLabel: {
-    fontFamily: Fonts.sansSemi,
-    fontSize: 13,
-    lineHeight: 17,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
+  mono: { fontFamily: Fonts.mono, fontSize: 11, lineHeight: 15, letterSpacing: 1.1, textTransform: 'uppercase' },
+  monoSmall: { fontFamily: Fonts.mono, fontSize: 10, lineHeight: 13, letterSpacing: 1, textTransform: 'uppercase' },
 });

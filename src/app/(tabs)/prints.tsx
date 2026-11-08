@@ -6,8 +6,10 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Screen } from '@/components/screen';
+import { SectionHeader } from '@/components/section-header';
+import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPrintStatus, formatCents, type PrintStage } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
@@ -59,21 +61,24 @@ export default function PrintsScreen() {
   }
 
   return (
-    <Screen withTabBar>
-      <ThemedText type="display" style={styles.title} accessibilityRole="header">
-        Prints
-      </ThemedText>
+    <Screen withTabBar contentStyle={styles.content}>
+      <View style={styles.title}>
+        <SectionHeader large title="Prints" meta={String(orders.length).padStart(2, '0')} />
+      </View>
       {orders.map((order) => (
-        <View key={order.id} style={[styles.row, { borderTopColor: theme.line }]}>
-          {order.coverUri !== undefined ? <Image source={order.coverUri} style={styles.photo} contentFit="cover" /> : null}
+        <View key={order.id} style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+          {order.coverUri !== undefined ? <Image source={order.coverUri} style={[styles.photo, { backgroundColor: theme.surfaceRaised }]} contentFit="cover" /> : null}
           <View style={styles.text}>
-            <ThemedText type="bodyStrong">{order.rollName}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {`${order.count} prints, ${formatCents(order.totalCents)} before tax`}
+            <ThemedText type="subtitle" numberOfLines={1}>{order.rollName}</ThemedText>
+            <ThemedText type="mono" themeColor="textSecondary">
+              {`${order.count} × 4×6  ·  ${formatCents(order.totalCents)}`}
             </ThemedText>
-            <ThemedText type="label" themeColor={order.stage === 'problem' ? 'mark' : 'brand'}>
-              {STAGE_LABEL[order.stage]}
-            </ThemedText>
+            <View style={styles.stage}>
+              {order.stage === 'printing' || order.stage === 'shipped' ? <StatusDot live={order.stage === 'printing'} /> : null}
+              <ThemedText type="label" themeColor={order.stage === 'problem' ? 'mark' : 'text'} style={styles.grow}>
+                {STAGE_LABEL[order.stage]}
+              </ThemedText>
+            </View>
             {order.trackingUrl ? (
               <Pressable accessibilityRole="link" onPress={() => Linking.openURL(order.trackingUrl!)}>
                 <ThemedText type="small" themeColor="brand" style={styles.link}>
@@ -89,9 +94,12 @@ export default function PrintsScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { paddingTop: Spacing.three, paddingBottom: Spacing.three },
-  row: { flexDirection: 'row', gap: Spacing.three, paddingVertical: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth },
+  content: { paddingHorizontal: Gutter },
+  title: { paddingTop: 52 + Spacing.three, paddingBottom: 18 },
+  row: { flexDirection: 'row', gap: 14, padding: 8, paddingRight: 14, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, marginBottom: 10 },
   photo: { width: 76, height: 95, borderRadius: Radius.print },
-  text: { flex: 1, gap: 2 },
+  text: { flex: 1, gap: 5, paddingVertical: 6 },
+  stage: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  grow: { flex: 1 },
   link: { textDecorationLine: 'underline' },
 });

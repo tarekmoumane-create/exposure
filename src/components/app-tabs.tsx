@@ -11,8 +11,8 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       tintColor={colors.brand}
-      iconColor={{ default: colors.textTertiary, selected: colors.brand }}
-      labelStyle={{ default: { color: colors.textTertiary }, selected: { color: colors.brand } }}>
+      iconColor={{ default: colors.textTertiary, selected: colors.text }}
+      labelStyle={{ default: { color: colors.textTertiary }, selected: { color: colors.text } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Icon sf={{ default: 'square.stack', selected: 'square.stack.fill' }} md="photo_library" />
         <NativeTabs.Trigger.Label>Rolls</NativeTabs.Trigger.Label>

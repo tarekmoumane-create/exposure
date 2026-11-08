@@ -13,6 +13,8 @@ export type Look = {
   group: LookGroup;
   /** What it looks like, in one line. */
   tagline: string;
+  /** The camera, film or light it stands for, as a short spec line. Factual, never a brand. */
+  spec: string;
   /** When to load it. */
   bestFor: string;
   description: string;
@@ -23,7 +25,7 @@ export type Look = {
 
 export const LOOK_GROUPS: { id: LookGroup; label: string }[] = [
   { id: 'flash', label: 'Flash' },
-  { id: 'compact', label: 'Compact cameras' },
+  { id: 'compact', label: 'Compacts' },
   { id: 'film', label: 'Film' },
   { id: 'light', label: 'Light' },
 ];
@@ -34,6 +36,7 @@ export const LOOKS: Look[] = [
     name: 'Night Out',
     group: 'flash',
     tagline: 'On-camera flash in a dark room.',
+    spec: 'Direct flash · night',
     bestFor: 'Bars, parties, the walk home',
     description: 'A bright flash-lit subject, a background that falls away to black, crushed shadows and a little noise.',
     before: require('@/assets/images/looks/night-flash-before.jpg'),
@@ -44,6 +47,7 @@ export const LOOKS: Look[] = [
     name: 'Noon Flash',
     group: 'flash',
     tagline: 'Daylight with the flash forced on.',
+    spec: 'Fill flash · daylight',
     bestFor: 'Street, lunch, holiday afternoons',
     description: 'Fill flash on the subject, punchy colour, crisp detail and a background a touch darker than real life.',
     before: require('@/assets/images/looks/day-flash-before.jpg'),
@@ -54,6 +58,7 @@ export const LOOKS: Look[] = [
     name: 'Red Room',
     group: 'flash',
     tagline: 'A red gel over the flash.',
+    spec: 'Red gel · flash',
     bestFor: 'Going-out photos you want to feel loud',
     description: 'Saturated red flash on the subject with cool teal shadows behind.',
     before: require('@/assets/images/looks/red-flash-before.jpg'),
@@ -64,6 +69,7 @@ export const LOOKS: Look[] = [
     name: 'Pocket Compact',
     group: 'compact',
     tagline: 'A modern 1-inch compact, flash on Auto.',
+    spec: '1-inch compact · flash',
     bestFor: 'Dinner, friends, anything indoors',
     description: 'Glossy clean skin, rich colour and warm lamps glowing behind.',
     before: require('@/assets/images/looks/digicam-before.jpg'),
@@ -74,6 +80,7 @@ export const LOOKS: Look[] = [
     name: '2003 Compact',
     group: 'compact',
     tagline: 'Three megapixels and a memory stick.',
+    spec: 'CCD compact · 3 MP',
     bestFor: 'Friends, nights in, photo dumps',
     description: 'A small CCD sensor: blown flash highlights, sharpening halos, colour speckle and a cool-magenta cast.',
     before: require('@/assets/images/looks/y2k-digicam-before.jpg'),
@@ -84,6 +91,7 @@ export const LOOKS: Look[] = [
     name: 'Sunny 200',
     group: 'film',
     tagline: 'Warm consumer negative, lab scanned.',
+    spec: 'ISO 200 · colour negative',
     bestFor: 'Weekends, trips, whole days out',
     description: 'Peach skin, olive greens, creamy highlights and soft organic grain.',
     before: require('@/assets/images/looks/gold-200-before.jpg'),
@@ -94,6 +102,7 @@ export const LOOKS: Look[] = [
     name: 'Vibrant 400',
     group: 'film',
     tagline: 'The cooler, greener drugstore roll.',
+    spec: 'ISO 400 · colour negative',
     bestFor: 'Outdoors, parks, overcast days',
     description: 'Vivid greens, deep cyan blues, pink skin, coarser grain and lifted green shadows.',
     before: require('@/assets/images/looks/superia-400-before.jpg'),
@@ -104,6 +113,7 @@ export const LOOKS: Look[] = [
     name: 'Shoebox 35',
     group: 'film',
     tagline: 'An expired roll, found years later.',
+    spec: 'Expired 35 mm film',
     bestFor: 'Sets you want to feel like a memory',
     description: 'Milky lifted blacks, muted warm colour, soft grain and a cheap lens.',
     before: require('@/assets/images/looks/film-35-before.jpg'),
@@ -114,6 +124,7 @@ export const LOOKS: Look[] = [
     name: 'Last Light',
     group: 'light',
     tagline: 'Flat daylight becomes the last hour of sun.',
+    spec: 'Low sun · warm light',
     bestFor: 'Beaches, rooftops, anything outside',
     description: 'Low, warm sunset light with long soft shadows and glowing hair edges.',
     before: require('@/assets/images/looks/golden-hour-before.jpg'),
@@ -124,12 +135,18 @@ export const LOOKS: Look[] = [
     name: 'After Sunset',
     group: 'light',
     tagline: 'The twenty minutes after the sun goes.',
+    spec: 'Blue hour · mixed light',
     bestFor: 'City evenings',
     description: 'Cool blue ambient light with warm points of artificial light.',
     before: require('@/assets/images/looks/blue-hour-before.jpg'),
     after: require('@/assets/images/looks/blue-hour-after.jpg'),
   },
 ];
+
+/** The look's catalogue number, like "No. 06". */
+export function lookNumber(look: Look): string {
+  return `No. ${String(LOOKS.indexOf(look) + 1).padStart(2, '0')}`;
+}
 
 export function getLook(id: string | undefined): Look | undefined {
   return LOOKS.find((look) => look.id === id);

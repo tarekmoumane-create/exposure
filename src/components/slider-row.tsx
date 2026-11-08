@@ -2,7 +2,6 @@ import Slider from '@react-native-community/slider';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -18,16 +17,17 @@ type Props = {
   format?: (value: number) => string;
 };
 
+/** A precise meter: a mono label and readout over an ink track. */
 export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete, format }: Props) {
   const theme = useTheme();
   const display = format ? format(value) : `${Math.round(((value - min) / (max - min)) * 100)}%`;
   return (
     <View style={styles.row}>
       <View style={styles.labels}>
-        <ThemedText type="caption" themeColor="textSecondary">
+        <ThemedText type="mono" themeColor="textSecondary" numberOfLines={1} style={styles.label}>
           {label}
         </ThemedText>
-        <ThemedText type="caption" themeColor="textTertiary">
+        <ThemedText type="mono" style={styles.value}>
           {display}
         </ThemedText>
       </View>
@@ -40,9 +40,9 @@ export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete
         value={value === 0 && min < 0 ? 0.000001 : value}
         onValueChange={onChange}
         onSlidingComplete={onComplete}
-        minimumTrackTintColor={theme.brand}
+        minimumTrackTintColor={theme.text}
         maximumTrackTintColor={theme.line}
-        thumbTintColor={theme.brand}
+        thumbTintColor={theme.text}
         accessibilityLabel={label}
         accessibilityValue={{ min: Math.round(min * 100), max: Math.round(max * 100), now: Math.round(value * 100), text: display }}
       />
@@ -51,7 +51,9 @@ export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 2 },
-  labels: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: Spacing.one },
+  row: { gap: 0 },
+  labels: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  label: { flex: 1 },
+  value: { fontVariant: ['tabular-nums'] },
   slider: { width: '100%', height: 36 },
 });

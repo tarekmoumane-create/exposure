@@ -7,7 +7,7 @@ import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { persistToGallery } from '@/lib/image-io';
 import { fetchPrintStatus, formatCents, orderPrints, PrintError } from '@/lib/prints';
@@ -81,8 +81,12 @@ export default function OrderPrintsScreen() {
     <Screen edges={['left', 'right', 'bottom']} scroll={false} contentStyle={styles.root}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.intro}>
-          <ThemedText type="title">Your roll, on paper.</ThemedText>
-          <ThemedText themeColor="textSecondary">4x6 prints on real silver-halide photo paper, mailed to you. Your whole photo is printed, with a white border if its shape needs one. Tap a frame to leave it out.</ThemedText>
+          <ThemedText type="display" accessibilityRole="header">Your roll, on paper.</ThemedText>
+          <ThemedText themeColor="textSecondary">4x6 prints on real silver-halide photo paper, mailed to you. Your whole photo is printed, with a white border if its shape needs one.</ThemedText>
+          <View style={styles.introMeta}>
+            <ThemedText type="mono">{`${String(count).padStart(2, '0')} / ${String(frames.length).padStart(2, '0')} selected`}</ThemedText>
+            <ThemedText type="mono" themeColor="textTertiary">Tap to leave out</ThemedText>
+          </View>
         </View>
         <View style={styles.grid}>
           {frames.map((frame, index) => {
@@ -95,9 +99,15 @@ export default function OrderPrintsScreen() {
                 accessibilityLabel={`Frame ${index + 1}`}
                 onPress={() => toggle(frame.id)}
                 disabled={working}
-                style={[styles.cell, { opacity: selected ? 1 : 0.35, borderColor: selected ? theme.brand : 'transparent' }]}>
-                {frame.strength < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-                <Image source={frame.thumbUri ?? frame.resultUri} style={[StyleSheet.absoluteFill, { opacity: frame.strength }]} contentFit="cover" />
+                style={styles.cell}>
+                <View style={[styles.cellPhoto, { backgroundColor: theme.surfaceRaised, opacity: selected ? 1 : 0.3 }]}>
+                  {frame.strength < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+                  <Image source={frame.thumbUri ?? frame.resultUri} style={[StyleSheet.absoluteFill, { opacity: frame.strength }]} contentFit="cover" />
+                </View>
+                <View style={[styles.check, { backgroundColor: selected ? theme.text : 'rgba(251,248,243,0.94)', borderColor: selected ? theme.text : theme.line }]}>
+                  {selected ? <ThemedText type="monoSmall" style={{ color: theme.onBrand }}>✓</ThemedText> : null}
+                </View>
+                <ThemedText type="monoSmall" themeColor="textTertiary">{String(index + 1).padStart(2, '0')}</ThemedText>
               </Pressable>
             );
           })}
@@ -130,18 +140,22 @@ export default function OrderPrintsScreen() {
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <View style={styles.line}>
-      <ThemedText type={strong ? 'bodyStrong' : 'small'}>{label}</ThemedText>
-      <ThemedText type={strong ? 'bodyStrong' : 'small'}>{value}</ThemedText>
+      <ThemedText type={strong ? 'bodyStrong' : 'mono'} themeColor={strong ? 'text' : 'textSecondary'}>{label}</ThemedText>
+      <ThemedText type={strong ? 'bodyStrong' : 'mono'} style={styles.tabular}>{value}</ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { paddingBottom: Spacing.two },
-  scroll: { paddingVertical: Spacing.three, gap: Spacing.three },
-  intro: { gap: Spacing.one },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  cell: { width: '31.8%', aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden', borderWidth: 3 },
-  summary: { gap: Spacing.two, paddingTop: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth },
-  line: { flexDirection: 'row', justifyContent: 'space-between' },
+  root: { paddingHorizontal: Gutter, paddingBottom: Spacing.two },
+  scroll: { paddingVertical: Spacing.three, gap: 20 },
+  intro: { gap: 10 },
+  introMeta: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 12 },
+  cell: { width: '31.8%', gap: 5 },
+  cellPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
+  check: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  summary: { gap: 10, paddingTop: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth * 2 },
+  line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  tabular: { fontVariant: ['tabular-nums'] },
 });

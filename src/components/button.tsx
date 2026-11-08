@@ -1,13 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  type PressableProps,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Platform, Pressable, type PressableProps, StyleSheet, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -25,34 +18,13 @@ type Props = Omit<PressableProps, 'style' | 'children'> & {
   style?: ViewStyle;
 };
 
-export function Button({
-  title,
-  variant = 'primary',
-  size = 'lg',
-  loading = false,
-  icon,
-  style,
-  disabled,
-  onPress,
-  ...rest
-}: Props) {
+/** Soft pill buttons. Ink is the one primary action on a screen; secondary is an outlined pill. */
+export function Button({ title, variant = 'primary', size = 'lg', loading = false, icon, style, disabled, onPress, ...rest }: Props) {
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
-  const background = {
-    primary: theme.text,
-    accent: theme.accent,
-    secondary: theme.surfaceRaised,
-    ghost: 'transparent',
-    danger: 'transparent',
-  }[variant];
-  const color = {
-    primary: theme.onBrand,
-    accent: theme.onAccent,
-    secondary: theme.text,
-    ghost: theme.textSecondary,
-    danger: theme.mark,
-  }[variant];
+  const background = { primary: theme.brand, accent: theme.accent, secondary: theme.surface, ghost: 'transparent', danger: 'transparent' }[variant];
+  const color = { primary: theme.onBrand, accent: theme.onAccent, secondary: theme.text, ghost: theme.text, danger: theme.mark }[variant];
 
   return (
     <Pressable
@@ -66,8 +38,10 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         size === 'lg' ? styles.lg : styles.md,
-        { backgroundColor: background, opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1 },
+        { backgroundColor: background, opacity: isDisabled ? 0.45 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+        variant === 'secondary' && { borderColor: theme.line, borderWidth: StyleSheet.hairlineWidth * 2 },
         (variant === 'ghost' || variant === 'danger') && styles.ghost,
+        pressed && (variant === 'ghost' || variant === 'danger') && { opacity: 0.6 },
         style,
       ]}
       {...rest}>
@@ -76,7 +50,7 @@ export function Button({
       ) : (
         <>
           {icon}
-          <ThemedText type="bodyStrong" style={{ color }}>
+          <ThemedText type={size === 'lg' ? 'bodyStrong' : 'label'} style={[{ color }, size === 'md' && styles.mdText]}>
             {title}
           </ThemedText>
         </>
@@ -86,14 +60,9 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  base: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    borderRadius: Radius.md,
-  },
-  lg: { paddingVertical: 16, paddingHorizontal: Spacing.four, minHeight: 56 },
-  md: { paddingVertical: 10, paddingHorizontal: Spacing.three, minHeight: 42 },
+  base: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.two, borderRadius: Radius.pill },
+  lg: { paddingHorizontal: Spacing.four, minHeight: 54 },
+  md: { paddingHorizontal: 18, minHeight: 44 },
+  mdText: { fontSize: 14, lineHeight: 19 },
   ghost: { paddingHorizontal: Spacing.two },
 });

@@ -5,15 +5,15 @@ import { useRef, useState } from 'react';
 import { FlatList, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { BeforeAfterSwitch } from '@/components/compare-photo';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gutter, Spacing } from '@/constants/theme';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
-import { useTheme } from '@/hooks/use-theme';
 import { saveToPhotos, shareFile } from '@/lib/media';
 import { dismiss } from '@/lib/navigation';
 import { blendFrame } from '@/lib/render';
@@ -21,7 +21,6 @@ import { type Frame, useAppStore } from '@/store/app-store';
 
 /** One frame at full size. Swipe through the roll, hold to see the original, set how strong the look is. */
 export default function FrameScreen() {
-  const theme = useTheme();
   const toast = useToast();
   const params = useLocalSearchParams<{ roll: string; index?: string }>();
   const { rolls, updateFrame, paid } = useAppStore();
@@ -31,7 +30,9 @@ export default function FrameScreen() {
   const startAt = Math.max(0, roll ? frames.indexOf(roll.frames[Number(params.index ?? 0)]) : 0);
   const [index, setIndex] = useState(startAt);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [comparing, setComparing] = useState(false);
+  const [holding, setHolding] = useState(false);
+  const [pinnedBefore, setPinnedBefore] = useState(false);
+  const comparing = holding || pinnedBefore;
   const [strength, setStrength] = useState<number | null>(null);
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
   const list = useRef<FlatList<Frame>>(null);
@@ -51,6 +52,7 @@ export default function FrameScreen() {
     if (size.width === 0) return;
     setIndex(Math.round(event.nativeEvent.contentOffset.x / size.width));
     setStrength(null);
+    setPinnedBefore(false);
   };
 
   const exportFrame = async (action: 'save' | 'share') => {
@@ -79,8 +81,8 @@ export default function FrameScreen() {
     <Screen scroll={false} edges={['top', 'left', 'right', 'bottom']} contentStyle={styles.content}>
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
-        <ThemedText type="label" themeColor="textSecondary">
-          {`Frame ${roll.frames.indexOf(current) + 1} of ${roll.frames.length}`}
+        <ThemedText type="mono" themeColor="textSecondary">
+          {`Fr ${String(roll.frames.indexOf(current) + 1).padStart(2, '0')} / ${String(roll.frames.length).padStart(2, '0')}`}
         </ThemedText>
         <View style={styles.spacer} />
       </View>
@@ -106,9 +108,9 @@ export default function FrameScreen() {
                   accessibilityLabel="Hold to see the original"
                   onPressIn={() => {
                     if (Platform.OS !== 'web') Haptics.selectionAsync();
-                    setComparing(true);
+                    setHolding(true);
                   }}
-                  onPressOut={() => setComparing(false)}
+                  onPressOut={() => setHolding(false)}
                   style={[styles.page, { width: size.width, height: size.height }]}>
                   <Image source={item.sourceUri} style={StyleSheet.absoluteFill} contentFit="contain" />
                   <Image source={item.resultUri} style={[StyleSheet.absoluteFill, { opacity }]} contentFit="contain" transition={120} />
@@ -117,10 +119,14 @@ export default function FrameScreen() {
             }}
           />
         ) : null}
-        <View style={[styles.hint, { backgroundColor: theme.scrim }]} pointerEvents="none">
-          <ThemedText type="caption" themeColor="onPhoto">
-            {comparing ? 'Original' : 'Hold to see the original'}
-          </ThemedText>
+        <View style={styles.switch} pointerEvents="box-none">
+          <BeforeAfterSwitch
+            showingBefore={comparing}
+            onChange={(side) => {
+              if (Platform.OS !== 'web') Haptics.selectionAsync();
+              setPinnedBefore(side === 'before');
+            }}
+          />
         </View>
       </View>
 
@@ -146,12 +152,12 @@ export default function FrameScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 0, paddingBottom: Spacing.two },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.three, paddingVertical: Spacing.two },
-  spacer: { width: 36 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, height: 52 },
+  spacer: { width: 44 },
   stage: { flex: 1 },
   page: { overflow: 'hidden' },
-  hint: { position: 'absolute', top: Spacing.two, alignSelf: 'center', paddingVertical: 5, paddingHorizontal: 10, borderRadius: Radius.sm },
-  controls: { gap: Spacing.two, paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
-  actions: { flexDirection: 'row', gap: Spacing.two },
+  switch: { position: 'absolute', bottom: 14, left: 0, right: 0, alignItems: 'center' },
+  controls: { gap: 10, paddingHorizontal: Gutter, paddingTop: 14 },
+  actions: { flexDirection: 'row', gap: 10 },
   grow: { flex: 1 },
 });

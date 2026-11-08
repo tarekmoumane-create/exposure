@@ -55,14 +55,14 @@ function RootStack() {
       screenOptions={{
         headerStyle: { backgroundColor: palette.background },
         headerTintColor: palette.text,
-        headerTitleStyle: { fontFamily: Fonts.display, fontSize: 17 },
+        headerTitleStyle: { fontFamily: Fonts.sansSemi, fontSize: 16 },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: palette.background },
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
-      <Stack.Screen name="stock/[id]" options={{ title: '' }} />
+      <Stack.Screen name="stock/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="new-roll" options={{ title: 'New roll', presentation: 'modal' }} />
       <Stack.Screen name="roll/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="frame" options={{ headerShown: false, animation: 'fade' }} />

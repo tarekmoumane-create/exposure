@@ -4,7 +4,7 @@ import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type ToastContextValue = { show: (message: string) => void };
@@ -51,5 +51,5 @@ export function useToast() {
 
 const styles = StyleSheet.create({
   host: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  toast: { paddingVertical: 10, paddingHorizontal: Spacing.three, borderRadius: Radius.md },
+  toast: { paddingVertical: 11, paddingHorizontal: 18, borderRadius: Radius.pill },
 });

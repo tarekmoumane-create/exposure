@@ -6,7 +6,7 @@ import { Button } from '@/components/button';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
 import { FALLBACK_PRICES, PACK_PRODUCTS, type PackId } from '@/data/products';
 import { useTheme } from '@/hooks/use-theme';
 import { dismiss } from '@/lib/navigation';
@@ -48,16 +48,17 @@ export default function OutOfCreditsScreen() {
   };
 
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={styles.content}>
       <View style={styles.header}>
+        <ThemedText type="mono" themeColor="textSecondary">Photo packs</ThemedText>
         <IconButton name={{ ios: 'xmark', android: 'close', web: 'close' }} label="Close" onPress={() => dismiss()} />
       </View>
 
       <View style={styles.copy}>
-        <ThemedText type="title">{plan === 'free' ? 'Keep developing.' : 'That’s all for today.'}</ThemedText>
-        <ThemedText type="body" themeColor="textSecondary">
+        <ThemedText type="display" accessibilityRole="header">{plan === 'free' ? 'Keep developing.' : 'That’s all for today.'}</ThemedText>
+        <ThemedText themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan for new frames every day, or buy a pack and finish your roll.'
+            ? 'Buy a pack to finish your roll, or join a plan for new frames every day.'
             : `${allowance} more arrive ${refresh}. Add a few now, or ${plan === 'weekly' ? 'double your daily frames with Yearly' : 'keep going with a pack'}.`}
         </ThemedText>
       </View>
@@ -67,25 +68,25 @@ export default function OutOfCreditsScreen() {
           <Pressable
             key={pack.id}
             accessibilityRole="button"
+            accessibilityLabel={`${PACK_PRODUCTS[pack.id].credits} frames for ${prices[PACK_PRODUCTS[pack.id].productId]}${pack.badge ? `, ${pack.badge}` : ''}`}
             onPress={() => buy(pack.id)}
             disabled={busy !== null || !canBuy}
-            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.brand : theme.line, opacity: pressed || (busy && busy !== pack.id) ? 0.7 : 1 }]}>
+            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.text : theme.line, opacity: busy && busy !== pack.id ? 0.5 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
+            <ThemedText type="display" style={styles.count}>{PACK_PRODUCTS[pack.id].credits}</ThemedText>
             <View style={styles.packText}>
               <View style={styles.packTitle}>
-                <ThemedText type="bodyStrong">{PACK_PRODUCTS[pack.id].credits} frames</ThemedText>
+                <ThemedText type="mono">Frames</ThemedText>
                 {pack.badge ? (
                   <View style={[styles.badge, { backgroundColor: theme.accent }]}>
-                    <ThemedText type="caption" style={{ color: theme.onAccent }}>
-                      {pack.badge}
-                    </ThemedText>
+                    <ThemedText type="monoSmall" style={{ color: theme.onAccent }}>{pack.badge}</ThemedText>
                   </View>
                 ) : null}
               </View>
-              <ThemedText type="small" themeColor="textSecondary">
-                Never expire
-              </ThemedText>
+              <ThemedText type="caption" themeColor="textSecondary">Never expire</ThemedText>
             </View>
-            <ThemedText type="bodyStrong">{prices[PACK_PRODUCTS[pack.id].productId]}</ThemedText>
+            <View style={[styles.price, { backgroundColor: theme.background }]}>
+              {busy === pack.id ? <ThemedText type="label">…</ThemedText> : <ThemedText type="label">{prices[PACK_PRODUCTS[pack.id].productId]}</ThemedText>}
+            </View>
           </Pressable>
         ))}
       </View>
@@ -101,8 +102,8 @@ export default function OutOfCreditsScreen() {
             Purchases are not available in this build yet.
           </ThemedText>
         ) : null}
-        {plan === 'free' ? <Button title="See plans"  onPress={() => router.replace('/paywall')} /> : null}
-        {plan === 'weekly' ? <Button title="Switch to Yearly"  onPress={() => router.replace('/paywall')} /> : null}
+        {plan === 'free' ? <Button title="See plans" onPress={() => router.replace('/paywall')} /> : null}
+        {plan === 'weekly' ? <Button title="Switch to Yearly" onPress={() => router.replace('/paywall')} /> : null}
         <Button title="Not now" variant="ghost" size="md" onPress={() => dismiss()} />
       </View>
     </Screen>
@@ -110,13 +111,16 @@ export default function OutOfCreditsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: 'flex-end', paddingVertical: Spacing.two },
-  copy: { gap: Spacing.two, paddingVertical: Spacing.three },
-  packs: { gap: Spacing.two, paddingVertical: Spacing.three },
-  pack: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing.three, borderRadius: Radius.lg, borderWidth: 1.5 },
-  packText: { gap: 2 },
-  packTitle: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  badge: { paddingVertical: 2, paddingHorizontal: Spacing.two, borderRadius: Radius.sm },
+  content: { paddingHorizontal: Gutter },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 52, marginRight: -6 },
+  copy: { gap: 10, paddingTop: Spacing.three, paddingBottom: Spacing.four },
+  packs: { gap: 10 },
+  pack: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingLeft: 18, paddingRight: 12, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2 },
+  count: { width: 52, fontVariant: ['tabular-nums'] },
+  packText: { flex: 1, gap: 3 },
+  packTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: Radius.pill },
+  price: { minWidth: 76, height: 38, paddingHorizontal: 12, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
   actions: { gap: Spacing.two, marginTop: 'auto', paddingTop: Spacing.four },
   center: { textAlign: 'center' },
 });

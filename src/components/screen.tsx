@@ -33,7 +33,7 @@ export function Screen({
     return (
       <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: theme.background }]}>
         {light}
-        <View style={[styles.inner, { paddingBottom }, contentStyle]}>{children}</View>
+        <View style={[styles.inner, styles.fixed, { paddingBottom }, contentStyle]}>{children}</View>
       </SafeAreaView>
     );
   }
@@ -60,4 +60,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     flexGrow: 1,
   },
+  // A fixed screen is exactly the height it is given, never its content's: a long list scrolls inside it.
+  fixed: { flex: 1, minHeight: 0 },
 });

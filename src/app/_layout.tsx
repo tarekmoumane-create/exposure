@@ -67,7 +67,7 @@ function RootStack() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
       <Stack.Screen name="stock/[id]" options={{ headerShown: false }} />
-      {/* Full screen, not a sheet: a sheet sits lower than the screen and pushes the fixed footer button out of reach. */}
+      {/* Full screen: the roll flow gets the whole height, with its button pinned to the bottom. */}
       <Stack.Screen name="new-roll" options={{ title: 'New roll', presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="roll/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="frame" options={{ headerShown: false, animation: 'fade' }} />

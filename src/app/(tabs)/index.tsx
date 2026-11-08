@@ -65,14 +65,18 @@ export default function RollsScreen() {
         </View>
       )}
 
-      <View style={styles.section}>
-        <SectionHeader title="Looks to try" meta={`${LOOKS.length} in all`} />
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
-        {RAIL.map((look) => (
-          <LookTile key={look.id} look={look} compact style={styles.railTile} />
-        ))}
-      </ScrollView>
+      {paid ? (
+        <>
+          <View style={styles.section}>
+            <SectionHeader title="Looks to try" meta={`${LOOKS.length} in all`} />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
+            {RAIL.map((look) => (
+              <LookTile key={look.id} look={look} compact style={styles.railTile} />
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
     </Screen>
   );
 }

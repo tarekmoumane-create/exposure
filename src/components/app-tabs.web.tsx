@@ -13,7 +13,7 @@ function TabIcon({ glyph, color }: { glyph: string; color: ColorValue }) {
 
 /** Web fallback: the standard JS tab navigator. Native platforms use app-tabs.tsx. */
 export default function AppTabs() {
-  const { printConfig, orders } = useAppStore();
+  const { printConfig, orders, paid } = useAppStore();
   return (
     <Tabs
       initialRouteName="index"
@@ -27,7 +27,7 @@ export default function AppTabs() {
         tabBarItemStyle: styles.item,
       }}>
       <Tabs.Screen name="index" options={{ title: 'Rolls', tabBarIcon: ({ color }) => <TabIcon glyph="▤" color={color} /> }} />
-      <Tabs.Screen name="stocks" options={{ title: 'Looks', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
+      <Tabs.Screen name="stocks" options={{ title: 'Looks', href: paid ? undefined : null, tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }} />
       <Tabs.Screen name="prints" options={{ title: 'Prints', href: printConfig.enabled || orders.length > 0 ? undefined : null, tabBarIcon: ({ color }) => <TabIcon glyph="✉" color={color} /> }} />
     </Tabs>
   );

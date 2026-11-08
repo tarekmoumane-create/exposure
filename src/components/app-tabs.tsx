@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/app-store';
 
 export default function AppTabs() {
   const colors = Colors.light;
-  const { printConfig, orders } = useAppStore();
+  const { printConfig, orders, paid } = useAppStore();
 
   return (
     <NativeTabs
@@ -18,7 +18,7 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Rolls</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="stocks">
+      <NativeTabs.Trigger name="stocks" hidden={!paid}>
         <NativeTabs.Trigger.Icon sf={{ default: 'camera.aperture', selected: 'camera.aperture' }} md="camera" />
         <NativeTabs.Trigger.Label>Looks</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

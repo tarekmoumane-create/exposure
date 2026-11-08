@@ -13,7 +13,7 @@ import { LookCaption } from '@/components/look-caption';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
-import { getLook, LOOKS, lookNumber } from '@/data/looks';
+import { getLook, LOOKS, lookNumber, STARTER_LOOKS } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { persistTemporary } from '@/lib/media';
 import { defaultRollName } from '@/lib/roll';
@@ -24,7 +24,8 @@ export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
   const { addRoll, credits, paid, aiConsent, setAiConsent } = useAppStore();
-  const [lookId, setLookId] = useState(getLook(params.lookId)?.id ?? 'digicam');
+  const choices = paid ? LOOKS : STARTER_LOOKS;
+  const [lookId, setLookId] = useState(choices.find((item) => item.id === params.lookId)?.id ?? 'digicam');
   const [step, setStep] = useState<0 | 1>(0);
   const [photos, setPhotos] = useState<string[]>([]);
   const [name, setName] = useState('');
@@ -126,7 +127,7 @@ export default function NewRollScreen() {
               </View>
             ) : null}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail} style={styles.bleed} accessibilityRole="radiogroup">
-              {LOOKS.map((item) => {
+              {choices.map((item) => {
                 const selected = item.id === lookId;
                 return (
                   <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={item.name} onPress={() => setLookId(item.id)} style={styles.railItem}>

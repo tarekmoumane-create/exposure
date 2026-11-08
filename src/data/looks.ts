@@ -166,6 +166,12 @@ export const LOOKS: Look[] = [
   },
 ];
 
+/**
+ * The only looks someone sees before they pay: one compact, one flash, one film. The full
+ * catalogue (Looks tab, the home rail, every look in New roll) opens up with a plan or pack.
+ */
+export const STARTER_LOOKS: Look[] = ['digicam', 'night-flash', 'film-35'].map((id) => LOOKS.find((look) => look.id === id)!);
+
 /** The look's catalogue number, like "No. 06". */
 export function lookNumber(look: Look): string {
   return `No. ${String(LOOKS.indexOf(look) + 1).padStart(2, '0')}`;

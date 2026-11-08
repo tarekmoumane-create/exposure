@@ -15,6 +15,9 @@ export type Look = {
   tagline: string;
   /** The camera, film or light it stands for, as a short spec line. Factual, never a brand. */
   spec: string;
+  /** The look's colour, like a film box: a soft tint for grounds and a deep shade for type on it. */
+  tint: string;
+  deep: string;
   /** When to load it. */
   bestFor: string;
   description: string;
@@ -37,6 +40,8 @@ export const LOOKS: Look[] = [
     group: 'flash',
     tagline: 'On-camera flash in a dark room.',
     spec: 'Direct flash · night',
+    tint: '#DCD6F0',
+    deep: '#3B2F6B',
     bestFor: 'Bars, parties, the walk home',
     description: 'A bright flash-lit subject, a background that falls away to black, crushed shadows and a little noise.',
     before: require('@/assets/images/looks/night-flash-before.jpg'),
@@ -48,6 +53,8 @@ export const LOOKS: Look[] = [
     group: 'flash',
     tagline: 'Daylight with the flash forced on.',
     spec: 'Fill flash · daylight',
+    tint: '#F7E7A6',
+    deep: '#6E5200',
     bestFor: 'Street, lunch, holiday afternoons',
     description: 'Fill flash on the subject, punchy colour, crisp detail and a background a touch darker than real life.',
     before: require('@/assets/images/looks/day-flash-before.jpg'),
@@ -59,6 +66,8 @@ export const LOOKS: Look[] = [
     group: 'flash',
     tagline: 'A red gel over the flash.',
     spec: 'Red gel · flash',
+    tint: '#F6CFC6',
+    deep: '#8A2717',
     bestFor: 'Going-out photos you want to feel loud',
     description: 'Saturated red flash on the subject with cool teal shadows behind.',
     before: require('@/assets/images/looks/red-flash-before.jpg'),
@@ -70,6 +79,8 @@ export const LOOKS: Look[] = [
     group: 'compact',
     tagline: 'A modern 1-inch compact, flash on Auto.',
     spec: '1-inch compact · flash',
+    tint: '#F2DCC2',
+    deep: '#6B4220',
     bestFor: 'Dinner, friends, anything indoors',
     description: 'Glossy clean skin, rich colour and warm lamps glowing behind.',
     before: require('@/assets/images/looks/digicam-before.jpg'),
@@ -81,6 +92,8 @@ export const LOOKS: Look[] = [
     group: 'compact',
     tagline: 'Three megapixels and a memory stick.',
     spec: 'CCD compact · 3 MP',
+    tint: '#D2E3F1',
+    deep: '#1E4868',
     bestFor: 'Friends, nights in, photo dumps',
     description: 'A small CCD sensor: blown flash highlights, sharpening halos, colour speckle and a cool-magenta cast.',
     before: require('@/assets/images/looks/y2k-digicam-before.jpg'),
@@ -92,6 +105,8 @@ export const LOOKS: Look[] = [
     group: 'film',
     tagline: 'Warm consumer negative, lab scanned.',
     spec: 'ISO 200 · colour negative',
+    tint: '#F8DD9C',
+    deep: '#714800',
     bestFor: 'Weekends, trips, whole days out',
     description: 'Peach skin, olive greens, creamy highlights and soft organic grain.',
     before: require('@/assets/images/looks/gold-200-before.jpg'),
@@ -103,6 +118,8 @@ export const LOOKS: Look[] = [
     group: 'film',
     tagline: 'The cooler, greener drugstore roll.',
     spec: 'ISO 400 · colour negative',
+    tint: '#D3E6CF',
+    deep: '#2C5629',
     bestFor: 'Outdoors, parks, overcast days',
     description: 'Vivid greens, deep cyan blues, pink skin, coarser grain and lifted green shadows.',
     before: require('@/assets/images/looks/superia-400-before.jpg'),
@@ -114,6 +131,8 @@ export const LOOKS: Look[] = [
     group: 'film',
     tagline: 'An expired roll, found years later.',
     spec: 'Expired 35 mm film',
+    tint: '#EDD6D3',
+    deep: '#6A3A36',
     bestFor: 'Sets you want to feel like a memory',
     description: 'Milky lifted blacks, muted warm colour, soft grain and a cheap lens.',
     before: require('@/assets/images/looks/film-35-before.jpg'),
@@ -125,6 +144,8 @@ export const LOOKS: Look[] = [
     group: 'light',
     tagline: 'Flat daylight becomes the last hour of sun.',
     spec: 'Low sun · warm light',
+    tint: '#F9D2B2',
+    deep: '#853A10',
     bestFor: 'Beaches, rooftops, anything outside',
     description: 'Low, warm sunset light with long soft shadows and glowing hair edges.',
     before: require('@/assets/images/looks/golden-hour-before.jpg'),
@@ -136,6 +157,8 @@ export const LOOKS: Look[] = [
     group: 'light',
     tagline: 'The twenty minutes after the sun goes.',
     spec: 'Blue hour · mixed light',
+    tint: '#CED6F1',
+    deep: '#26346E',
     bestFor: 'City evenings',
     description: 'Cool blue ambient light with warm points of artificial light.',
     before: require('@/assets/images/looks/blue-hour-before.jpg'),

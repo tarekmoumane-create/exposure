@@ -8,7 +8,7 @@ import { Button } from '@/components/button';
 import { ExternalLink } from '@/components/external-link';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { DAILY_ALLOWANCE, useAppStore } from '@/store/app-store';
 
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   return (
     <Screen edges={['bottom', 'left', 'right']} contentStyle={styles.content}>
       <Stack.Screen options={{ headerRight: () => <Button title="Done" variant="ghost" size="md" onPress={() => router.back()} /> }} />
-      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+      <View style={[styles.card, { backgroundColor: theme.surface }]}>
         <View style={styles.planRow}>
           <View style={styles.stat}>
             <ThemedText type="mono" themeColor="textTertiary">Plan</ThemedText>
@@ -113,7 +113,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={styles.section}>
       <ThemedText type="mono" themeColor="textTertiary" style={styles.sectionTitle}>{title}</ThemedText>
-      <View style={[styles.group, { backgroundColor: theme.surface, borderColor: theme.line }]}>{children}</View>
+      <View style={[styles.group, { backgroundColor: theme.surface }]}>{children}</View>
     </View>
   );
 }
@@ -142,7 +142,7 @@ function LinkRow({ label, href, last }: { label: string; href: string; last?: bo
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Gutter },
-  card: { gap: 14, padding: 18, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, marginTop: Spacing.three },
+  card: { gap: 14, padding: 18, borderRadius: Radius.lg, boxShadow: Shadow.card, marginTop: Spacing.three },
   planRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   stat: { gap: 4 },
   statRight: { alignItems: 'flex-end' },
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   inlineButtons: { gap: Spacing.two },
   section: { gap: 8, marginTop: 26 },
   sectionTitle: { paddingHorizontal: 4 },
-  group: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
+  group: { borderRadius: Radius.lg, boxShadow: Shadow.card },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, minHeight: 50, paddingHorizontal: 16 },
   para: { paddingHorizontal: 16, paddingVertical: 14 },
   inset: { padding: 12 },

@@ -1,6 +1,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 
+import { Shadow } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -20,7 +21,7 @@ export function IconButton({ name, label, onPress, filled = false }: Props) {
       accessibilityLabel={label}
       hitSlop={6}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, filled && { backgroundColor: theme.surface, borderColor: theme.line, borderWidth: StyleSheet.hairlineWidth * 2 }, { opacity: pressed ? 0.6 : 1 }]}>
+      style={({ pressed }) => [styles.button, filled && { backgroundColor: theme.surface, boxShadow: Shadow.card }, { opacity: pressed ? 0.6 : 1 }]}>
       <SymbolView name={name} size={17} weight="medium" tintColor={theme.text} />
     </Pressable>
   );

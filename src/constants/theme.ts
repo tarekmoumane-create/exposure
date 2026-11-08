@@ -58,6 +58,19 @@ export const Spacing = {
   six: 64,
 } as const;
 
+/** Depth. Prints and raised cards cast soft, warm shadows, never grey ones. */
+export const Shadow = {
+  print: '0px 1px 2px rgba(60,40,20,0.10), 0px 10px 22px rgba(60,40,20,0.16)',
+  card: '0px 1px 2px rgba(60,40,20,0.05), 0px 6px 18px rgba(60,40,20,0.08)',
+  button: '0px 6px 14px rgba(29,26,23,0.22)',
+} as const;
+
+/** The warm glow behind key moments: apricot light falling onto paper. */
+export const Glow = ['#F8D9C2', '#F6E2D6', '#F3EEE6'] as const;
+
+/** Photo paper border colour. */
+export const PrintWhite = '#FFFDF8';
+
 /** The page gutter. */
 export const Gutter = 20;
 
@@ -65,9 +78,9 @@ export const Radius = {
   /** Photographs stay nearly square, like prints. */
   print: 3,
   sm: 8,
-  md: 12,
+  md: 14,
   /** Cards and sheets are soft. */
-  lg: 18,
+  lg: 22,
   pill: 999,
 } as const;
 

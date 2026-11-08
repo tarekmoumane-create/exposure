@@ -16,7 +16,7 @@ export default function LooksScreen() {
   const looks = group === 'all' ? LOOKS : LOOKS.filter((look) => look.group === group);
 
   return (
-    <Screen withTabBar contentStyle={styles.content}>
+    <Screen withTabBar glow contentStyle={styles.content}>
       <View style={styles.header}>
         <SectionHeader large title="Looks" meta={`${String(looks.length).padStart(2, '0')} / ${LOOKS.length}`} />
         <ThemedText themeColor="textSecondary" style={styles.intro}>

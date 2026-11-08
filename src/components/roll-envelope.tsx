@@ -1,79 +1,65 @@
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { PrintFan } from '@/components/print';
 import { StatusDot } from '@/components/status-dot';
+import { Tappable } from '@/components/tappable';
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { countFrames, rollSummary } from '@/lib/roll';
 import { type Roll, useAppStore } from '@/store/app-store';
 
-/** A roll on the shelf: a strip of its first frames and its details, like a lab sleeve. */
+/** A roll on the shelf: its prints fanned out on its look's colour, with its name and state. */
 export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => void }) {
   const theme = useTheme();
   const { paid } = useAppStore();
   const { total, done, developing } = countFrames(roll);
-  const shown = roll.frames.slice(0, 4);
   const look = getLook(roll.lookId);
+  const tint = look?.tint ?? theme.surfaceRaised;
+  const deep = look?.deep ?? theme.text;
   const date = roll.createdAt ? new Date(roll.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-  const status = developing > 0 ? `Developing ${done}/${total}` : done === total ? `${total} fr` : rollSummary(roll);
+  // Before any purchase only originals are shown here, so nothing developed leaks past the paywall.
+  const sources = [0, 1, 2].map((i) => {
+    const frame = roll.frames[i] ?? roll.frames[0];
+    if (!frame) return undefined;
+    return paid || typeof frame.sourceUri !== 'string' ? frame.thumbUri ?? frame.resultUri ?? frame.sourceUri : frame.sourceUri;
+  });
+  const status = developing > 0 ? `Developing ${done}/${total}` : done === total ? `${total} ${total === 1 ? 'frame' : 'frames'}` : rollSummary(roll);
 
   return (
-    <Pressable
+    <Tappable
       accessibilityRole="button"
       accessibilityLabel={`${roll.name}, ${look?.name ?? 'film'}, ${rollSummary(roll)}`}
       disabled={!onPress}
       onPress={onPress}
-      style={({ pressed }) => [styles.card, { backgroundColor: theme.surface, borderColor: theme.line, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
-      <View style={styles.strip}>
-        {shown.map((frame) => {
-          // Before any purchase only the original is shown here, so nothing leaks past the paywall.
-          const source = paid || typeof frame.sourceUri !== 'string' ? frame.thumbUri ?? frame.resultUri ?? frame.sourceUri : frame.sourceUri;
-          return (
-            <View key={frame.id} style={[styles.cell, { backgroundColor: theme.surfaceRaised }]}>
-              <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" />
-              {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(243,238,230,0.55)' }]} /> : null}
-            </View>
-          );
-        })}
-        {Array.from({ length: Math.max(0, 4 - shown.length) }, (_, i) => (
-          <View key={`empty-${i}`} style={[styles.cell, styles.empty, { borderColor: theme.line }]} />
-        ))}
-      </View>
+      scaleTo={0.975}
+      style={[styles.card, { backgroundColor: tint }]}>
+      <PrintFan sources={sources} width={150} />
       <View style={styles.info}>
-        <View style={styles.titleRow}>
-          <ThemedText type="subtitle" numberOfLines={1} style={styles.grow}>
-            {roll.name}
+        <ThemedText type="monoSmall" style={[styles.soft, { color: deep }]}>
+          {date}
+        </ThemedText>
+        <ThemedText type="subtitle" numberOfLines={2} style={{ color: deep }}>
+          {roll.name}
+        </ThemedText>
+        <ThemedText type="mono" numberOfLines={1} style={[styles.soft, { color: deep }]}>
+          {look?.name ?? 'Film'}
+        </ThemedText>
+        <View style={[styles.status, { backgroundColor: 'rgba(255,253,248,0.7)' }]}>
+          {developing > 0 ? <StatusDot live /> : null}
+          <ThemedText type="monoSmall" style={{ color: developing > 0 ? theme.accent : deep }}>
+            {status}
           </ThemedText>
-          <ThemedText type="subtitle" themeColor="textTertiary">
-            ›
-          </ThemedText>
-        </View>
-        <View style={styles.meta}>
-          <ThemedText type="mono" themeColor="textSecondary" numberOfLines={1} style={styles.grow}>
-            {[look?.name ?? 'Film', date].filter(Boolean).join('  ·  ')}
-          </ThemedText>
-          <View style={styles.status}>
-            {developing > 0 ? <StatusDot live /> : null}
-            <ThemedText type="mono" themeColor={developing > 0 ? 'accent' : 'textSecondary'}>
-              {status}
-            </ThemedText>
-          </View>
         </View>
       </View>
-    </Pressable>
+    </Tappable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: 8 },
-  strip: { flexDirection: 'row', gap: 4 },
-  cell: { flex: 1, aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
-  empty: { borderWidth: StyleSheet.hairlineWidth * 2, borderStyle: 'dashed', backgroundColor: 'transparent' },
-  info: { gap: 4, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 6 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  status: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  grow: { flex: 1 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: Radius.lg, paddingVertical: 18, paddingLeft: 8, paddingRight: 16 },
+  info: { flex: 1, gap: 5, alignItems: 'flex-start' },
+  soft: { opacity: 0.72 },
+  status: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 24, paddingHorizontal: 10, borderRadius: Radius.pill, marginTop: 6 },
 });

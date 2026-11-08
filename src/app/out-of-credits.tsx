@@ -6,7 +6,7 @@ import { Button } from '@/components/button';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { FALLBACK_PRICES, PACK_PRODUCTS, type PackId } from '@/data/products';
 import { useTheme } from '@/hooks/use-theme';
 import { dismiss } from '@/lib/navigation';
@@ -71,7 +71,7 @@ export default function OutOfCreditsScreen() {
             accessibilityLabel={`${PACK_PRODUCTS[pack.id].credits} frames for ${prices[PACK_PRODUCTS[pack.id].productId]}${pack.badge ? `, ${pack.badge}` : ''}`}
             onPress={() => buy(pack.id)}
             disabled={busy !== null || !canBuy}
-            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.text : theme.line, opacity: busy && busy !== pack.id ? 0.5 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
+            style={({ pressed }) => [styles.pack, { backgroundColor: theme.surface, borderColor: busy === pack.id ? theme.text : 'transparent', opacity: busy && busy !== pack.id ? 0.5 : 1, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
             <ThemedText type="display" style={styles.count}>{PACK_PRODUCTS[pack.id].credits}</ThemedText>
             <View style={styles.packText}>
               <View style={styles.packTitle}>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 52, marginRight: -6 },
   copy: { gap: 10, paddingTop: Spacing.three, paddingBottom: Spacing.four },
   packs: { gap: 10 },
-  pack: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingLeft: 18, paddingRight: 12, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2 },
+  pack: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingLeft: 18, paddingRight: 12, borderRadius: Radius.lg, boxShadow: Shadow.card },
   count: { width: 52, fontVariant: ['tabular-nums'] },
   packText: { flex: 1, gap: 3 },
   packTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },

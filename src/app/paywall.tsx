@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -6,10 +5,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { ExternalLink } from '@/components/external-link';
 import { IconButton } from '@/components/icon-button';
+import { PrintFan } from '@/components/print';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { dismiss } from '@/lib/navigation';
 import { FALLBACK_PRICES, LEGAL_URLS, PLAN_PRODUCTS } from '@/data/products';
@@ -31,7 +31,7 @@ const TIERS: Tier[] = [
   { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'cancel any time' },
 ];
 const TEASER_FRAMES = [SAMPLE_ROLL.frames[8], SAMPLE_ROLL.frames[2], SAMPLE_ROLL.frames[3]];
-const FEATURES = ['Every look, all ten of them', 'Rolls of up to 12 frames', 'Save and share every frame', 'New frames every day'];
+const FEATURES = ['Every look, all ten of them', 'Unlimited rolls, yours to keep', 'Save and share every frame', 'New frames every day'];
 
 /** The plan sheet. Prices come from the store when one is configured, otherwise the USD list prices. */
 export default function PaywallScreen() {
@@ -75,27 +75,14 @@ export default function PaywallScreen() {
   const headline = plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Unlock your roll.' : 'Keep every frame.';
 
   return (
-    <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={styles.content}>
+    <Screen edges={['top', 'bottom', 'left', 'right']} glow contentStyle={styles.content}>
       <View style={styles.header}>
         <Wordmark size={13} />
         <IconButton name={{ ios: 'xmark', android: 'close', web: 'close' }} label="Close" onPress={() => dismiss()} />
       </View>
 
-      <View style={[styles.sheet, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-        <View style={styles.sheetHead}>
-          <ThemedText type="monoSmall" themeColor="textTertiary">Contact sheet</ThemedText>
-          <ThemedText type="monoSmall" themeColor="textTertiary">Sunny 200</ThemedText>
-        </View>
-        <View style={styles.strip}>
-          {TEASER_FRAMES.map((frame, index) => (
-            <View key={frame.id} style={styles.stripCell}>
-              <View style={[styles.stripPhoto, { backgroundColor: theme.surfaceRaised }]}>
-                <Image source={frame.resultUri} style={StyleSheet.absoluteFill} contentFit="cover" />
-              </View>
-              <ThemedText type="monoSmall" themeColor="textTertiary">{`0${index + 1}`}</ThemedText>
-            </View>
-          ))}
-        </View>
+      <View style={styles.fan}>
+        <PrintFan sources={TEASER_FRAMES.map((frame) => frame.resultUri)} width={300} />
       </View>
 
       <View style={styles.copy}>
@@ -126,7 +113,7 @@ export default function PaywallScreen() {
               accessibilityState={{ selected: isSelected }}
               accessibilityLabel={`${tier.name}, ${prices[PLAN_PRODUCTS[tier.id]]} a ${tier.price}. ${tier.perDay} frames a day.`}
               onPress={() => setSelected(tier)}
-              style={[styles.tier, { backgroundColor: theme.surface, borderColor: isSelected ? theme.text : theme.line, borderWidth: isSelected ? 1.5 : StyleSheet.hairlineWidth * 2 }]}>
+              style={[styles.tier, { backgroundColor: theme.surface, borderColor: isSelected ? theme.text : 'transparent' }]}>
               <View style={[styles.radio, { borderColor: isSelected ? theme.text : theme.line }]}>{isSelected ? <View style={[styles.radioDot, { backgroundColor: theme.text }]} /> : null}</View>
               <View style={styles.tierText}>
                 <View style={styles.tierTitle}>
@@ -189,18 +176,14 @@ export default function PaywallScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Gutter },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 52, marginRight: -6 },
-  sheet: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: 10, gap: 10, marginTop: Spacing.two },
-  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
-  strip: { flexDirection: 'row', gap: 6 },
-  stripCell: { flex: 1, gap: 5 },
-  stripPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
-  copy: { gap: 16, paddingTop: 26, paddingBottom: 22 },
+  fan: { alignItems: 'center', paddingTop: 10 },
+  copy: { gap: 16, paddingTop: 22, paddingBottom: 22 },
   features: { gap: 10 },
   feature: { flexDirection: 'row', gap: 12, alignItems: 'center' },
   grow: { flex: 1 },
   center: { textAlign: 'center' },
   tiers: { gap: 10 },
-  tier: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 16, borderRadius: Radius.lg },
+  tier: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 16, paddingHorizontal: 16, borderRadius: Radius.lg, borderWidth: 2, boxShadow: Shadow.card },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   radioDot: { width: 10, height: 10, borderRadius: 5 },
   tierText: { flex: 1, gap: 4 },

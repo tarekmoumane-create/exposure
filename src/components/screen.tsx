@@ -2,6 +2,7 @@ import { type PropsWithChildren } from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
+import { Glow } from '@/components/glow';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -12,6 +13,8 @@ type Props = PropsWithChildren<{
   withTabBar?: boolean;
   edges?: Edge[];
   contentStyle?: ViewStyle;
+  /** Warm light from the top of the screen: true for the house glow, or a look's tint. */
+  glow?: boolean | string;
 }>;
 
 export function Screen({
@@ -20,13 +23,16 @@ export function Screen({
   withTabBar = false,
   edges = ['top', 'left', 'right'],
   contentStyle,
+  glow,
 }: Props) {
   const theme = useTheme();
+  const light = glow ? <Glow tint={typeof glow === 'string' ? glow : undefined} /> : null;
   const paddingBottom = withTabBar ? BottomTabInset + Spacing.four : Spacing.four;
 
   if (!scroll) {
     return (
       <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: theme.background }]}>
+        {light}
         <View style={[styles.inner, { paddingBottom }, contentStyle]}>{children}</View>
       </SafeAreaView>
     );
@@ -34,6 +40,7 @@ export function Screen({
 
   return (
     <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: theme.background }]}>
+      {light}
       <ScrollView
         style={styles.root}
         contentContainerStyle={[styles.inner, { paddingBottom }, contentStyle]}

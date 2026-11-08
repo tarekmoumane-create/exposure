@@ -1,23 +1,24 @@
 import { Redirect, router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
-import { ComparePhoto } from '@/components/compare-photo';
 import { CreditsPill } from '@/components/credits-pill';
 import { IconButton } from '@/components/icon-button';
-import { LookCaption } from '@/components/look-caption';
 import { LookTile } from '@/components/look-tile';
+import { PrintFan } from '@/components/print';
 import { RollEnvelope } from '@/components/roll-envelope';
 import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { getLook, LOOKS } from '@/data/looks';
+import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { useTheme } from '@/hooks/use-theme';
 import { useAppStore } from '@/store/app-store';
 
-const FEATURED = getLook('gold-200')!;
+const HERO_FRAMES = [SAMPLE_ROLL.frames[3].resultUri, SAMPLE_ROLL.frames[8].resultUri, SAMPLE_ROLL.frames[0].resultUri];
 const RAIL = ['night-flash', 'y2k-digicam', 'golden-hour', 'film-35'].map((id) => getLook(id)!);
 
 export default function RollsScreen() {
@@ -27,11 +28,11 @@ export default function RollsScreen() {
   if (!onboarded) return <Redirect href="/onboarding" />;
 
   return (
-    <Screen withTabBar contentStyle={styles.content}>
+    <Screen withTabBar glow contentStyle={styles.content}>
       <View style={styles.header}>
         <Wordmark size={14} />
         <View style={styles.headerRight}>
-          <CreditsPill />
+          {paid ? <CreditsPill /> : null}
           <IconButton name={{ ios: 'gearshape', android: 'settings', web: 'settings' }} label="Settings" onPress={() => router.push('/settings')} />
         </View>
       </View>
@@ -41,25 +42,26 @@ export default function RollsScreen() {
       </View>
 
       {rolls.length === 0 ? (
-        <View style={[styles.hero, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-          <ComparePhoto before={FEATURED.before} after={FEATURED.after} aspectRatio={1.05} accessibilityLabel={`${FEATURED.name} example. Press and hold to see the original.`} />
-          <View style={styles.heroCaption}>
-            <LookCaption look={FEATURED} />
+        <Animated.View entering={FadeInDown.duration(420)} style={[styles.hero, { backgroundColor: theme.surface }]}>
+          <View style={styles.heroFan}>
+            <PrintFan sources={HERO_FRAMES} width={300} />
           </View>
           <View style={styles.heroCopy}>
-            <ThemedText type="title">Develop your first roll</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Pick a look and add a photo. Your first frame develops free.'}
+            <ThemedText type="title" style={styles.heroText}>Develop your first roll</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.heroText}>
+              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Pick a look, add a photo and watch it develop right here.'}
             </ThemedText>
           </View>
           <Button title="Start a roll" onPress={() => router.push('/new-roll')} />
-        </View>
+        </Animated.View>
       ) : (
         <View style={styles.rolls}>
-          <Button title="New roll" variant="secondary" icon={<ThemedText type="subtitle">+</ThemedText>} onPress={() => router.push('/new-roll')} />
-          {rolls.map((roll) => (
-            <RollEnvelope key={roll.id} roll={roll} onPress={() => router.push({ pathname: '/roll/[id]', params: { id: roll.id } })} />
+          {rolls.map((roll, index) => (
+            <Animated.View key={roll.id} entering={FadeInDown.delay(index * 70).duration(380)}>
+              <RollEnvelope roll={roll} onPress={() => router.push({ pathname: '/roll/[id]', params: { id: roll.id } })} />
+            </Animated.View>
           ))}
+          <Button title="New roll" icon={<ThemedText type="subtitle" style={{ color: theme.onBrand }}>+</ThemedText>} onPress={() => router.push('/new-roll')} style={styles.newRoll} />
         </View>
       )}
 
@@ -68,7 +70,7 @@ export default function RollsScreen() {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
         {RAIL.map((look) => (
-          <LookTile key={look.id} look={look} style={styles.railTile} />
+          <LookTile key={look.id} look={look} compact style={styles.railTile} />
         ))}
       </ScrollView>
     </Screen>
@@ -80,12 +82,14 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   title: { paddingTop: Spacing.three, paddingBottom: 18 },
-  hero: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: 8, paddingBottom: 12, gap: 12 },
-  heroCaption: { paddingHorizontal: 4 },
-  heroCopy: { gap: 6, paddingHorizontal: 4, paddingBottom: 4 },
+  hero: { borderRadius: Radius.lg, padding: 16, paddingTop: 26, gap: 18, boxShadow: Shadow.card },
+  heroFan: { alignItems: 'center' },
+  heroCopy: { gap: 6, alignItems: 'center' },
+  heroText: { textAlign: 'center' },
   rolls: { gap: 12 },
+  newRoll: { marginTop: 6 },
   section: { paddingTop: 36, paddingBottom: 14 },
   bleed: { marginHorizontal: -Gutter, flexGrow: 0 },
   rail: { gap: 12, paddingHorizontal: Gutter },
-  railTile: { width: 132 },
+  railTile: { width: 150 },
 });

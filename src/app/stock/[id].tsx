@@ -6,10 +6,11 @@ import { Button } from '@/components/button';
 import { ComparePhoto } from '@/components/compare-photo';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
+import { Print } from '@/components/print';
 import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
 import { getLook, LOOK_GROUPS, lookNumber } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { dismiss } from '@/lib/navigation';
@@ -32,12 +33,11 @@ export default function StockScreen() {
   const group = LOOK_GROUPS.find((item) => item.id === look.group)?.label ?? '';
   const rows = [
     ['Kind', group],
-    ['Character', look.spec],
     ['Best for', look.bestFor],
   ];
 
   return (
-    <Screen scroll={false} edges={['top', 'left', 'right', 'bottom']} contentStyle={styles.root}>
+    <Screen scroll={false} edges={['top', 'left', 'right', 'bottom']} glow={look.tint} contentStyle={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
@@ -46,9 +46,14 @@ export default function StockScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <ComparePhoto before={look.before} after={look.after} strength={strength} aspectRatio={4 / 5} accessibilityLabel={`${look.name} example. Press and hold to see the original.`} />
+        <Print border={7}>
+          <ComparePhoto before={look.before} after={look.after} strength={strength} aspectRatio={4 / 5} accessibilityLabel={`${look.name} example. Press and hold to see the original.`} />
+        </Print>
 
         <View style={styles.titleBlock}>
+          <View style={[styles.badge, { backgroundColor: look.tint }]}>
+            <ThemedText type="monoSmall" style={{ color: look.deep }}>{look.spec}</ThemedText>
+          </View>
           <ThemedText type="display" accessibilityRole="header">{look.name}</ThemedText>
           <ThemedText type="subtitle" themeColor="textSecondary">{look.tagline}</ThemedText>
         </View>
@@ -83,7 +88,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, marginHorizontal: -6 },
   spacer: { width: 44 },
   scroll: { gap: 20, paddingTop: 6, paddingBottom: Spacing.four },
-  titleBlock: { gap: 6 },
+  titleBlock: { gap: 8, alignItems: 'flex-start' },
+  badge: { height: 26, paddingHorizontal: 11, borderRadius: Radius.pill, justifyContent: 'center' },
   table: { borderTopWidth: StyleSheet.hairlineWidth * 2 },
   row: { flexDirection: 'row', gap: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth * 2 },
   rowLabel: { width: 92, paddingTop: 3 },

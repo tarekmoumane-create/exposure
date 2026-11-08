@@ -18,7 +18,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
       }}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? theme.text : theme.surface, borderColor: selected ? theme.text : theme.line, opacity: pressed ? 0.75 : 1 },
+        { backgroundColor: selected ? theme.text : theme.surfaceRaised, opacity: pressed ? 0.75 : 1 },
       ]}>
       <ThemedText type="caption" style={{ color: selected ? theme.onBrand : theme.text }}>
         {label}
@@ -28,5 +28,5 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
 }
 
 const styles = StyleSheet.create({
-  chip: { height: 36, paddingHorizontal: 15, borderRadius: Radius.pill, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center' },
+  chip: { height: 36, paddingHorizontal: 16, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

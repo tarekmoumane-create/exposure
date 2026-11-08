@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -7,11 +6,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { ComparePhoto } from '@/components/compare-photo';
+import { Glow } from '@/components/glow';
 import { IconButton } from '@/components/icon-button';
 import { LookCaption } from '@/components/look-caption';
+import { Print, PrintFan } from '@/components/print';
 import { ThemedText } from '@/components/themed-text';
 import { Wordmark } from '@/components/wordmark';
-import { Gutter, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { Gutter, MaxContentWidth, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { SAMPLE_ROLL } from '@/data/sample-roll';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,8 +22,8 @@ const HERO = getLook('y2k-digicam')!;
 const STRIP = [SAMPLE_ROLL.frames[0], SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[6]];
 const STEPS = [
   { title: 'Choose a look', detail: 'Flash, film, compacts and light. One look for the whole roll.' },
-  { title: 'Add your photos', detail: 'Start with one favourite. Rolls hold up to 12.' },
-  { title: 'Watch it develop', detail: 'Your first frame develops free. A plan unlocks it to keep.' },
+  { title: 'Add your photos', detail: 'Start with a favourite. Nights out, trips, anything.' },
+  { title: 'Watch it develop', detail: 'Every frame comes back as if it was shot on that camera.' },
 ];
 
 export default function OnboardingScreen() {
@@ -41,6 +42,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.background }]}>
+      <Glow height={560} />
       <View style={styles.header}>
         {page === 1 ? <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => setPage(0)} /> : <Wordmark size={14} />}
         <ThemedText type="mono" themeColor="textSecondary" accessibilityLabel={`Introduction, ${page + 1} of 2`}>
@@ -52,7 +54,9 @@ export default function OnboardingScreen() {
         {page === 0 ? (
           <Animated.View key="intro" entering={FadeIn.duration(260)} style={styles.stage}>
             <View style={styles.figure}>
-              <ComparePhoto before={HERO.before} after={HERO.after} aspectRatio={0.86} accessibilityLabel={`${HERO.name} example. Press and hold to see the original.`} />
+              <Print rotate={-1.5} aspectRatio={0.9} border={7}>
+                <ComparePhoto before={HERO.before} after={HERO.after} aspectRatio={0.9} accessibilityLabel={`${HERO.name} example. Press and hold to see the original.`} />
+              </Print>
               <LookCaption look={HERO} />
             </View>
             <View style={styles.copy}>
@@ -64,21 +68,8 @@ export default function OnboardingScreen() {
           </Animated.View>
         ) : (
           <Animated.View key="steps" entering={FadeIn.duration(260)} style={styles.stage}>
-            <View style={[styles.sheet, { backgroundColor: theme.surface, borderColor: theme.line }]}>
-              <View style={styles.sheetHead}>
-                <ThemedText type="mono">Sample roll</ThemedText>
-                <ThemedText type="mono" themeColor="textTertiary">Sunny 200 · 9 fr</ThemedText>
-              </View>
-              <View style={styles.strip}>
-                {STRIP.map((frame, index) => (
-                  <View key={frame.id} style={styles.stripCell}>
-                    <View style={[styles.stripPhoto, { backgroundColor: theme.surfaceRaised }]}>
-                      <Image source={frame.resultUri} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    </View>
-                    <ThemedText type="monoSmall" themeColor="textTertiary">{`0${index + 1}`}</ThemedText>
-                  </View>
-                ))}
-              </View>
+            <View style={styles.fan}>
+              <PrintFan sources={STRIP.map((frame) => frame.resultUri)} width={320} />
             </View>
             <View style={styles.copy}>
               <ThemedText type="display" accessibilityRole="header">
@@ -112,13 +103,9 @@ const styles = StyleSheet.create({
   header: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', height: 52, paddingHorizontal: Gutter, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   scroll: { flexGrow: 1, justifyContent: 'center' },
   stage: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Gutter, paddingVertical: Spacing.three, gap: 22 },
-  figure: { gap: 10 },
+  figure: { gap: 14, paddingHorizontal: 6 },
   copy: { gap: 12 },
-  sheet: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: 12, gap: 12 },
-  sheetHead: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2 },
-  strip: { flexDirection: 'row', gap: 6 },
-  stripCell: { flex: 1, gap: 6 },
-  stripPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
+  fan: { alignItems: 'center', paddingVertical: 8 },
   step: { flexDirection: 'row', gap: 16, paddingVertical: 14, borderTopWidth: StyleSheet.hairlineWidth * 2 },
   stepNo: { width: 22, paddingTop: 4 },
   stepText: { flex: 1, gap: 2 },

@@ -8,10 +8,11 @@ import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
 import { ComparePhoto } from '@/components/compare-photo';
 import { IconButton } from '@/components/icon-button';
+import { Print } from '@/components/print';
 import { LookCaption } from '@/components/look-caption';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
-import { Fonts, Gutter, Radius, Spacing } from '@/constants/theme';
+import { Fonts, Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { getLook, LOOKS, lookNumber } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { persistTemporary } from '@/lib/media';
@@ -79,7 +80,7 @@ export default function NewRollScreen() {
     count === 0
       ? 'Your photos stay on your phone until you agree to processing.'
       : !paid
-        ? 'It develops for free. A plan unlocks it to save and share, and opens rolls of up to 12.'
+        ? 'It develops right here in about 30 seconds.'
         : covered === count
           ? `Uses ${count} of your ${credits} ${credits === 1 ? 'frame' : 'frames'}.`
           : covered > 0
@@ -89,7 +90,7 @@ export default function NewRollScreen() {
   const footerTitle = step === 0 ? `Use ${look?.name ?? 'this look'}` : count === 0 ? (paid ? 'Choose photos' : 'Choose a photo') : !paid ? 'Start developing' : `Develop ${count} ${count === 1 ? 'photo' : 'photos'}`;
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']} scroll={false} contentStyle={styles.root}>
+    <Screen edges={['top', 'left', 'right', 'bottom']} scroll={false} glow={step === 0 ? look?.tint : true} contentStyle={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <IconButton
@@ -117,7 +118,9 @@ export default function NewRollScreen() {
             </View>
             {look ? (
               <View style={styles.figure}>
-                <ComparePhoto key={look.id} before={look.before} after={look.after} aspectRatio={1.08} accessibilityLabel={`${look.name} example. Press and hold to see the original.`} />
+                <Print border={7} aspectRatio={1.08}>
+                  <ComparePhoto key={look.id} before={look.before} after={look.after} aspectRatio={1.08} accessibilityLabel={`${look.name} example. Press and hold to see the original.`} />
+                </Print>
                 <LookCaption look={look} />
                 <ThemedText type="small" themeColor="textSecondary">{`${look.tagline} Best for ${look.bestFor.toLowerCase()}.`}</ThemedText>
               </View>
@@ -127,13 +130,13 @@ export default function NewRollScreen() {
                 const selected = item.id === lookId;
                 return (
                   <Pressable key={item.id} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={item.name} onPress={() => setLookId(item.id)} style={styles.railItem}>
-                    <View style={[styles.railRing, { borderColor: selected ? theme.text : 'transparent' }]}>
+                    <View style={[styles.railRing, { borderColor: selected ? item.deep : 'transparent', backgroundColor: item.tint }]}>
                       <View style={[styles.railPhoto, { backgroundColor: theme.surfaceRaised }]}>
                         <Image source={item.after} style={StyleSheet.absoluteFill} contentFit="cover" />
                       </View>
                     </View>
                     <View style={styles.railLabel}>
-                      <View style={[styles.railDot, { backgroundColor: selected ? theme.accent : 'transparent' }]} />
+                      <View style={[styles.railDot, { backgroundColor: selected ? item.deep : 'transparent' }]} />
                       <ThemedText type="caption" numberOfLines={2} themeColor={selected ? 'text' : 'textSecondary'} style={styles.railName}>{item.name}</ThemedText>
                     </View>
                   </Pressable>
@@ -148,12 +151,12 @@ export default function NewRollScreen() {
               <ThemedText type="small" themeColor="textSecondary">{maxPhotos === 1 ? 'Choose one favourite to see it through a different camera.' : `Choose up to ${maxPhotos}. They develop together as one set.`}</ThemedText>
             </View>
             {count === 0 ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={paid ? 'Choose photos from your library' : 'Choose a photo from your library'} onPress={addPhotos} style={({ pressed }) => [styles.upload, { backgroundColor: theme.surface, borderColor: theme.line, transform: [{ scale: pressed ? 0.99 : 1 }] }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={paid ? 'Choose photos from your library' : 'Choose a photo from your library'} onPress={addPhotos} style={({ pressed }) => [styles.upload, { backgroundColor: theme.surface, borderColor: theme.line, transform: [{ scale: pressed ? 0.985 : 1 }] }]}>
                 <View style={[styles.plusCircle, { backgroundColor: theme.text }]}>
                   <ThemedText type="title" style={{ color: theme.onBrand }}>+</ThemedText>
                 </View>
                 <ThemedText type="bodyStrong">Choose from your library</ThemedText>
-                <ThemedText type="mono" themeColor="textTertiary">{maxPhotos === 1 ? '1 photo to start' : `Up to ${maxPhotos} photos`}</ThemedText>
+                <ThemedText type="mono" themeColor="textTertiary">{maxPhotos === 1 ? 'Pick your favourite' : `Up to ${maxPhotos} photos`}</ThemedText>
               </Pressable>
             ) : (
               <View style={styles.section}>
@@ -183,19 +186,19 @@ export default function NewRollScreen() {
               </View>
             )}
             {look ? (
-              <Pressable accessibilityRole="button" accessibilityLabel={`Change look. Currently ${look.name}`} onPress={() => setStep(0)} style={({ pressed }) => [styles.lookSummary, { backgroundColor: theme.surface, borderColor: theme.line, opacity: pressed ? 0.75 : 1 }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Change look. Currently ${look.name}`} onPress={() => setStep(0)} style={({ pressed }) => [styles.lookSummary, { backgroundColor: look.tint, opacity: pressed ? 0.75 : 1 }]}>
                 <Image source={look.after} style={styles.summaryPhoto} contentFit="cover" />
                 <View style={styles.summaryText}>
-                  <ThemedText type="monoSmall" themeColor="textTertiary">{`Look  ${lookNumber(look)}`}</ThemedText>
-                  <ThemedText type="bodyStrong">{look.name}</ThemedText>
+                  <ThemedText type="monoSmall" style={{ color: look.deep, opacity: 0.72 }}>{`Look  ${lookNumber(look)}`}</ThemedText>
+                  <ThemedText type="bodyStrong" style={{ color: look.deep }}>{look.name}</ThemedText>
                 </View>
-                <ThemedText type="label" themeColor="textSecondary">Change</ThemedText>
+                <ThemedText type="label" style={{ color: look.deep }}>Change</ThemedText>
               </Pressable>
             ) : null}
             {paid ? (
               <View style={styles.section}>
                 <ThemedText type="mono" themeColor="textSecondary">Roll name  <ThemedText type="mono" themeColor="textTertiary">(optional)</ThemedText></ThemedText>
-                <TextInput value={name} onChangeText={setName} placeholder={defaultRollName()} placeholderTextColor={theme.textTertiary} maxLength={40} returnKeyType="done" accessibilityLabel="Roll name" style={[styles.input, { backgroundColor: theme.surface, borderColor: theme.line, color: theme.text }]} />
+                <TextInput value={name} onChangeText={setName} placeholder={defaultRollName()} placeholderTextColor={theme.textTertiary} maxLength={40} returnKeyType="done" accessibilityLabel="Roll name" style={[styles.input, { backgroundColor: theme.surface, color: theme.text }]} />
               </View>
             ) : null}
           </>
@@ -224,8 +227,8 @@ const styles = StyleSheet.create({
   bleed: { marginHorizontal: -Gutter, flexGrow: 0 },
   rail: { gap: 10, paddingHorizontal: Gutter },
   railItem: { width: 76, gap: 7 },
-  railRing: { padding: 2, borderRadius: Radius.sm, borderWidth: 1.5 },
-  railPhoto: { width: '100%', aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
+  railRing: { padding: 4, borderRadius: 14, borderWidth: 2 },
+  railPhoto: { width: '100%', aspectRatio: 4 / 5, borderRadius: 9, overflow: 'hidden' },
   railLabel: { alignItems: 'center', gap: 4 },
   railName: { textAlign: 'center', fontSize: 12, lineHeight: 15 },
   railDot: { width: 5, height: 5, borderRadius: 3 },
@@ -238,10 +241,10 @@ const styles = StyleSheet.create({
   cellPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
   add: { alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed' },
   remove: { position: 'absolute', top: 6, right: 6, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  lookSummary: { flexDirection: 'row', gap: 12, padding: 8, paddingRight: 16, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center' },
-  summaryPhoto: { width: 44, height: 55, borderRadius: Radius.print },
+  lookSummary: { flexDirection: 'row', gap: 12, padding: 8, paddingRight: 16, borderRadius: Radius.lg, alignItems: 'center' },
+  summaryPhoto: { width: 44, height: 55, borderRadius: 12 },
   summaryText: { flex: 1, gap: 2 },
-  input: { fontFamily: Fonts.sans, fontSize: 16, minHeight: 50, paddingHorizontal: 16, borderRadius: Radius.md, borderWidth: StyleSheet.hairlineWidth * 2 },
+  input: { fontFamily: Fonts.sans, fontSize: 16, minHeight: 50, paddingHorizontal: 16, borderRadius: Radius.md, boxShadow: Shadow.card },
   footer: { gap: 8, paddingTop: 10 },
   footerNote: { textAlign: 'center' },
 });

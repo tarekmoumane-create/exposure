@@ -9,7 +9,7 @@ import { Screen } from '@/components/screen';
 import { SectionHeader } from '@/components/section-header';
 import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { fetchPrintStatus, formatCents, type PrintStage } from '@/lib/prints';
 import { useAppStore } from '@/store/app-store';
@@ -61,12 +61,12 @@ export default function PrintsScreen() {
   }
 
   return (
-    <Screen withTabBar contentStyle={styles.content}>
+    <Screen withTabBar glow contentStyle={styles.content}>
       <View style={styles.title}>
         <SectionHeader large title="Prints" meta={String(orders.length).padStart(2, '0')} />
       </View>
       {orders.map((order) => (
-        <View key={order.id} style={[styles.row, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+        <View key={order.id} style={[styles.row, { backgroundColor: theme.surface }]}>
           {order.coverUri !== undefined ? <Image source={order.coverUri} style={[styles.photo, { backgroundColor: theme.surfaceRaised }]} contentFit="cover" /> : null}
           <View style={styles.text}>
             <ThemedText type="subtitle" numberOfLines={1}>{order.rollName}</ThemedText>
@@ -96,7 +96,7 @@ export default function PrintsScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: Gutter },
   title: { paddingTop: 52 + Spacing.three, paddingBottom: 18 },
-  row: { flexDirection: 'row', gap: 14, padding: 8, paddingRight: 14, borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, marginBottom: 10 },
+  row: { flexDirection: 'row', gap: 14, padding: 8, paddingRight: 14, borderRadius: Radius.lg, boxShadow: Shadow.card, marginBottom: 10 },
   photo: { width: 76, height: 95, borderRadius: Radius.print },
   text: { flex: 1, gap: 5, paddingVertical: 6 },
   stage: { flexDirection: 'row', alignItems: 'center', gap: 7 },

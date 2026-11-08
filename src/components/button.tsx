@@ -3,7 +3,7 @@ import { type ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, type PressableProps, StyleSheet, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Variant = 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger';
@@ -23,7 +23,7 @@ export function Button({ title, variant = 'primary', size = 'lg', loading = fals
   const theme = useTheme();
   const isDisabled = disabled || loading;
 
-  const background = { primary: theme.brand, accent: theme.accent, secondary: theme.surface, ghost: 'transparent', danger: 'transparent' }[variant];
+  const background = { primary: theme.brand, accent: theme.accent, secondary: theme.surfaceRaised, ghost: 'transparent', danger: 'transparent' }[variant];
   const color = { primary: theme.onBrand, accent: theme.onAccent, secondary: theme.text, ghost: theme.text, danger: theme.mark }[variant];
 
   return (
@@ -39,7 +39,7 @@ export function Button({ title, variant = 'primary', size = 'lg', loading = fals
         styles.base,
         size === 'lg' ? styles.lg : styles.md,
         { backgroundColor: background, opacity: isDisabled ? 0.45 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        variant === 'secondary' && { borderColor: theme.line, borderWidth: StyleSheet.hairlineWidth * 2 },
+        (variant === 'primary' || variant === 'accent') && !isDisabled && styles.lifted,
         (variant === 'ghost' || variant === 'danger') && styles.ghost,
         pressed && (variant === 'ghost' || variant === 'danger') && { opacity: 0.6 },
         style,
@@ -65,4 +65,5 @@ const styles = StyleSheet.create({
   md: { paddingHorizontal: 18, minHeight: 44 },
   mdText: { fontSize: 14, lineHeight: 19 },
   ghost: { paddingHorizontal: Spacing.two },
+  lifted: { boxShadow: Shadow.button },
 });

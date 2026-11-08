@@ -10,12 +10,13 @@ import { Button } from '@/components/button';
 import { DevelopingPhoto } from '@/components/developing-photo';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
+import { Print } from '@/components/print';
 import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast';
-import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
 import { useTheme } from '@/hooks/use-theme';
@@ -163,7 +164,7 @@ export default function RollScreen() {
   const openPaywall = () => router.push({ pathname: '/paywall', params: { rollId: roll.id } });
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']} contentStyle={styles.content}>
+    <Screen edges={['top', 'left', 'right', 'bottom']} glow={look?.tint ?? true} contentStyle={styles.content}>
       {developing > 0 ? <StayAwake /> : null}
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
@@ -208,13 +209,13 @@ export default function RollScreen() {
       ) : null}
 
       {teaser ? (
-        <View style={[styles.teaser, locked && { backgroundColor: theme.surface, borderColor: theme.line }]}>
+        <View style={styles.teaser}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={locked ? 'Your first frame, developed and locked. Unlock to see it.' : 'Your first frame'}
             disabled={!locked}
-            onPress={openPaywall}
-            style={[styles.teaserPhoto, { backgroundColor: theme.surfaceRaised }]}>
+            onPress={openPaywall}>
+            <Print rotate={-1.2} border={8}>
             <DevelopingPhoto source={teaser.resultUri} amount={locked ? 0 : 1} locked={locked} />
             {locked ? (
               <View style={styles.lockWrap} pointerEvents="none">
@@ -224,6 +225,7 @@ export default function RollScreen() {
                 </View>
               </View>
             ) : null}
+            </Print>
           </Pressable>
           {locked ? (
             <View style={styles.teaserCopy}>
@@ -292,7 +294,7 @@ export default function RollScreen() {
       </View>}
 
       {failed > 0 ? (
-        <View style={[styles.notice, styles.failNote, { backgroundColor: theme.surface, borderColor: theme.line }]}>
+        <View style={[styles.notice, styles.failNote, { backgroundColor: theme.surface }]}>
           <ThemedText type="small" themeColor="mark">
             {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A frame did not develop.'} Trying again won’t charge you twice.
           </ThemedText>
@@ -339,11 +341,10 @@ const styles = StyleSheet.create({
   sampleNote: { paddingTop: 4 },
   notice: { gap: 6, padding: 18, borderRadius: Radius.lg, marginBottom: 18 },
   noticeButton: { alignSelf: 'flex-start', marginTop: 8 },
-  teaser: { borderRadius: Radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'transparent', padding: 8, marginHorizontal: -8, marginBottom: 22, gap: 4 },
-  teaserPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
+  teaser: { marginBottom: 22, gap: 8, paddingHorizontal: 10, paddingTop: 6 },
   lockWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   lock: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 34, paddingHorizontal: 14, borderRadius: Radius.pill },
-  teaserCopy: { gap: 6, padding: 8, paddingTop: 12 },
+  teaserCopy: { gap: 6, paddingTop: 14, marginHorizontal: -10 },
   teaserButton: { marginTop: 10 },
   meter: { paddingBottom: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 12 },
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
   cellMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   veil: { backgroundColor: 'rgba(29,26,23,0.45)' },
   retry: { paddingHorizontal: 10, height: 24, borderRadius: Radius.pill, justifyContent: 'center' },
-  failNote: { borderWidth: StyleSheet.hairlineWidth * 2, marginTop: 18, marginBottom: 0 },
+  failNote: { boxShadow: Shadow.card, marginTop: 18, marginBottom: 0 },
   actions: { gap: 10, paddingTop: 28 },
   row: { flexDirection: 'row', gap: 10 },
   grow: { flex: 1 },

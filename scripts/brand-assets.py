@@ -1,8 +1,9 @@
 """
 Builds every icon file for Exposure from one master. Run: python3 scripts/brand-assets.py
 
-The icon, "the roll": a glossy red film canister with its strip curling out, each frame a different
-look's colour. The master (assets/brand/icon-master.png, 2048px) is rendered artwork; this script
+The icon, "the exposure": a single frame of 35 mm film in the dark, filling with light, overexposed
+to warm white with an amber bloom and a red halation fringe, its sprocket holes lit by the spill.
+The master (assets/brand/icon-master.png, 2048px) is rendered artwork; this script
 only crops, rounds and resizes it, and draws the single-colour Android silhouette by hand.
 The in-app mark (src/components/logo-mark.tsx) uses mark.png, the same art as a small rounded tile.
 """
@@ -37,24 +38,17 @@ def fit(im, size, scale):
 
 
 def silhouette(size):
-    """Android's themed icon: canister, cap and a band of film, in white on transparency."""
+    """Android's themed icon: the frame and its two rows of sprocket holes, in white on transparency."""
     s = size * SS
     im = Image.new('RGBA', (s, s), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     white = (255, 255, 255, 255)
-    clear = (0, 0, 0, 0)
-    bx0, bx1, by0, by1 = s * 0.30, s * 0.70, s * 0.24, s * 0.84
-    d.rounded_rectangle([s * 0.43, s * 0.14, s * 0.57, s * 0.26], radius=s * 0.02, fill=white)  # cap
-    d.rounded_rectangle([bx0, by0, bx1, by1], radius=s * 0.05, fill=white)  # body
-    # A band of film across the body, cut free of it by a clear gap, with sprocket holes.
-    band0, band1 = s * 0.44, s * 0.66
-    d.rectangle([s * 0.10, band0 - s * 0.025, s * 0.90, band1 + s * 0.025], fill=clear)
-    d.rounded_rectangle([s * 0.10, band0, s * 0.90, band1], radius=s * 0.02, fill=white)
-    hole = s * 0.03
-    for i in range(10):
-        x = s * 0.14 + i * s * 0.074
-        for y in (band0 + s * 0.022, band1 - s * 0.022 - hole):
-            d.rounded_rectangle([x, y, x + hole, y + hole], radius=hole * 0.25, fill=clear)
+    d.rounded_rectangle([s * 0.26, s * 0.34, s * 0.74, s * 0.66], radius=s * 0.03, fill=white)
+    hole_w, hole_h = s * 0.028, s * 0.034
+    for i in range(7):
+        x = s * 0.27 + i * (s * 0.46 - hole_w) / 6
+        for y in (s * 0.285, s * 0.68):
+            d.rounded_rectangle([x, y, x + hole_w, y + hole_h], radius=hole_w * 0.3, fill=white)
     return im.resize((size, size), Image.LANCZOS)
 
 

@@ -19,10 +19,23 @@
     "production": {
       "autoIncrement": true,
       "channel": "production"
+    },
+    "testflight": {
+      "extends": "production",
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_TESTER_TOOLS": "1"
+      }
     }
   },
   "submit": {
     "production": {
+      "ios": {
+        "ascAppId": "6822011946",
+        "appleTeamId": "T3PTQPU249"
+      }
+    },
+    "testflight": {
       "ios": {
         "ascAppId": "6822011946",
         "appleTeamId": "T3PTQPU249"

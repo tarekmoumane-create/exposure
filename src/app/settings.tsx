@@ -10,13 +10,13 @@ import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { DAILY_ALLOWANCE, useAppStore } from '@/store/app-store';
+import { DAILY_ALLOWANCE, TESTER_TOOLS, useAppStore } from '@/store/app-store';
 
 const PLAN_LABEL = { free: 'Free', weekly: 'Weekly', yearly: 'Yearly' } as const;
 
 export default function SettingsScreen() {
   const theme = useTheme();
-  const { plan, credits, dailyCredits, packCredits, rolls, restore, aiConsent, setAiConsent } = useAppStore();
+  const { plan, credits, dailyCredits, packCredits, rolls, restore, aiConsent, setAiConsent, previewing, startPreview, endPreview } = useAppStore();
   const [restoring, setRestoring] = useState(false);
   // Toasts render under native modals on iOS, so status is shown inline here.
   const [status, setStatus] = useState<string | null>(null);
@@ -89,6 +89,28 @@ export default function SettingsScreen() {
         <LinkRow label="Terms of service" href="https://exposure-api.vercel.app/terms" />
         <LinkRow label="Contact" href="mailto:tarekmoumane@gmail.com" last />
       </Section>
+
+      {TESTER_TOOLS ? (
+        <Section title="TestFlight only">
+          <ThemedText type="small" themeColor="textSecondary" style={styles.para}>
+            {previewing
+              ? 'You’re seeing the app as a brand-new user. Your real rolls and plan are set aside, untouched.'
+              : 'See exactly what a brand-new user sees: onboarding, three looks, the blurred first frame and the paywall. Your rolls and plan come back when you switch back.'}
+          </ThemedText>
+          <View style={styles.inset}>
+            <Button
+              title={previewing ? 'Back to my account' : 'View as new user'}
+              variant={previewing ? 'primary' : 'secondary'}
+              size="md"
+              onPress={() => {
+                if (previewing) endPreview();
+                else startPreview();
+                router.back();
+              }}
+            />
+          </View>
+        </Section>
+      ) : null}
 
       <Button title="Restore purchases" variant="ghost" size="md" onPress={onRestore} loading={restoring} style={styles.restore} />
       {status ? (

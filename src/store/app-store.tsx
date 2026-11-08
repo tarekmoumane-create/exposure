@@ -99,7 +99,17 @@ type State = {
   aiConsent: boolean;
   /** Ever bought a plan or a pack. Until then the free frame stays half developed. */
   hasPurchased: boolean;
+  /**
+   * TestFlight only: the tester's real account, set aside while they view the app as a brand-new
+   * user. Null the rest of the time. Restored exactly by `endPreview`.
+   */
+  stash: Stash | null;
 };
+
+type Stash = Pick<State, 'onboarded' | 'rolls' | 'aiConsent' | 'hasPurchased' | 'plan'>;
+
+/** Set only in TestFlight builds (eas.json "testflight" profile). The App Store build never has it. */
+export const TESTER_TOOLS = process.env.EXPO_PUBLIC_TESTER_TOOLS === '1';
 
 type Action =
   | { type: 'hydrate'; state: Partial<State> }
@@ -116,7 +126,10 @@ type Action =
   | { type: 'setAiConsent'; value: boolean }
   | { type: 'addPack'; amount: number }
   | { type: 'setPlan'; plan: Plan; today: string }
-  | { type: 'applyCustomer'; customer: CustomerState; today: string }
+  /** `explicit` marks a purchase or restore the user just made; background syncs are not explicit. */
+  | { type: 'applyCustomer'; customer: CustomerState; today: string; explicit?: boolean }
+  | { type: 'startPreview' }
+  | { type: 'endPreview' }
   | { type: 'refresh'; today: string };
 
 const STORAGE_KEY = 'exposure.state.v2';
@@ -150,6 +163,7 @@ const initialState: State = {
   grantedTransactions: [],
   aiConsent: false,
   hasPurchased: false,
+  stash: null,
 };
 
 function daysBetween(fromDay: string, toDay: string): number {
@@ -211,6 +225,7 @@ function sanitize(saved: Partial<State> & { version?: number; shots?: SavedShot[
     orders: Array.isArray(saved.orders) ? saved.orders : [],
     aiConsent: saved.aiConsent === true,
     hasPurchased: saved.hasPurchased === true,
+    stash: TESTER_TOOLS && saved.stash && Array.isArray(saved.stash.rolls) ? saved.stash : null,
   };
 }
 
@@ -252,6 +267,9 @@ function reducer(state: State, action: Action): State {
     case 'setPlan':
       return applyPlan(state, action.plan, action.today);
     case 'applyCustomer': {
+      // Viewing as a new user: the store keeps reporting the tester's real purchases on launch;
+      // only a purchase made inside the preview should unlock it.
+      if (state.stash && !action.explicit) return state;
       let next = state.plan === action.customer.plan ? state : applyPlan(state, action.customer.plan, action.today);
       const fresh = action.customer.packTransactions.filter((transaction) => !next.grantedTransactions.includes(transaction.id));
       if (action.customer.packTransactions.length > 0 && !next.hasPurchased) next = { ...next, hasPurchased: true };
@@ -260,6 +278,14 @@ function reducer(state: State, action: Action): State {
       next = { ...next, packCredits: next.packCredits + credits, grantedTransactions: [...next.grantedTransactions, ...fresh.map((t) => t.id)] };
       return next;
     }
+    case 'startPreview': {
+      if (state.stash) return state;
+      const { onboarded, rolls, aiConsent, hasPurchased, plan } = state;
+      return { ...state, stash: { onboarded, rolls, aiConsent, hasPurchased, plan }, onboarded: false, rolls: [], aiConsent: false, hasPurchased: false, plan: 'free' };
+    }
+    case 'endPreview':
+      if (!state.stash) return state;
+      return { ...state, ...state.stash, stash: null };
     case 'refresh':
       return applyRefresh(state, action.today);
   }
@@ -299,6 +325,12 @@ type AppStore = State & {
   /** Buys a credit pack through the store, or grants it locally in mock mode. */
   buyPack: (pack: PackId) => Promise<PurchaseFeedback>;
   restore: () => Promise<PurchaseFeedback>;
+  /** TestFlight only: set the real account aside and start over as a brand-new user. */
+  startPreview: () => void;
+  /** Leave the new-user view and bring the real account back. */
+  endPreview: () => void;
+  /** True while viewing the app as a new user. */
+  previewing: boolean;
 };
 
 const AppStoreContext = createContext<AppStore | null>(null);
@@ -330,13 +362,15 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!state.hydrated) return;
-    const { rolls, orders, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent, hasPurchased } = state;
+    const { rolls, orders, plan, dailyCredits, packCredits, lastRefreshDay, onboarded, grantedTransactions, aiConsent, hasPurchased, stash } = state;
     // File uris are stored as relative keys: iOS moves the app container on every update.
     const portable = (uri: MediaRef | undefined) => (typeof uri === 'string' ? toMediaKey(uri) : uri);
-    const portableRolls = rolls.map((roll) => ({
-      ...roll,
-      frames: roll.frames.map((frame) => ({ ...frame, sourceUri: portable(frame.sourceUri), resultUri: portable(frame.resultUri), thumbUri: portable(frame.thumbUri) })),
-    }));
+    const portableRollsOf = (list: Roll[]) =>
+      list.map((roll) => ({
+        ...roll,
+        frames: roll.frames.map((frame) => ({ ...frame, sourceUri: portable(frame.sourceUri), resultUri: portable(frame.resultUri), thumbUri: portable(frame.thumbUri) })),
+      }));
+    const portableRolls = portableRollsOf(rolls);
     AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -351,6 +385,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
         grantedTransactions,
         aiConsent,
         hasPurchased,
+        stash: stash ? { ...stash, rolls: portableRollsOf(stash.rolls) } : null,
       })
     ).catch(() => {});
   }, [state]);
@@ -420,6 +455,14 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
   const setAiConsent = useCallback((value: boolean) => dispatch({ type: 'setAiConsent', value }), []);
   const addPack = useCallback((amount: number) => dispatch({ type: 'addPack', amount }), []);
   const setPlan = useCallback((plan: Plan) => dispatch({ type: 'setPlan', plan, today: localDay() }), []);
+  const startPreview = useCallback(() => {
+    if (TESTER_TOOLS) dispatch({ type: 'startPreview' });
+  }, []);
+  const endPreview = useCallback(() => {
+    // Rolls made while previewing are thrown away with their files; the real ones come back untouched.
+    stateRef.current.rolls.forEach((roll) => roll.frames.forEach((frame) => [frame.sourceUri, frame.resultUri, frame.thumbUri].forEach((uri) => typeof uri === 'string' && deleteMedia(uri))));
+    dispatch({ type: 'endPreview' });
+  }, []);
 
   const purchasesLive = isPurchasesEnabled();
   const canBuy = purchasesLive || isPurchasesMockable();
@@ -432,7 +475,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       }
       const outcome = await purchasePlan(plan);
       if (!outcome.ok) return { ok: false, message: outcome.cancelled ? '' : outcome.message };
-      dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay() });
+      dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay(), explicit: true });
       return { ok: outcome.state.plan !== 'free', message: outcome.state.plan !== 'free' ? 'Welcome in' : 'The plan did not activate' };
     },
     [purchasesLive]
@@ -447,7 +490,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       }
       const outcome = await purchasePack(pack);
       if (!outcome.ok) return { ok: false, message: outcome.cancelled ? '' : outcome.message };
-      dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay() });
+      dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay(), explicit: true });
       return { ok: true, message: `${credits} frames added` };
     },
     [purchasesLive]
@@ -458,7 +501,7 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
     const outcome = await restorePurchases();
     if (!outcome.ok) return { ok: false, message: outcome.message };
     const freshPacks = outcome.state.packTransactions.some((t) => !stateRef.current.grantedTransactions.includes(t.id));
-    dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay() });
+    dispatch({ type: 'applyCustomer', customer: outcome.state, today: localDay(), explicit: true });
     const found = outcome.state.plan !== 'free' || freshPacks;
     return { ok: found, message: found ? 'Purchases restored' : 'No purchases found for this account' };
   }, [purchasesLive]);
@@ -502,8 +545,11 @@ export function AppStoreProvider({ children }: PropsWithChildren) {
       buyPlan,
       buyPack,
       restore,
+      startPreview,
+      endPreview,
+      previewing: state.stash !== null,
     }),
-    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, removeFrames, addOrder, updateOrder, removeOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore]
+    [state, rolls, orders, purchasesLive, canBuy, printConfig, setOnboarded, addRoll, removeRoll, updateFrame, removeFrames, addOrder, updateOrder, removeOrder, spendCredit, syncCredits, setAiConsent, addPack, setPlan, buyPlan, buyPack, restore, startPreview, endPreview]
   );
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;

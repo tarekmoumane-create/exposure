@@ -20,9 +20,8 @@ import { useAppStore } from '@/store/app-store';
 const HERO = getLook('y2k-digicam')!;
 const STRIP = [SAMPLE_ROLL.frames[0], SAMPLE_ROLL.frames[3], SAMPLE_ROLL.frames[6]];
 const STEPS = [
-  { title: 'Choose a look', detail: 'Flash, film, compacts and light. One look for the whole roll.' },
   { title: 'Add your photos', detail: 'Start with a favourite. Nights out, trips, anything.' },
-  { title: 'Watch it develop', detail: 'Every frame comes back as if it was shot on that camera.' },
+  { title: 'Watch it develop', detail: 'Every frame comes back as if it was shot on a real camera.' },
 ];
 
 export default function OnboardingScreen() {
@@ -91,7 +90,7 @@ export default function OnboardingScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title={page === 0 ? 'See how it works' : 'Choose your look'} onPress={() => (page === 0 ? setPage(1) : finish())} />
+        <Button title={page === 0 ? 'See how it works' : 'Add your photo'} onPress={() => (page === 0 ? setPage(1) : finish())} />
       </View>
     </SafeAreaView>
   );

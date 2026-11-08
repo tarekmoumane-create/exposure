@@ -33,7 +33,73 @@ export const LOOK_GROUPS: { id: LookGroup; label: string }[] = [
   { id: 'light', label: 'Light' },
 ];
 
+/** In catalogue order: 35 mm film and the digicams lead, as the looks people come for. */
 export const LOOKS: Look[] = [
+  {
+    id: 'film-35',
+    name: 'Shoebox 35',
+    group: 'film',
+    tagline: 'An expired roll, found years later.',
+    spec: 'Expired 35 mm film',
+    tint: '#EDD6D3',
+    deep: '#6A3A36',
+    bestFor: 'Sets you want to feel like a memory',
+    description: 'Milky lifted blacks, muted warm colour, soft grain and a cheap lens.',
+    before: require('@/assets/images/looks/film-35-before.jpg'),
+    after: require('@/assets/images/looks/film-35-after.jpg'),
+  },
+  {
+    id: 'y2k-digicam',
+    name: '2003 Compact',
+    group: 'compact',
+    tagline: 'Three megapixels and a memory stick.',
+    spec: 'CCD compact · 3 MP',
+    tint: '#D2E3F1',
+    deep: '#1E4868',
+    bestFor: 'Friends, nights in, photo dumps',
+    description: 'A small CCD sensor: blown flash highlights, sharpening halos, colour speckle and a cool-magenta cast.',
+    before: require('@/assets/images/looks/y2k-digicam-before.jpg'),
+    after: require('@/assets/images/looks/y2k-digicam-after.jpg'),
+  },
+  {
+    id: 'digicam',
+    name: 'Pocket Compact',
+    group: 'compact',
+    tagline: 'A modern 1-inch compact, flash on Auto.',
+    spec: '1-inch compact · flash',
+    tint: '#F2DCC2',
+    deep: '#6B4220',
+    bestFor: 'Dinner, friends, anything indoors',
+    description: 'Glossy clean skin, rich colour and warm lamps glowing behind.',
+    before: require('@/assets/images/looks/digicam-before.jpg'),
+    after: require('@/assets/images/looks/digicam-after.jpg'),
+  },
+  {
+    id: 'gold-200',
+    name: 'Sunny 200',
+    group: 'film',
+    tagline: 'Warm consumer negative, lab scanned.',
+    spec: 'ISO 200 · colour negative',
+    tint: '#F8DD9C',
+    deep: '#714800',
+    bestFor: 'Weekends, trips, whole days out',
+    description: 'Peach skin, olive greens, creamy highlights and soft organic grain.',
+    before: require('@/assets/images/looks/gold-200-before.jpg'),
+    after: require('@/assets/images/looks/gold-200-after.jpg'),
+  },
+  {
+    id: 'superia-400',
+    name: 'Vibrant 400',
+    group: 'film',
+    tagline: 'The cooler, greener drugstore roll.',
+    spec: 'ISO 400 · colour negative',
+    tint: '#D3E6CF',
+    deep: '#2C5629',
+    bestFor: 'Outdoors, parks, overcast days',
+    description: 'Vivid greens, deep cyan blues, pink skin, coarser grain and lifted green shadows.',
+    before: require('@/assets/images/looks/superia-400-before.jpg'),
+    after: require('@/assets/images/looks/superia-400-after.jpg'),
+  },
   {
     id: 'night-flash',
     name: 'Night Out',
@@ -74,71 +140,6 @@ export const LOOKS: Look[] = [
     after: require('@/assets/images/looks/red-flash-after.jpg'),
   },
   {
-    id: 'digicam',
-    name: 'Pocket Compact',
-    group: 'compact',
-    tagline: 'A modern 1-inch compact, flash on Auto.',
-    spec: '1-inch compact · flash',
-    tint: '#F2DCC2',
-    deep: '#6B4220',
-    bestFor: 'Dinner, friends, anything indoors',
-    description: 'Glossy clean skin, rich colour and warm lamps glowing behind.',
-    before: require('@/assets/images/looks/digicam-before.jpg'),
-    after: require('@/assets/images/looks/digicam-after.jpg'),
-  },
-  {
-    id: 'y2k-digicam',
-    name: '2003 Compact',
-    group: 'compact',
-    tagline: 'Three megapixels and a memory stick.',
-    spec: 'CCD compact · 3 MP',
-    tint: '#D2E3F1',
-    deep: '#1E4868',
-    bestFor: 'Friends, nights in, photo dumps',
-    description: 'A small CCD sensor: blown flash highlights, sharpening halos, colour speckle and a cool-magenta cast.',
-    before: require('@/assets/images/looks/y2k-digicam-before.jpg'),
-    after: require('@/assets/images/looks/y2k-digicam-after.jpg'),
-  },
-  {
-    id: 'gold-200',
-    name: 'Sunny 200',
-    group: 'film',
-    tagline: 'Warm consumer negative, lab scanned.',
-    spec: 'ISO 200 · colour negative',
-    tint: '#F8DD9C',
-    deep: '#714800',
-    bestFor: 'Weekends, trips, whole days out',
-    description: 'Peach skin, olive greens, creamy highlights and soft organic grain.',
-    before: require('@/assets/images/looks/gold-200-before.jpg'),
-    after: require('@/assets/images/looks/gold-200-after.jpg'),
-  },
-  {
-    id: 'superia-400',
-    name: 'Vibrant 400',
-    group: 'film',
-    tagline: 'The cooler, greener drugstore roll.',
-    spec: 'ISO 400 · colour negative',
-    tint: '#D3E6CF',
-    deep: '#2C5629',
-    bestFor: 'Outdoors, parks, overcast days',
-    description: 'Vivid greens, deep cyan blues, pink skin, coarser grain and lifted green shadows.',
-    before: require('@/assets/images/looks/superia-400-before.jpg'),
-    after: require('@/assets/images/looks/superia-400-after.jpg'),
-  },
-  {
-    id: 'film-35',
-    name: 'Shoebox 35',
-    group: 'film',
-    tagline: 'An expired roll, found years later.',
-    spec: 'Expired 35 mm film',
-    tint: '#EDD6D3',
-    deep: '#6A3A36',
-    bestFor: 'Sets you want to feel like a memory',
-    description: 'Milky lifted blacks, muted warm colour, soft grain and a cheap lens.',
-    before: require('@/assets/images/looks/film-35-before.jpg'),
-    after: require('@/assets/images/looks/film-35-after.jpg'),
-  },
-  {
     id: 'golden-hour',
     name: 'Last Light',
     group: 'light',
@@ -167,10 +168,10 @@ export const LOOKS: Look[] = [
 ];
 
 /**
- * The only looks someone sees before they pay: one compact, one flash, one film. The full
- * catalogue (Looks tab, the home rail, every look in New roll) opens up with a plan or pack.
+ * The look a new user's free first frame develops in. Before paying there is no choice of look at
+ * all: New roll goes straight to choosing a photo. The catalogue opens up with a plan or pack.
  */
-export const STARTER_LOOKS: Look[] = ['digicam', 'night-flash', 'film-35'].map((id) => LOOKS.find((look) => look.id === id)!);
+export const FREE_LOOK_ID = 'y2k-digicam';
 
 /** The look's catalogue number, like "No. 06". */
 export function lookNumber(look: Look): string {

@@ -19,7 +19,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAppStore } from '@/store/app-store';
 
 const HERO_FRAMES = [SAMPLE_ROLL.frames[3].resultUri, SAMPLE_ROLL.frames[8].resultUri, SAMPLE_ROLL.frames[0].resultUri];
-const RAIL = ['night-flash', 'y2k-digicam', 'golden-hour', 'film-35'].map((id) => getLook(id)!);
+const RAIL = ['film-35', 'y2k-digicam', 'night-flash', 'golden-hour'].map((id) => getLook(id)!);
 
 export default function RollsScreen() {
   const theme = useTheme();
@@ -49,7 +49,7 @@ export default function RollsScreen() {
           <View style={styles.heroCopy}>
             <ThemedText type="title" style={styles.heroText}>Develop your first roll</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.heroText}>
-              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Pick a look, add a photo and watch it develop right here.'}
+              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Add a photo and watch it develop right here.'}
             </ThemedText>
           </View>
           <Button title="Start a roll" onPress={() => router.push('/new-roll')} />

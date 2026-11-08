@@ -10,7 +10,7 @@ import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Fonts, Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
-import { getLook, LOOKS, lookNumber, STARTER_LOOKS } from '@/data/looks';
+import { FREE_LOOK_ID, getLook, LOOKS, lookNumber } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { persistTemporary } from '@/lib/media';
 import { defaultRollName } from '@/lib/roll';
@@ -25,9 +25,9 @@ export default function NewRollScreen() {
   const theme = useTheme();
   const params = useLocalSearchParams<{ lookId?: string }>();
   const { addRoll, credits, paid, aiConsent, setAiConsent } = useAppStore();
-  const choices = paid ? LOOKS : STARTER_LOOKS;
-  const [lookId, setLookId] = useState(choices.find((item) => item.id === params.lookId)?.id ?? 'digicam');
-  const [step, setStep] = useState<0 | 1>(0);
+  // Before paying there is no look to choose: the free frame develops in one look, straight from a photo.
+  const [lookId, setLookId] = useState(paid ? (getLook(params.lookId)?.id ?? LOOKS[0].id) : FREE_LOOK_ID);
+  const [step, setStep] = useState<0 | 1>(paid ? 0 : 1);
   const [photos, setPhotos] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [asking, setAsking] = useState(false);
@@ -96,18 +96,18 @@ export default function NewRollScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <IconButton
-          name={step === 1 ? { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } : { ios: 'xmark', android: 'close', web: 'close' }}
-          label={step === 1 ? 'Back to choosing a look' : 'Cancel new roll'}
-          onPress={() => (step === 1 ? setStep(0) : router.back())}
+          name={paid && step === 1 ? { ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' } : { ios: 'xmark', android: 'close', web: 'close' }}
+          label={paid && step === 1 ? 'Back to choosing a look' : 'Cancel new roll'}
+          onPress={() => (paid && step === 1 ? setStep(0) : router.back())}
         />
-        <View style={styles.steps} accessibilityLabel={`Step ${step + 1} of 2: ${step === 0 ? 'Look' : 'Photos'}`}>
+        {paid ? <View style={styles.steps} accessibilityLabel={`Step ${step + 1} of 2: ${step === 0 ? 'Look' : 'Photos'}`}>
           {(['Look', 'Photos'] as const).map((label, index) => (
             <View key={label} style={styles.stepItem}>
               <View style={[styles.stepBar, { backgroundColor: index <= step ? theme.text : theme.line }]} />
               <ThemedText type="monoSmall" themeColor={index === step ? 'text' : 'textTertiary'}>{`0${index + 1} ${label}`}</ThemedText>
             </View>
           ))}
-        </View>
+        </View> : null}
         <View style={styles.spacer} />
       </View>
 
@@ -119,7 +119,7 @@ export default function NewRollScreen() {
               <ThemedText type="small" themeColor="textSecondary">One look develops the whole roll. You’ll see it on your own photos.</ThemedText>
             </View>
             <View style={styles.cards} accessibilityRole="radiogroup">
-              {choices.map((item) => {
+              {LOOKS.map((item) => {
                 const selected = item.id === lookId;
                 return (
                   <Pressable
@@ -182,7 +182,7 @@ export default function NewRollScreen() {
                 </View>
               </View>
             )}
-            {look ? (
+            {paid && look ? (
               <Pressable accessibilityRole="button" accessibilityLabel={`Change look. Currently ${look.name}`} onPress={() => setStep(0)} style={({ pressed }) => [styles.lookSummary, { backgroundColor: look.tint, opacity: pressed ? 0.75 : 1 }]}>
                 <View style={[styles.summaryPhoto, { backgroundColor: look.deep }]} />
                 <View style={styles.summaryText}>

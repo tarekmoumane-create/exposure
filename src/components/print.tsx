@@ -18,12 +18,12 @@ type Props = {
   children?: ReactNode;
 };
 
-/** A photograph as a physical print: paper border, soft shadow, an optional tilt. */
+/** A photograph as a soft-cornered print: white border, rosy shadow, an optional tilt. */
 export function Print({ source, rotate = 0, aspectRatio = 4 / 5, border = 6, style, children }: Props) {
   const theme = useTheme();
   return (
     <View style={[styles.paper, { padding: border, transform: [{ rotate: `${rotate}deg` }] }, style]}>
-      <View style={[styles.photo, { aspectRatio, backgroundColor: theme.surfaceRaised }]}>
+      <View style={[styles.photo, { aspectRatio, backgroundColor: theme.surfaceRaised, borderRadius: Math.max(6, Radius.print - border) }]}>
         {children ?? <Image source={source as ImageSourcePropType} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />}
       </View>
     </View>
@@ -44,8 +44,8 @@ export function PrintFan({ sources, width, style }: { sources: (MediaRef | Image
 }
 
 const styles = StyleSheet.create({
-  paper: { backgroundColor: PrintWhite, borderRadius: Radius.print + 1, boxShadow: Shadow.print },
-  photo: { width: '100%', borderRadius: 1, overflow: 'hidden' },
+  paper: { backgroundColor: PrintWhite, borderRadius: Radius.print, boxShadow: Shadow.print },
+  photo: { width: '100%', overflow: 'hidden' },
   fan: { position: 'relative' },
   fanItem: { position: 'absolute' },
 });

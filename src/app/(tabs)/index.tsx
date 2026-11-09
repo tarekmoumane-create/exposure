@@ -38,7 +38,7 @@ export default function RollsScreen() {
       </View>
 
       <View style={styles.title}>
-        <SectionHeader large title="Your rolls" meta={rolls.length ? String(rolls.length).padStart(2, '0') : undefined} />
+        <SectionHeader large title="Your rolls" meta={rolls.length ? `${rolls.length} ${rolls.length === 1 ? 'roll' : 'rolls'}` : undefined} />
       </View>
 
       {rolls.length === 0 ? (
@@ -47,12 +47,12 @@ export default function RollsScreen() {
             <PrintFan sources={HERO_FRAMES} width={300} />
           </View>
           <View style={styles.heroCopy}>
-            <ThemedText type="title" style={styles.heroText}>Develop your first roll</ThemedText>
+            <ThemedText type="title" style={styles.heroText}>{paid ? 'Develop your first roll' : 'Try it on your photo'}</ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.heroText}>
-              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Add a photo and watch it develop right here.'}
+              {paid ? 'Pick a look and up to 12 photos. They develop together as one matching set.' : 'Pick a look, add a photo, and watch it develop right here.'}
             </ThemedText>
           </View>
-          <Button title="Start a roll" onPress={() => router.push('/new-roll')} />
+          <Button title={paid ? 'Start a roll' : 'Try a look'} onPress={() => router.push('/new-roll')} />
         </Animated.View>
       ) : (
         <View style={styles.rolls}>
@@ -68,7 +68,7 @@ export default function RollsScreen() {
       {paid ? (
         <>
           <View style={styles.section}>
-            <SectionHeader title="Looks to try" meta={`${LOOKS.length} in all`} />
+            <SectionHeader title="Looks to try" meta={`${LOOKS.length} looks`} />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.rail}>
             {RAIL.map((look) => (

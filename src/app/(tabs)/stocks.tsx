@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Gutter, Spacing } from '@/constants/theme';
 import { LOOK_GROUPS, LOOKS, type LookGroup } from '@/data/looks';
 
-/** The catalogue: every look as a numbered photograph with its spec, filtered by kind of camera or light. */
+/** The catalogue: every look as a photograph on its colour, filtered by kind of camera or light. */
 export default function LooksScreen() {
   const [group, setGroup] = useState<LookGroup | 'all'>('all');
   const filters = [{ id: 'all' as const, label: 'All' }, ...LOOK_GROUPS];
@@ -18,9 +18,9 @@ export default function LooksScreen() {
   return (
     <Screen withTabBar glow contentStyle={styles.content}>
       <View style={styles.header}>
-        <SectionHeader large title="Looks" meta={`${String(looks.length).padStart(2, '0')} / ${LOOKS.length}`} />
+        <SectionHeader large title="Looks" meta={`${looks.length} ${looks.length === 1 ? 'look' : 'looks'}`} />
         <ThemedText themeColor="textSecondary" style={styles.intro}>
-          Real cameras, film stocks and light. Each one develops a whole roll.
+          Real cameras, film and light. Pick one and your whole roll gets it.
         </ThemedText>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.bleed} contentContainerStyle={styles.filters} accessibilityRole="radiogroup">

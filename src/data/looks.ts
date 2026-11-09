@@ -168,15 +168,13 @@ export const LOOKS: Look[] = [
 ];
 
 /**
- * The look a new user's free first frame develops in. Before paying there is no choice of look at
- * all: New roll goes straight to choosing a photo. The catalogue opens up with a plan or pack.
+ * The looks anyone can try on their first photo, before paying: 35 mm, the two digicams and a
+ * flash. Chosen by name and colour only, never by example photo. The rest open with a plan or pack.
  */
-export const FREE_LOOK_ID = 'y2k-digicam';
+export const TRIAL_LOOK_IDS = ['film-35', 'y2k-digicam', 'digicam', 'night-flash'];
 
-/** The look's catalogue number, like "No. 06". */
-export function lookNumber(look: Look): string {
-  return `No. ${String(LOOKS.indexOf(look) + 1).padStart(2, '0')}`;
-}
+export const TRIAL_LOOKS: Look[] = TRIAL_LOOK_IDS.map((id) => LOOKS.find((look) => look.id === id)!);
+export const LOCKED_LOOKS: Look[] = LOOKS.filter((look) => !TRIAL_LOOK_IDS.includes(look.id));
 
 export function getLook(id: string | undefined): Look | undefined {
   return LOOKS.find((look) => look.id === id);

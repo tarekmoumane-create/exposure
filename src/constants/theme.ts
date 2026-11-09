@@ -1,8 +1,7 @@
 /**
- * The photo lab. Oat paper and ink carry the interface; photographs bring the colour.
- * Safelight red is a signal, not decoration: live states, selection and the sun in the mark.
- * Monospace labels carry the technical layer (frame numbers, specs, steps); everything a
- * person reads to decide something is set in the friendly sans.
+ * Soft and sunny. Blush paper, plum ink, and a rose-to-peach glow for the one thing to tap.
+ * Photographs are big, rounded and warm. Nothing on screen reads as a spec sheet: every label is
+ * a friendly sentence-case word, and headlines are set in a rounded, playful display face.
  */
 
 import '@/global.css';
@@ -10,23 +9,23 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 const palette = {
-  background: '#F3EEE6',
-  surface: '#FBF8F3',
-  surfaceRaised: '#E8E1D6',
-  line: '#DCD3C6',
-  text: '#1D1A17',
-  textSecondary: '#5F574E',
-  textTertiary: '#746B60',
-  brand: '#1D1A17',
-  onBrand: '#FBF8F3',
-  /** Safelight red. */
-  accent: '#C4462B',
-  accentSoft: '#F2DED4',
-  onAccent: '#FBF8F3',
+  background: '#FFF6F2',
+  surface: '#FFFFFF',
+  surfaceRaised: '#FCEAE4',
+  line: '#F3DAD2',
+  text: '#2B1F26',
+  textSecondary: '#6F5E67',
+  textTertiary: '#9C8A93',
+  /** Rose: the primary action and anything live or selected. */
+  brand: '#F2557C',
+  onBrand: '#FFFFFF',
+  accent: '#F2557C',
+  accentSoft: '#FFE3EA',
+  onAccent: '#FFFFFF',
   /** Errors and failed frames. */
-  mark: '#B3261E',
+  mark: '#D93A5C',
   onPhoto: '#FFFFFF',
-  scrim: 'rgba(29,26,23,0.55)',
+  scrim: 'rgba(43,31,38,0.5)',
 } as const;
 
 export const Colors = {
@@ -38,14 +37,13 @@ export type ThemeColor = keyof typeof palette;
 
 /** Font family names registered by useAppFonts(). */
 export const Fonts = {
-  display: 'InstrumentSans_500Medium',
-  displayHeavy: 'InstrumentSans_600SemiBold',
+  /** Headlines: rounded and a little playful. */
+  display: 'BricolageGrotesque_700Bold',
+  displaySoft: 'BricolageGrotesque_600SemiBold',
   sans: 'InstrumentSans_400Regular',
   sansMedium: 'InstrumentSans_500Medium',
   sansSemi: 'InstrumentSans_600SemiBold',
   sansBold: 'InstrumentSans_700Bold',
-  mono: 'DMMono_400Regular',
-  monoMedium: 'DMMono_500Medium',
 } as const;
 
 export const Spacing = {
@@ -58,29 +56,31 @@ export const Spacing = {
   six: 64,
 } as const;
 
-/** Depth. Prints and raised cards cast soft, warm shadows, never grey ones. */
+/** Depth. Cards and photos cast soft, rosy shadows, never grey ones. */
 export const Shadow = {
-  print: '0px 1px 2px rgba(60,40,20,0.10), 0px 10px 22px rgba(60,40,20,0.16)',
-  card: '0px 1px 2px rgba(60,40,20,0.05), 0px 6px 18px rgba(60,40,20,0.08)',
-  button: '0px 6px 14px rgba(29,26,23,0.22)',
+  print: '0px 2px 4px rgba(120,60,90,0.08), 0px 14px 30px rgba(120,60,90,0.16)',
+  card: '0px 1px 2px rgba(120,60,90,0.04), 0px 8px 22px rgba(120,60,90,0.08)',
+  button: '0px 8px 18px rgba(242,85,124,0.32)',
 } as const;
 
-/** The warm glow behind key moments: apricot light falling onto paper. */
-export const Glow = ['#F8D9C2', '#F6E2D6', '#F3EEE6'] as const;
+/** The glow behind key moments: lilac to blush, fading into the page. */
+export const Glow = ['#F6E3FF', '#FFE4EA', '#FFF6F2'] as const;
+
+/** The sunset gradient: primary buttons, progress and the reveal. */
+export const Sunset = ['#FF5F8F', '#FF8E6E'] as const;
 
 /** Photo paper border colour. */
-export const PrintWhite = '#FFFDF8';
+export const PrintWhite = '#FFFFFF';
 
 /** The page gutter. */
 export const Gutter = 20;
 
 export const Radius = {
-  /** Photographs stay nearly square, like prints. */
-  print: 3,
-  sm: 8,
-  md: 14,
-  /** Cards and sheets are soft. */
-  lg: 22,
+  /** Photographs are soft-cornered cards. */
+  print: 18,
+  sm: 12,
+  md: 18,
+  lg: 26,
   pill: 999,
 } as const;
 

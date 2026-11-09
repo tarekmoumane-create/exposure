@@ -84,8 +84,8 @@ export default function OrderPrintsScreen() {
           <ThemedText type="display" accessibilityRole="header">Your roll, on paper.</ThemedText>
           <ThemedText themeColor="textSecondary">4x6 prints on real silver-halide photo paper, mailed to you. Your whole photo is printed, with a white border if its shape needs one.</ThemedText>
           <View style={styles.introMeta}>
-            <ThemedText type="mono">{`${String(count).padStart(2, '0')} / ${String(frames.length).padStart(2, '0')} selected`}</ThemedText>
-            <ThemedText type="mono" themeColor="textTertiary">Tap to leave out</ThemedText>
+            <ThemedText type="label">{`${count} of ${frames.length} selected`}</ThemedText>
+            <ThemedText type="caption" themeColor="textTertiary">Tap to leave out</ThemedText>
           </View>
         </View>
         <View style={styles.grid}>
@@ -104,10 +104,9 @@ export default function OrderPrintsScreen() {
                   {frame.strength < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
                   <Image source={frame.thumbUri ?? frame.resultUri} style={[StyleSheet.absoluteFill, { opacity: frame.strength }]} contentFit="cover" />
                 </View>
-                <View style={[styles.check, { backgroundColor: selected ? theme.text : 'rgba(251,248,243,0.94)', borderColor: selected ? theme.text : theme.line }]}>
-                  {selected ? <ThemedText type="monoSmall" style={{ color: theme.onBrand }}>✓</ThemedText> : null}
+                <View style={[styles.check, { backgroundColor: selected ? theme.accent : 'rgba(255,255,255,0.94)', borderColor: selected ? theme.accent : theme.line }]}>
+                  {selected ? <ThemedText type="tiny" style={{ color: theme.onBrand }}>✓</ThemedText> : null}
                 </View>
-                <ThemedText type="monoSmall" themeColor="textTertiary">{String(index + 1).padStart(2, '0')}</ThemedText>
               </Pressable>
             );
           })}
@@ -140,8 +139,8 @@ export default function OrderPrintsScreen() {
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <View style={styles.line}>
-      <ThemedText type={strong ? 'bodyStrong' : 'mono'} themeColor={strong ? 'text' : 'textSecondary'}>{label}</ThemedText>
-      <ThemedText type={strong ? 'bodyStrong' : 'mono'} style={styles.tabular}>{value}</ThemedText>
+      <ThemedText type={strong ? 'bodyStrong' : 'small'} themeColor={strong ? 'text' : 'textSecondary'}>{label}</ThemedText>
+      <ThemedText type={strong ? 'bodyStrong' : 'small'} style={styles.tabular}>{value}</ThemedText>
     </View>
   );
 }
@@ -152,8 +151,8 @@ const styles = StyleSheet.create({
   intro: { gap: 10 },
   introMeta: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 12 },
-  cell: { width: '31.8%', gap: 5 },
-  cellPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden' },
+  cell: { width: '31.8%' },
+  cellPhoto: { aspectRatio: 4 / 5, borderRadius: Radius.sm, overflow: 'hidden' },
   check: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   summary: { gap: 10, paddingTop: Spacing.three, borderTopWidth: StyleSheet.hairlineWidth * 2 },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },

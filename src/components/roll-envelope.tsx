@@ -25,7 +25,7 @@ export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => vo
     if (!frame) return undefined;
     return paid || typeof frame.sourceUri !== 'string' ? frame.thumbUri ?? frame.resultUri ?? frame.sourceUri : frame.sourceUri;
   });
-  const status = developing > 0 ? `Developing ${done}/${total}` : done === total ? `${total} ${total === 1 ? 'frame' : 'frames'}` : rollSummary(roll);
+  const status = developing > 0 ? `Developing ${done} of ${total}` : done === total ? `${total} ${total === 1 ? 'photo' : 'photos'}` : rollSummary(roll);
 
   return (
     <Tappable
@@ -37,18 +37,18 @@ export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => vo
       style={[styles.card, { backgroundColor: tint }]}>
       <PrintFan sources={sources} width={150} />
       <View style={styles.info}>
-        <ThemedText type="monoSmall" style={[styles.soft, { color: deep }]}>
+        <ThemedText type="caption" style={[styles.soft, { color: deep }]}>
           {date}
         </ThemedText>
         <ThemedText type="subtitle" numberOfLines={2} style={{ color: deep }}>
           {roll.name}
         </ThemedText>
-        <ThemedText type="mono" numberOfLines={1} style={[styles.soft, { color: deep }]}>
+        <ThemedText type="caption" numberOfLines={1} style={[styles.soft, { color: deep }]}>
           {look?.name ?? 'Film'}
         </ThemedText>
-        <View style={[styles.status, { backgroundColor: 'rgba(255,253,248,0.7)' }]}>
+        <View style={[styles.status, { backgroundColor: 'rgba(255,255,255,0.72)' }]}>
           {developing > 0 ? <StatusDot live /> : null}
-          <ThemedText type="monoSmall" style={{ color: developing > 0 ? theme.accent : deep }}>
+          <ThemedText type="tiny" style={{ color: developing > 0 ? theme.accent : deep }}>
             {status}
           </ThemedText>
         </View>
@@ -60,6 +60,6 @@ export function RollEnvelope({ roll, onPress }: { roll: Roll; onPress?: () => vo
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: Radius.lg, paddingVertical: 18, paddingLeft: 8, paddingRight: 16 },
   info: { flex: 1, gap: 5, alignItems: 'flex-start' },
-  soft: { opacity: 0.72 },
-  status: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 24, paddingHorizontal: 10, borderRadius: Radius.pill, marginTop: 6 },
+  soft: { opacity: 0.78 },
+  status: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, paddingHorizontal: 11, borderRadius: Radius.pill, marginTop: 6 },
 });

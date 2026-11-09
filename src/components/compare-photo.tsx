@@ -64,7 +64,7 @@ export function ComparePhoto({ before, after, strength = 1, aspectRatio = 4 / 5,
 export function BeforeAfterSwitch({ showingBefore, onChange }: { showingBefore: boolean; onChange: (side: 'before' | 'after') => void }) {
   const theme = useTheme();
   return (
-    <View style={[styles.switch, { backgroundColor: 'rgba(251,248,243,0.94)' }]} accessibilityRole="radiogroup">
+    <View style={[styles.switch, { backgroundColor: 'rgba(255,255,255,0.94)' }]} accessibilityRole="radiogroup">
       {(['before', 'after'] as const).map((side) => {
         const active = side === 'before' ? showingBefore : !showingBefore;
         return (
@@ -76,8 +76,8 @@ export function BeforeAfterSwitch({ showingBefore, onChange }: { showingBefore: 
             hitSlop={6}
             onPress={() => onChange(side)}
             style={[styles.segment, active && { backgroundColor: theme.text }]}>
-            <ThemedText type="monoSmall" style={{ color: active ? theme.onBrand : theme.textSecondary }}>
-              {side}
+            <ThemedText type="tiny" style={{ color: active ? theme.onBrand : theme.textSecondary }}>
+              {side === 'before' ? 'Before' : 'After'}
             </ThemedText>
           </Pressable>
         );
@@ -90,5 +90,5 @@ const styles = StyleSheet.create({
   root: { width: '100%', borderRadius: Radius.print, overflow: 'hidden' },
   switchWrap: { position: 'absolute', left: 0, right: 0, bottom: 12, alignItems: 'center' },
   switch: { flexDirection: 'row', padding: 3, borderRadius: Radius.pill, gap: 2 },
-  segment: { minWidth: 64, height: 26, paddingHorizontal: 12, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  segment: { minWidth: 64, height: 28, paddingHorizontal: 12, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

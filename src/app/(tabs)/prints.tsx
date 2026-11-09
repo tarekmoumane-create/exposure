@@ -53,7 +53,7 @@ export default function PrintsScreen() {
       <Screen scroll={false} withTabBar>
         <EmptyState
           title="No prints yet"
-          message="Develop a roll of at least 4 frames, then open it and choose Order prints."
+          message="Develop a roll of at least 4 photos, then open it and choose Order prints."
           action={<Button title="Go to my rolls" onPress={() => router.navigate('/')} />}
         />
       </Screen>
@@ -63,15 +63,15 @@ export default function PrintsScreen() {
   return (
     <Screen withTabBar glow contentStyle={styles.content}>
       <View style={styles.title}>
-        <SectionHeader large title="Prints" meta={String(orders.length).padStart(2, '0')} />
+        <SectionHeader large title="Prints" meta={`${orders.length} ${orders.length === 1 ? 'order' : 'orders'}`} />
       </View>
       {orders.map((order) => (
         <View key={order.id} style={[styles.row, { backgroundColor: theme.surface }]}>
           {order.coverUri !== undefined ? <Image source={order.coverUri} style={[styles.photo, { backgroundColor: theme.surfaceRaised }]} contentFit="cover" /> : null}
           <View style={styles.text}>
             <ThemedText type="subtitle" numberOfLines={1}>{order.rollName}</ThemedText>
-            <ThemedText type="mono" themeColor="textSecondary">
-              {`${order.count} × 4×6  ·  ${formatCents(order.totalCents)}`}
+            <ThemedText type="caption" themeColor="textSecondary">
+              {`${order.count} prints · ${formatCents(order.totalCents)}`}
             </ThemedText>
             <View style={styles.stage}>
               {order.stage === 'printing' || order.stage === 'shipped' ? <StatusDot live={order.stage === 'printing'} /> : null}
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Gutter },
   title: { paddingTop: 52 + Spacing.three, paddingBottom: 18 },
   row: { flexDirection: 'row', gap: 14, padding: 8, paddingRight: 14, borderRadius: Radius.lg, boxShadow: Shadow.card, marginBottom: 10 },
-  photo: { width: 76, height: 95, borderRadius: Radius.print },
+  photo: { width: 76, height: 95, borderRadius: Radius.lg - 8 },
   text: { flex: 1, gap: 5, paddingVertical: 6 },
   stage: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   grow: { flex: 1 },

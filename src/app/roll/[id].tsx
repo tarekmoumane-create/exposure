@@ -2,21 +2,20 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
-import { DevelopingPhoto } from '@/components/developing-photo';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
-import { Print } from '@/components/print';
 import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { StatusDot } from '@/components/status-dot';
 import { ThemedText } from '@/components/themed-text';
-import { UnlockSheet } from '@/components/unlock-sheet';
 import { useToast } from '@/components/toast';
+import { TrialStage } from '@/components/trial-stage';
+import { UnlockSheet } from '@/components/unlock-sheet';
 import { Gutter, Radius, Shadow, Spacing } from '@/constants/theme';
 import { getLook } from '@/data/looks';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
@@ -29,13 +28,20 @@ import { countFrames } from '@/lib/roll';
 import { useSheetFont } from '@/lib/use-sheet-font';
 import { type Frame, useAppStore } from '@/store/app-store';
 
-/** Holds the screen on while frames develop; a locked phone would pause them. */
+/** Holds the screen on while frames develop; a locked phone would pause them. Phones only: browsers manage this themselves. */
 function StayAwake() {
+  return Platform.OS === 'web' ? null : <KeepAwake />;
+}
+
+function KeepAwake() {
   useKeepAwake();
   return null;
 }
 
-/** The contact sheet: every frame of a roll, developing in place, and what to do with the set. */
+/**
+ * A roll. Before paying it is one photo, big, developing on stage until a plan unlocks it.
+ * After paying it is the contact sheet: every frame developing in place, and what to do with the set.
+ */
 export default function RollScreen() {
   const theme = useTheme();
   const toast = useToast();
@@ -48,10 +54,11 @@ export default function RollScreen() {
   const [liveStrength, setLiveStrength] = useState<number | null>(null);
   const wasLocked = useRef(!paid);
   const [revealing, setRevealing] = useState(false);
-  /** The plans sheet over a locked roll; the blurred frame stays visible above it. */
+  /** The plans sheet over a locked roll; the frosted photo stays visible above it. */
   const [sheet, setSheet] = useState(false);
+  const offered = useRef(false);
 
-  // Coming back from the paywall: the rest of the free frame drops into view.
+  // Coming back from the paywall: the frost lifts off the photo, then the roll shows as usual.
   useFocusEffect(
     useCallback(() => {
       if (!paid) {
@@ -61,32 +68,13 @@ export default function RollScreen() {
       if (!wasLocked.current) return;
       wasLocked.current = false;
       setRevealing(true);
-      const timer = setTimeout(() => setRevealing(false), 2200);
+      const timer = setTimeout(() => setRevealing(false), 2400);
       return () => clearTimeout(timer);
     }, [paid])
   );
 
   const isSample = id === SAMPLE_ROLL_ID;
   const roll = isSample ? SAMPLE_ROLL : rolls.find((item) => item.id === id);
-
-  // Before any purchase, a finished frame stays blurred and the paywall opens on its own, once per visit.
-  const [focused, setFocused] = useState(true);
-  useFocusEffect(
-    useCallback(() => {
-      setFocused(true);
-      return () => setFocused(false);
-    }, [])
-  );
-  const offered = useRef(false);
-  const lockedReady = !paid && !isSample && !!roll?.frames.some((frame) => frame.status === 'done');
-  useEffect(() => {
-    if (!lockedReady || !focused || offered.current || !roll) return;
-    const timer = setTimeout(() => {
-      offered.current = true;
-      setSheet(true);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, [lockedReady, focused, roll]);
 
   if (!roll) {
     return (
@@ -100,10 +88,11 @@ export default function RollScreen() {
   const { total, done, developing, waiting, failed } = countFrames(roll);
   const finished = roll.frames.filter((frame) => frame.status === 'done');
   const rollStrength = liveStrength ?? (finished.length ? finished.reduce((sum, frame) => sum + frame.strength, 0) / finished.length : 1);
-  /** Before any purchase a finished frame stays blurred, and nothing can be saved or shared. */
+  /** Before any purchase a finished photo stays frosted, and nothing can be saved or shared. */
   const locked = !paid && !isSample;
-  const teaser = locked || revealing ? finished[0] : undefined;
   const blocked = waiting > 0 && developing === 0 && credits === 0 && !(locked && done > 0);
+  /** The one-photo try-out, kept on stage a moment longer after paying so the frost can lift. */
+  const trial = (locked || revealing) && !isSample && total === 1 && !blocked;
   const needsConsent = waiting > 0 && !aiConsent;
 
   if (asking) {
@@ -130,7 +119,7 @@ export default function RollScreen() {
         }
       }
       if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      toast.show(finished.length === 1 ? 'Saved to Photos' : `${finished.length} frames saved to Photos`);
+      toast.show(finished.length === 1 ? 'Saved to Photos' : `${finished.length} photos saved to Photos`);
     } catch {
       toast.show('Saving stopped. Try again.');
     } finally {
@@ -151,7 +140,7 @@ export default function RollScreen() {
   };
 
   const onDelete = async () => {
-    const ok = await confirm('Delete this roll?', 'Its frames are removed from Exposure on this phone. Anything saved to Photos stays.', 'Delete');
+    const ok = await confirm('Delete this roll?', 'Its photos are removed from Exposure on this phone. Anything saved to Photos stays.', 'Delete');
     if (!ok) return;
     dismiss();
     setTimeout(() => removeRoll(roll.id), 350);
@@ -159,12 +148,45 @@ export default function RollScreen() {
 
   const status =
     done === total
-      ? `${total} ${total === 1 ? 'frame' : 'frames'}`
+      ? `${total} ${total === 1 ? 'photo' : 'photos'}`
       : developing > 0
-        ? `Developing ${done}/${total}`
-        : `${done}/${total} developed`;
+        ? `Developing ${done} of ${total}`
+        : `${done} of ${total} developed`;
   const date = roll.createdAt ? new Date(roll.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
   const openPaywall = () => (locked ? setSheet(true) : router.push({ pathname: '/paywall', params: { rollId: roll.id } }));
+  /** The plans rise once, on their own, after the photo has frosted over. */
+  const offerPlans = () => {
+    if (offered.current || !locked) return;
+    offered.current = true;
+    setSheet(true);
+  };
+
+  if (trial) {
+    const frame = roll.frames[0];
+    return (
+      <View style={styles.fill}>
+        <Screen edges={['top', 'left', 'right', 'bottom']} glow={look?.tint ?? true} contentStyle={styles.content}>
+          {developing > 0 || waiting > 0 ? <StayAwake /> : null}
+          <View style={styles.header}>
+            <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
+            <ThemedText type="label" themeColor="textSecondary">{look?.name ?? ''}</ThemedText>
+            <IconButton name={{ ios: 'trash', android: 'delete', web: 'delete' }} label="Delete" onPress={onDelete} />
+          </View>
+          {needsConsent ? (
+            <View style={[styles.notice, { backgroundColor: theme.accentSoft }]}>
+              <ThemedText type="bodyStrong">One quick permission first.</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">Your photo develops as soon as you allow processing.</ThemedText>
+              <Button title="Review and continue" size="md" style={styles.noticeButton} onPress={() => setAsking(true)} />
+            </View>
+          ) : null}
+          <View style={styles.trial}>
+            <TrialStage frame={frame} look={look} locked={locked} onUnlock={openPaywall} onRetry={retryFailed} onFrosted={offerPlans} />
+          </View>
+        </Screen>
+        <UnlockSheet visible={sheet && locked} rollId={roll.id} onClose={() => setSheet(false)} onDone={() => setSheet(false)} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.fill}>
@@ -172,7 +194,7 @@ export default function RollScreen() {
       {developing > 0 ? <StayAwake /> : null}
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
-        <ThemedText type="mono" themeColor="textSecondary">{isSample ? 'Example' : date}</ThemedText>
+        <ThemedText type="label" themeColor="textSecondary">{isSample ? 'Example' : date}</ThemedText>
         {!isSample ? <IconButton name={{ ios: 'trash', android: 'delete', web: 'delete' }} label="Delete roll" onPress={onDelete} /> : <View style={styles.spacer} />}
       </View>
 
@@ -181,24 +203,24 @@ export default function RollScreen() {
           {roll.name}
         </ThemedText>
         <View style={styles.meta} accessibilityLiveRegion="polite">
-          <ThemedText type="mono" themeColor="textSecondary">{`${look?.name ?? 'Film'}  ·  `}</ThemedText>
+          <ThemedText type="caption" themeColor="textSecondary">{`${look?.name ?? 'Film'}  ·  `}</ThemedText>
           {developing > 0 ? <StatusDot live /> : null}
-          <ThemedText type="mono" themeColor={developing > 0 ? 'accent' : 'textSecondary'}>{status}</ThemedText>
+          <ThemedText type="caption" themeColor={developing > 0 ? 'accent' : 'textSecondary'}>{status}</ThemedText>
         </View>
         {isSample ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.sampleNote}>
-            {`A real roll, developed on ${look?.name}. Open any frame and switch to Before to see the original.`}
+            {`A real roll, developed on ${look?.name}. Open any photo and switch to Before to see the original.`}
           </ThemedText>
         ) : null}
       </View>
 
       {blocked ? (
         <View style={[styles.notice, { backgroundColor: theme.accentSoft }]}>
-          <ThemedText type="bodyStrong">{done > 0 ? `${waiting} more ${waiting === 1 ? 'frame is' : 'frames are'} waiting.` : 'This roll is ready to develop.'}</ThemedText>
+          <ThemedText type="bodyStrong">{done > 0 ? `${waiting} more ${waiting === 1 ? 'photo is' : 'photos are'} waiting.` : 'This roll is ready to develop.'}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            {plan === 'free' ? 'Choose a plan or pack and they develop right here.' : 'They develop here when your new frames arrive at midnight, or add a pack now.'}
+            {plan === 'free' ? 'Choose a plan or pack and they develop right here.' : 'They develop here when your new photos arrive at midnight, or add a pack now.'}
           </ThemedText>
-          <Button title={plan === 'free' ? 'See plans' : 'Add frames'} size="md" style={styles.noticeButton} onPress={() => (plan === 'free' ? openPaywall() : router.push('/out-of-credits'))} />
+          <Button title={plan === 'free' ? 'See plans' : 'Add photos'} size="md" style={styles.noticeButton} onPress={() => (plan === 'free' ? openPaywall() : router.push('/out-of-credits'))} />
         </View>
       ) : null}
 
@@ -209,37 +231,6 @@ export default function RollScreen() {
             Photo processing is off in Settings.
           </ThemedText>
           <Button title="Review and continue" size="md" style={styles.noticeButton} onPress={() => setAsking(true)} />
-        </View>
-      ) : null}
-
-      {teaser ? (
-        <View style={styles.teaser}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={locked ? 'Your first frame, developed and locked. Unlock to see it.' : 'Your first frame'}
-            disabled={!locked}
-            onPress={openPaywall}>
-            <Print rotate={-1.2} border={8}>
-            <DevelopingPhoto source={teaser.resultUri} amount={locked ? 0 : 1} locked={locked} />
-            {locked ? (
-              <View style={styles.lockWrap} pointerEvents="none">
-                <View style={[styles.lock, { backgroundColor: 'rgba(251,248,243,0.94)' }]}>
-                  <StatusDot />
-                  <ThemedText type="mono">Developed · Locked</ThemedText>
-                </View>
-              </View>
-            ) : null}
-            </Print>
-          </Pressable>
-          {locked ? (
-            <View style={styles.teaserCopy}>
-              <ThemedText type="title">Your first frame is ready.</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {waiting > 0 ? `Unlock it to see it in full, save it and develop your other ${waiting === 1 ? 'frame' : `${waiting} frames`}.` : 'Unlock it to see it in full and save it to your photos.'}
-              </ThemedText>
-              <Button title="Unlock your frame" onPress={openPaywall} style={styles.teaserButton} />
-            </View>
-          ) : null}
         </View>
       ) : null}
 
@@ -258,49 +249,37 @@ export default function RollScreen() {
         </View>
       ) : null}
 
-      {/* Before purchase a one-frame roll is the locked teaser above; repeating it below adds nothing. */}
-      {locked && total === 1 ? null : <View style={styles.grid}>
+      <View style={styles.grid}>
         {roll.frames.map((frame, index) => (
-          <View key={frame.id} style={styles.cell}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={frame.status === 'done' ? `Open frame ${index + 1}` : frame.status === 'failed' ? `Frame ${index + 1} failed. Try again.` : `Frame ${index + 1}, ${frame.status}`}
-              disabled={frame.status === 'developing' || frame.status === 'waiting'}
-              onPress={() => openFrame(frame, index)}
-              style={({ pressed }) => [styles.photo, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.85 : 1 }]}>
-              {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-              {frame.status === 'done' && locked ? (
-                <DevelopingPhoto source={frame.thumbUri ?? frame.resultUri} amount={0} locked />
-              ) : (
-                <Image
-                  source={frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
-                  style={[StyleSheet.absoluteFill, frame.status === 'done' ? { opacity: liveStrength ?? frame.strength } : null]}
-                  contentFit="cover"
-                  transition={frame.status === 'done' ? 500 : 0}
-                />
-              )}
-              {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
-              {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
-              {frame.status === 'failed' ? (
-                <View style={[styles.retry, { backgroundColor: 'rgba(251,248,243,0.94)' }]}>
-                  <ThemedText type="monoSmall" themeColor="mark">Retry</ThemedText>
-                </View>
-              ) : null}
-            </Pressable>
-            <View style={styles.cellMeta}>
-              <ThemedText type="monoSmall" themeColor={frame.status === 'failed' ? 'mark' : 'textTertiary'}>
-                {String(index + 1).padStart(2, '0')}
-              </ThemedText>
-              {frame.status === 'developing' ? <StatusDot live size={5} /> : null}
-            </View>
-          </View>
+          <Pressable
+            key={frame.id}
+            accessibilityRole="button"
+            accessibilityLabel={frame.status === 'done' ? `Open photo ${index + 1}` : frame.status === 'failed' ? `Photo ${index + 1} failed. Try again.` : `Photo ${index + 1}, ${frame.status}`}
+            disabled={frame.status === 'developing' || frame.status === 'waiting'}
+            onPress={() => openFrame(frame, index)}
+            style={({ pressed }) => [styles.photo, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.85 : 1 }]}>
+            {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+            <Image
+              source={frame.status === 'done' && locked ? frame.sourceUri : frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
+              style={[StyleSheet.absoluteFill, frame.status === 'done' && !locked ? { opacity: liveStrength ?? frame.strength } : null]}
+              contentFit="cover"
+              transition={frame.status === 'done' ? 500 : 0}
+            />
+            {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
+            {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
+            {frame.status === 'failed' ? (
+              <View style={[styles.retry, { backgroundColor: 'rgba(255,255,255,0.94)' }]}>
+                <ThemedText type="tiny" themeColor="mark">Retry</ThemedText>
+              </View>
+            ) : null}
+          </Pressable>
         ))}
-      </View>}
+      </View>
 
       {failed > 0 ? (
         <View style={[styles.notice, styles.failNote, { backgroundColor: theme.surface }]}>
           <ThemedText type="small" themeColor="mark">
-            {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A frame did not develop.'} Trying again won’t charge you twice.
+            {roll.frames.find((frame) => frame.status === 'failed')?.error ?? 'A photo did not develop.'} Trying again won’t charge you twice.
           </ThemedText>
           <View style={styles.row}>
             <Button title={failed === 1 ? 'Try again' : `Try ${failed} again`} size="md" onPress={retryFailed} style={styles.grow} />
@@ -327,7 +306,7 @@ export default function RollScreen() {
             <Button title="Order prints" onPress={() => router.push({ pathname: '/order-prints', params: { roll: roll.id } })} />
           ) : null}
           <View style={styles.row}>
-            <Button title={done === 1 ? 'Save frame' : 'Save all'} variant="secondary" onPress={saveAll} loading={busy === 'save'} disabled={busy !== null} style={styles.grow} />
+            <Button title={done === 1 ? 'Save photo' : 'Save all'} variant="secondary" onPress={saveAll} loading={busy === 'save'} disabled={busy !== null} style={styles.grow} />
             <Button title="Contact sheet" variant="secondary" onPress={shareSheet} loading={busy === 'sheet'} disabled={busy !== null} style={styles.grow} />
           </View>
         </View>
@@ -348,17 +327,11 @@ const styles = StyleSheet.create({
   sampleNote: { paddingTop: 4 },
   notice: { gap: 6, padding: 18, borderRadius: Radius.lg, marginBottom: 18 },
   noticeButton: { alignSelf: 'flex-start', marginTop: 8 },
-  teaser: { marginBottom: 22, gap: 8, paddingHorizontal: 10, paddingTop: 6 },
-  lockWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
-  lock: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 34, paddingHorizontal: 14, borderRadius: Radius.pill },
-  teaserCopy: { gap: 6, paddingTop: 14, marginHorizontal: -10 },
-  teaserButton: { marginTop: 10 },
+  trial: { paddingTop: 8 },
   meter: { paddingBottom: 14 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 12 },
-  cell: { width: '31.8%', gap: 5 },
-  photo: { aspectRatio: 4 / 5, borderRadius: Radius.print, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  cellMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  veil: { backgroundColor: 'rgba(29,26,23,0.45)' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 },
+  photo: { width: '31.8%', aspectRatio: 4 / 5, borderRadius: Radius.sm, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
+  veil: { backgroundColor: 'rgba(43,31,38,0.4)' },
   retry: { paddingHorizontal: 10, height: 24, borderRadius: Radius.pill, justifyContent: 'center' },
   failNote: { boxShadow: Shadow.card, marginTop: 18, marginBottom: 0 },
   actions: { gap: 10, paddingTop: 28 },

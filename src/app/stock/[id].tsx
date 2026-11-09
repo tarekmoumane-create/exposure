@@ -11,11 +11,11 @@ import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { ThemedText } from '@/components/themed-text';
 import { Gutter, Radius, Spacing } from '@/constants/theme';
-import { getLook, LOOK_GROUPS, lookNumber } from '@/data/looks';
+import { getLook, LOOK_GROUPS } from '@/data/looks';
 import { useTheme } from '@/hooks/use-theme';
 import { dismiss } from '@/lib/navigation';
 
-/** One look as a spec sheet: the example, its range, and what it does. */
+/** One look up close: the example, how strong it can go, and what it does. */
 export default function StockScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +32,7 @@ export default function StockScreen() {
 
   const group = LOOK_GROUPS.find((item) => item.id === look.group)?.label ?? '';
   const rows = [
-    ['Kind', group],
+    ['Feels like', look.spec],
     ['Best for', look.bestFor],
   ];
 
@@ -41,7 +41,7 @@ export default function StockScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
-        <ThemedText type="mono" themeColor="textSecondary">{lookNumber(look)}</ThemedText>
+        <ThemedText type="label" themeColor="textSecondary">{group}</ThemedText>
         <View style={styles.spacer} />
       </View>
 
@@ -52,7 +52,7 @@ export default function StockScreen() {
 
         <View style={styles.titleBlock}>
           <View style={[styles.badge, { backgroundColor: look.tint }]}>
-            <ThemedText type="monoSmall" style={{ color: look.deep }}>{look.spec}</ThemedText>
+            <ThemedText type="tiny" style={{ color: look.deep }}>{look.bestFor}</ThemedText>
           </View>
           <ThemedText type="display" accessibilityRole="header">{look.name}</ThemedText>
           <ThemedText type="subtitle" themeColor="textSecondary">{look.tagline}</ThemedText>
@@ -65,7 +65,7 @@ export default function StockScreen() {
         <View style={[styles.table, { borderTopColor: theme.line }]}>
           {rows.map(([label, value]) => (
             <View key={label} style={[styles.row, { borderBottomColor: theme.line }]}>
-              <ThemedText type="mono" themeColor="textTertiary" style={styles.rowLabel}>{label}</ThemedText>
+              <ThemedText type="label" themeColor="textTertiary" style={styles.rowLabel}>{label}</ThemedText>
               <ThemedText type="small" style={styles.rowValue}>{value}</ThemedText>
             </View>
           ))}

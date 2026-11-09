@@ -50,7 +50,7 @@ export default function OutOfCreditsScreen() {
   return (
     <Screen edges={['top', 'bottom', 'left', 'right']} contentStyle={styles.content}>
       <View style={styles.header}>
-        <ThemedText type="mono" themeColor="textSecondary">Photo packs</ThemedText>
+        <ThemedText type="label" themeColor="textSecondary">Photo packs</ThemedText>
         <IconButton name={{ ios: 'xmark', android: 'close', web: 'close' }} label="Close" onPress={() => dismiss()} />
       </View>
 
@@ -58,7 +58,7 @@ export default function OutOfCreditsScreen() {
         <ThemedText type="display" accessibilityRole="header">{plan === 'free' ? 'Keep developing.' : 'That’s all for today.'}</ThemedText>
         <ThemedText themeColor="textSecondary">
           {plan === 'free'
-            ? 'Buy a pack to finish your roll, or join a plan for new frames every day.'
+            ? 'Buy a pack to finish your roll, or join a plan for new photos every day.'
             : `${allowance} more arrive ${refresh}. Add a few now, or ${plan === 'weekly' ? 'double your daily frames with Yearly' : 'keep going with a pack'}.`}
         </ThemedText>
       </View>
@@ -75,10 +75,10 @@ export default function OutOfCreditsScreen() {
             <ThemedText type="display" style={styles.count}>{PACK_PRODUCTS[pack.id].credits}</ThemedText>
             <View style={styles.packText}>
               <View style={styles.packTitle}>
-                <ThemedText type="mono">Frames</ThemedText>
+                <ThemedText type="label">photos</ThemedText>
                 {pack.badge ? (
                   <View style={[styles.badge, { backgroundColor: theme.accent }]}>
-                    <ThemedText type="monoSmall" style={{ color: theme.onAccent }}>{pack.badge}</ThemedText>
+                    <ThemedText type="tiny" style={{ color: theme.onAccent }}>{pack.badge}</ThemedText>
                   </View>
                 ) : null}
               </View>

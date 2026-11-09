@@ -9,12 +9,12 @@ export function Wordmark({ size = 16 }: { size?: number }) {
   return (
     <View style={styles.row} accessibilityRole="header" accessibilityLabel="Exposure">
       <LogoMark size={size * 1.75} />
-      <ThemedText style={[styles.name, { fontSize: size, lineHeight: size * 1.25, letterSpacing: size * 0.16 }]}>EXPOSURE</ThemedText>
+      <ThemedText style={[styles.name, { fontSize: size * 1.25, lineHeight: size * 1.5 }]}>Exposure</ThemedText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  name: { fontFamily: Fonts.sansSemi },
+  name: { fontFamily: Fonts.display, letterSpacing: -0.3 },
 });

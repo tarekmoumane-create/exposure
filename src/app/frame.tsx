@@ -81,8 +81,8 @@ export default function FrameScreen() {
     <Screen scroll={false} edges={['top', 'left', 'right', 'bottom']} contentStyle={styles.content}>
       <View style={styles.header}>
         <IconButton name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }} label="Back" onPress={() => dismiss()} />
-        <ThemedText type="mono" themeColor="textSecondary">
-          {`Fr ${String(roll.frames.indexOf(current) + 1).padStart(2, '0')} / ${String(roll.frames.length).padStart(2, '0')}`}
+        <ThemedText type="label" themeColor="textSecondary">
+          {`${roll.frames.indexOf(current) + 1} of ${roll.frames.length}`}
         </ThemedText>
         <View style={styles.spacer} />
       </View>

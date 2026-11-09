@@ -35,7 +35,7 @@ export default function AppTabs() {
 
 const styles = StyleSheet.create({
   bar: { backgroundColor: palette.background, borderTopColor: palette.line, height: 64, paddingTop: 6 },
-  label: { fontFamily: Fonts.mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase' },
+  label: { fontFamily: Fonts.sansSemi, fontSize: 11 },
   item: { maxWidth: MaxContentWidth / 3 },
   glyph: { fontSize: 20, lineHeight: 24 },
 });

@@ -39,18 +39,18 @@ export default function SettingsScreen() {
       <View style={[styles.card, { backgroundColor: theme.surface }]}>
         <View style={styles.planRow}>
           <View style={styles.stat}>
-            <ThemedText type="mono" themeColor="textTertiary">Plan</ThemedText>
+            <ThemedText type="eyebrow" themeColor="textTertiary">Plan</ThemedText>
             <ThemedText type="title">{PLAN_LABEL[plan]}</ThemedText>
           </View>
           <View style={[styles.stat, styles.statRight]}>
-            <ThemedText type="mono" themeColor="textTertiary">Frames left</ThemedText>
-            <ThemedText type="title" style={styles.tabular}>{String(credits).padStart(2, '0')}</ThemedText>
+            <ThemedText type="eyebrow" themeColor="textTertiary">Photos left</ThemedText>
+            <ThemedText type="title" style={styles.tabular}>{String(credits)}</ThemedText>
           </View>
         </View>
         <ThemedText type="small" themeColor="textSecondary">
           {plan === 'free'
-            ? 'Join a plan to develop whole rolls, with new frames every day.'
-            : `${allowance} new frames ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''} ${dailyCredits} left from your plan today.`}
+            ? 'Join a plan to develop whole rolls, with new photos every day.'
+            : `${allowance} new photos ${refreshLabel}. Unused ones bank for three days.${packCredits ? ` ${packCredits} extra never expire.` : ''} ${dailyCredits} left from your plan today.`}
         </ThemedText>
         {plan === 'free' ? <Button title="See plans" size="md" onPress={() => router.push('/paywall')} /> : null}
         {plan !== 'free' ? (
@@ -95,7 +95,7 @@ export default function SettingsScreen() {
           <ThemedText type="small" themeColor="textSecondary" style={styles.para}>
             {previewing
               ? 'You’re seeing the app as a brand-new user. Your real rolls and plan are set aside, untouched.'
-              : 'See exactly what a brand-new user sees: onboarding, three looks, the blurred first frame and the paywall. Your rolls and plan come back when you switch back.'}
+              : 'See exactly what a brand-new user sees: onboarding, the looks to try, the first photo developing and the paywall. Your rolls and plan come back when you switch back.'}
           </ThemedText>
           <View style={styles.inset}>
             <Button
@@ -118,7 +118,7 @@ export default function SettingsScreen() {
           {status}
         </ThemedText>
       ) : null}
-      <ThemedText type="mono" themeColor="textTertiary" style={styles.version}>
+      <ThemedText type="caption" themeColor="textTertiary" style={styles.version}>
         {`Exposure ${version}`}
       </ThemedText>
     </Screen>
@@ -134,7 +134,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   const theme = useTheme();
   return (
     <View style={styles.section}>
-      <ThemedText type="mono" themeColor="textTertiary" style={styles.sectionTitle}>{title}</ThemedText>
+      <ThemedText type="eyebrow" themeColor="textTertiary" style={styles.sectionTitle}>{title}</ThemedText>
       <View style={[styles.group, { backgroundColor: theme.surface }]}>{children}</View>
     </View>
   );

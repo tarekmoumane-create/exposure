@@ -17,17 +17,17 @@ type Props = {
   format?: (value: number) => string;
 };
 
-/** A precise meter: a mono label and readout over an ink track. */
+/** A friendly slider: a label and readout over a rose track. */
 export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete, format }: Props) {
   const theme = useTheme();
   const display = format ? format(value) : `${Math.round(((value - min) / (max - min)) * 100)}%`;
   return (
     <View style={styles.row}>
       <View style={styles.labels}>
-        <ThemedText type="mono" themeColor="textSecondary" numberOfLines={1} style={styles.label}>
+        <ThemedText type="label" themeColor="textSecondary" numberOfLines={1} style={styles.label}>
           {label}
         </ThemedText>
-        <ThemedText type="mono" style={styles.value}>
+        <ThemedText type="label" style={styles.value}>
           {display}
         </ThemedText>
       </View>
@@ -40,9 +40,9 @@ export function SliderRow({ label, value, min = 0, max = 1, onChange, onComplete
         value={value === 0 && min < 0 ? 0.000001 : value}
         onValueChange={onChange}
         onSlidingComplete={onComplete}
-        minimumTrackTintColor={theme.text}
+        minimumTrackTintColor={theme.accent}
         maximumTrackTintColor={theme.line}
-        thumbTintColor={theme.text}
+        thumbTintColor={theme.surface}
         accessibilityLabel={label}
         accessibilityValue={{ min: Math.round(min * 100), max: Math.round(max * 100), now: Math.round(value * 100), text: display }}
       />

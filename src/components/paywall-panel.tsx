@@ -24,7 +24,7 @@ const TIERS: Tier[] = [
   { id: 'yearly', name: 'Yearly', price: 'year', perDay: 10, note: 'about 300 a month', badge: 'Best value' },
   { id: 'weekly', name: 'Weekly', price: 'week', perDay: 5, note: 'cancel any time' },
 ];
-const FEATURES = ['Every look, all ten of them', 'Unlimited rolls, yours to keep', 'Save and share every frame', 'New frames every day'];
+const FEATURES = ['Every look, all ten of them', 'Rolls of up to 12 photos, yours to keep', 'Save and share every photo', 'New photos every day'];
 
 type Props = {
   /** Set when the paywall opens over a locked roll. */
@@ -75,7 +75,7 @@ export function PaywallPanel({ rollId, compact = false, onDone, onClose }: Props
     setStatus(result.message);
   };
 
-  const headline = plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your frames.' : rollId ? 'Unlock your roll.' : 'Keep every frame.';
+  const headline = plan === 'yearly' ? 'You have everything.' : plan === 'weekly' ? 'Double your photos.' : rollId ? 'Unlock your photo.' : 'Keep every photo.';
 
   return (
     <View style={compact ? styles.compact : styles.full}>
@@ -83,15 +83,17 @@ export function PaywallPanel({ rollId, compact = false, onDone, onClose }: Props
         <ThemedText type={compact ? 'title' : 'display'} accessibilityRole="header">{headline}</ThemedText>
         {plan !== 'free' ? (
           <ThemedText themeColor="textSecondary">
-            {plan === 'yearly' ? 'Ten frames a day in every look, banking for three days. Manage the plan in Settings.' : 'Ten frames a day instead of five. More room for every night out and weekend away.'}
+            {plan === 'yearly' ? 'Ten photos a day in every look, banking for three days. Manage the plan in Settings.' : 'Ten photos a day instead of five. More room for every night out and weekend away.'}
           </ThemedText>
         ) : compact ? (
-          <ThemedText type="small" themeColor="textSecondary">See it in full, save it and keep developing. Every look, unlimited rolls, new frames every day.</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">See it in full, save it, and put any look on a whole roll. Every look, new photos every day.</ThemedText>
         ) : (
           <View style={styles.features}>
             {FEATURES.map((feature) => (
               <View key={feature} style={styles.feature}>
-                <ThemedText type="mono" themeColor="accent">+</ThemedText>
+                <View style={[styles.tick, { backgroundColor: theme.accentSoft }]}>
+                  <ThemedText type="tiny" themeColor="accent">✓</ThemedText>
+                </View>
                 <ThemedText type="small" style={styles.grow}>{feature}</ThemedText>
               </View>
             ))}
@@ -107,24 +109,24 @@ export function PaywallPanel({ rollId, compact = false, onDone, onClose }: Props
               key={tier.id}
               accessibilityRole="radio"
               accessibilityState={{ selected: isSelected }}
-              accessibilityLabel={`${tier.name}, ${prices[PLAN_PRODUCTS[tier.id]]} a ${tier.price}. ${tier.perDay} frames a day.`}
+              accessibilityLabel={`${tier.name}, ${prices[PLAN_PRODUCTS[tier.id]]} a ${tier.price}. ${tier.perDay} photos a day.`}
               onPress={() => setSelected(tier)}
-              style={[styles.tier, compact && styles.tierCompact, { backgroundColor: theme.surface, borderColor: isSelected ? theme.text : 'transparent' }]}>
-              <View style={[styles.radio, { borderColor: isSelected ? theme.text : theme.line }]}>{isSelected ? <View style={[styles.radioDot, { backgroundColor: theme.text }]} /> : null}</View>
+              style={[styles.tier, compact && styles.tierCompact, { backgroundColor: theme.surface, borderColor: isSelected ? theme.accent : 'transparent' }]}>
+              <View style={[styles.radio, { borderColor: isSelected ? theme.accent : theme.line }]}>{isSelected ? <View style={[styles.radioDot, { backgroundColor: theme.accent }]} /> : null}</View>
               <View style={styles.tierText}>
                 <View style={styles.tierTitle}>
                   <ThemedText type="bodyStrong">{tier.name}</ThemedText>
                   {tier.badge ? (
                     <View style={[styles.badge, { backgroundColor: theme.accent }]}>
-                      <ThemedText type="monoSmall" style={{ color: theme.onAccent }}>{tier.badge}</ThemedText>
+                      <ThemedText type="tiny" style={{ color: theme.onAccent }}>{tier.badge}</ThemedText>
                     </View>
                   ) : null}
                 </View>
-                <ThemedText type="caption" themeColor="textSecondary">{tier.id === 'yearly' ? `${tier.perDay} frames a day` : `${tier.perDay} frames a day · ${tier.note}`}</ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">{tier.id === 'yearly' ? `${tier.perDay} photos a day` : `${tier.perDay} photos a day · ${tier.note}`}</ThemedText>
               </View>
               <View style={styles.price}>
                 <ThemedText type="bodyStrong">{prices[PLAN_PRODUCTS[tier.id]]}</ThemedText>
-                <ThemedText type="monoSmall" themeColor="textTertiary">{`per ${tier.price}`}</ThemedText>
+                <ThemedText type="tiny" themeColor="textTertiary">{`per ${tier.price}`}</ThemedText>
               </View>
             </Pressable>
           );
@@ -176,6 +178,7 @@ const styles = StyleSheet.create({
   copyCompact: { gap: 6, paddingBottom: 16 },
   features: { gap: 10 },
   feature: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  tick: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   grow: { flex: 1 },
   center: { textAlign: 'center' },
   fine: { fontSize: 11, lineHeight: 15 },

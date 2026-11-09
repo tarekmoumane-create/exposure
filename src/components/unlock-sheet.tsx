@@ -81,7 +81,7 @@ export function UnlockSheet({ visible, rollId, onClose, onDone }: Props) {
 }
 
 const styles = StyleSheet.create({
-  shade: { backgroundColor: 'rgba(29,26,23,0.22)' },
+  shade: { backgroundColor: 'rgba(43,31,38,0.25)' },
   sheet: {
     position: 'absolute',
     left: 0,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    boxShadow: '0px -10px 40px rgba(60,40,20,0.18)',
+    boxShadow: '0px -10px 40px rgba(120,60,90,0.18)',
   },
   handle: { alignSelf: 'center', width: 38, height: 5, borderRadius: 3, marginBottom: 16 },
 });

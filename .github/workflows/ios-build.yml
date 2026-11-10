@@ -9,7 +9,7 @@ name: iOS build
 # Profiles: testflight (tester tools on) for TestFlight testing,
 #           production (no tester tools) for anything sent to App Review.
 #
-# Needs one repository secret: EXPO_TOKEN (an Expo access token).
+# Needs one repository secret: EXPO_TOKEN, an Expo access token.
 
 on:
   workflow_dispatch:

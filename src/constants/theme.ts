@@ -84,6 +84,8 @@ export const Radius = {
   pill: 999,
 } as const;
 
-/** Native tab bar plus the home indicator on iOS; the tab bar sits over the content there. */
-export const BottomTabInset = Platform.select({ ios: 84, android: 80, web: 72 }) ?? 0;
+/** The tab bar's row, above the home indicator. See components/app-tabs.tsx. */
+export const TabBarHeight = 56;
+/** Room to leave under scrolling content so nothing hides behind the tab bar. */
+export const BottomTabInset = TabBarHeight + (Platform.select({ ios: 34, android: 24, web: 0 }) ?? 0);
 export const MaxContentWidth = 520;

@@ -1,10 +1,10 @@
 """
 Builds every icon file for Exposure from one master. Run: python3 scripts/brand-assets.py
 
-The icon, "the exposure": a single frame of 35 mm film in the dark, filling with light, overexposed
-to warm white with an amber bloom and a red halation fringe, its sprocket holes lit by the spill.
-The master (assets/brand/icon-master.png, 2048px) is rendered artwork; this script
-only crops, rounds and resizes it, and draws the single-colour Android silhouette by hand.
+The icon, "the bloom": a camera aperture drawn as six soft white petals, overlapping like a flower,
+on the app's rose-to-peach sunset gradient (the same gradient as the main buttons).
+The master (assets/brand/icon-master.png, 1024px) is rendered artwork; this script
+only rounds and resizes it, and lifts the white petals out as the single-colour Android silhouette.
 The in-app mark (src/components/logo-mark.tsx) uses mark.png, the same art as a small rounded tile.
 """
 import os
@@ -38,18 +38,17 @@ def fit(im, size, scale):
 
 
 def silhouette(size):
-    """Android's themed icon: the frame and its two rows of sprocket holes, in white on transparency."""
-    s = size * SS
-    im = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    white = (255, 255, 255, 255)
-    d.rounded_rectangle([s * 0.26, s * 0.34, s * 0.74, s * 0.66], radius=s * 0.03, fill=white)
-    hole_w, hole_h = s * 0.028, s * 0.034
-    for i in range(7):
-        x = s * 0.27 + i * (s * 0.46 - hole_w) / 6
-        for y in (s * 0.285, s * 0.68):
-            d.rounded_rectangle([x, y, x + hole_w, y + hole_h], radius=hole_w * 0.3, fill=white)
-    return im.resize((size, size), Image.LANCZOS)
+    """Android's themed icon: the white petals lifted off the gradient, on transparency."""
+    src = MASTER.resize((size, size), Image.LANCZOS)
+    out = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    px, dst = src.load(), out.load()
+    for y in range(size):
+        for x in range(size):
+            r, g, b = px[x, y]
+            # Solid white reads as the mark; the gradient (never near-white in all three channels) does not.
+            a = max(0, min(255, int((min(r, g, b) - 215) * 255 / 30)))
+            dst[x, y] = (255, 255, 255, a)
+    return out
 
 
 def save(im, name):

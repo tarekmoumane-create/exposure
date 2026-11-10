@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { CreditsPill } from '@/components/credits-pill';
+import { Gallery, GalleryEmpty, galleryItems } from '@/components/gallery';
 import { IconButton } from '@/components/icon-button';
 import { LookTile } from '@/components/look-tile';
 import { PrintFan } from '@/components/print';
@@ -24,6 +25,7 @@ const RAIL = ['film-35', 'y2k-digicam', 'night-flash', 'golden-hour'].map((id) =
 export default function RollsScreen() {
   const theme = useTheme();
   const { onboarded, rolls, paid } = useAppStore();
+  const gallery = paid ? galleryItems(rolls) : [];
 
   if (!onboarded) return <Redirect href="/onboarding" />;
 
@@ -75,6 +77,11 @@ export default function RollsScreen() {
               <LookTile key={look.id} look={look} compact style={styles.railTile} />
             ))}
           </ScrollView>
+
+          <View style={styles.section}>
+            <SectionHeader title="Gallery" meta={gallery.length ? `${gallery.length} ${gallery.length === 1 ? 'photo' : 'photos'}` : undefined} />
+          </View>
+          {gallery.length ? <Gallery items={gallery} /> : <GalleryEmpty />}
         </>
       ) : null}
     </Screen>

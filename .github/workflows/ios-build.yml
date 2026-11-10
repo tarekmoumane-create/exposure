@@ -1,0 +1,80 @@
+name: iOS build
+
+# Builds the iPhone app on a GitHub-hosted Mac with Expo's local build mode
+# (no EAS cloud build quota used) and uploads it to TestFlight.
+#
+# Run it from the Actions tab or with:
+#   gh workflow run ios-build.yml -f profile=testflight
+#
+# Profiles: testflight (tester tools on) for TestFlight testing,
+#           production (no tester tools) for anything sent to App Review.
+#
+# Needs one repository secret: EXPO_TOKEN (an Expo access token).
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Build profile (testflight or production)
+        type: choice
+        default: testflight
+        options:
+          - testflight
+          - production
+      submit:
+        description: Upload to TestFlight when the build succeeds
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and submit (${{ inputs.profile }})
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      CI: 1
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tool versions
+        run: |
+          xcodebuild -version
+          pod --version
+          fastlane --version | tail -1
+          npx eas-cli@latest --version
+
+      - name: Pull EAS environment variables
+        run: npx eas-cli@latest env:pull --environment production --non-interactive
+
+      - name: Build
+        run: |
+          mkdir -p build
+          npx eas-cli@latest build --platform ios --profile "${{ inputs.profile }}" --local --non-interactive --output build/exposure.ipa
+
+      - name: Keep the ipa for a few days
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exposure-${{ inputs.profile }}-${{ github.run_number }}
+          path: build/exposure.ipa
+          if-no-files-found: ignore
+          retention-days: 5
+
+      - name: Submit to TestFlight
+        if: ${{ inputs.submit }}
+        run: npx eas-cli@latest submit --platform ios --profile "${{ inputs.profile }}" --path build/exposure.ipa --non-interactive

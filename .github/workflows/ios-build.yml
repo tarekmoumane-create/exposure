@@ -46,10 +46,12 @@ jobs:
         env:
           RAW_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          token="$(printf '%s' "$RAW_EXPO_TOKEN" | tr -d '[:space:]')"
+          token="$(printf '%s' "$RAW_EXPO_TOKEN" | LC_ALL=C tr -cd 'A-Za-z0-9_-')"
           if [ -z "$token" ]; then echo "EXPO_TOKEN secret is missing"; exit 1; fi
           echo "::add-mask::$token"
+          echo "token: ${#token} characters kept, $(( ${#RAW_EXPO_TOKEN} - ${#token} )) stripped"
           echo "EXPO_TOKEN=$token" >> "$GITHUB_ENV"
+          EXPO_TOKEN="$token" npx eas-cli@latest whoami
 
       - name: Set up Node
         uses: actions/setup-node@v4

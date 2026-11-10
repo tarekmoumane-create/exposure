@@ -36,11 +36,20 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 90
     env:
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       CI: 1
     steps:
       - name: Check out
         uses: actions/checkout@v4
+
+      # The secret is pasted by hand, so strip any stray spaces or line breaks.
+      - name: Read the Expo token
+        env:
+          RAW_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          token="$(printf '%s' "$RAW_EXPO_TOKEN" | tr -d '[:space:]')"
+          if [ -z "$token" ]; then echo "EXPO_TOKEN secret is missing"; exit 1; fi
+          echo "::add-mask::$token"
+          echo "EXPO_TOKEN=$token" >> "$GITHUB_ENV"
 
       - name: Set up Node
         uses: actions/setup-node@v4

@@ -3,10 +3,12 @@ import { Image } from 'expo-image';
 import { useKeepAwake } from 'expo-keep-awake';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
+import { DevelopingCell } from '@/components/developing-cell';
 import { EmptyState } from '@/components/empty-state';
 import { IconButton } from '@/components/icon-button';
 import { Screen } from '@/components/screen';
@@ -132,8 +134,10 @@ export default function RollScreen() {
     try {
       const uri = await renderContactSheet({ frames: finished, title: roll.name, subtitle: `Shot on ${look?.name ?? 'film'}`, font });
       if (!(await shareFile(uri))) toast.show('Sharing is not available here');
-    } catch {
-      toast.show('The contact sheet did not render. Try again.');
+    } catch (error) {
+      const reason = error instanceof Error && error.message ? ` (${error.message})` : '';
+      console.warn('contact sheet', error);
+      toast.show(`The contact sheet did not render${reason}. Try again.`);
     } finally {
       setBusy(null);
     }
@@ -258,15 +262,20 @@ export default function RollScreen() {
             disabled={frame.status === 'developing' || frame.status === 'waiting'}
             onPress={() => openFrame(frame, index)}
             style={({ pressed }) => [styles.photo, { backgroundColor: theme.surfaceRaised, opacity: pressed ? 0.85 : 1 }]}>
-            {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
-            <Image
-              source={frame.status === 'done' && locked ? frame.sourceUri : frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
-              style={[StyleSheet.absoluteFill, frame.status === 'done' && !locked ? { opacity: liveStrength ?? frame.strength } : null]}
-              contentFit="cover"
-              transition={frame.status === 'done' ? 500 : 0}
-            />
-            {frame.status !== 'done' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
-            {frame.status === 'developing' ? <ActivityIndicator color={theme.onPhoto} /> : null}
+            {frame.status === 'waiting' || frame.status === 'developing' ? (
+              <DevelopingCell source={frame.sourceUri} status={frame.status} tint={look?.tint} />
+            ) : (
+              <Animated.View entering={FadeIn.duration(650)} style={StyleSheet.absoluteFill}>
+                {frame.status === 'done' && !locked && (liveStrength ?? frame.strength) < 0.995 ? <Image source={frame.sourceUri} style={StyleSheet.absoluteFill} contentFit="cover" /> : null}
+                <Image
+                  source={frame.status === 'done' && locked ? frame.sourceUri : frame.thumbUri ?? frame.resultUri ?? frame.sourceUri}
+                  style={[StyleSheet.absoluteFill, frame.status === 'done' && !locked ? { opacity: liveStrength ?? frame.strength } : null]}
+                  contentFit="cover"
+                  transition={frame.status === 'done' ? 500 : 0}
+                />
+                {frame.status === 'failed' ? <View style={[StyleSheet.absoluteFill, styles.veil]} /> : null}
+              </Animated.View>
+            )}
             {frame.status === 'failed' ? (
               <View style={[styles.retry, { backgroundColor: 'rgba(255,255,255,0.94)' }]}>
                 <ThemedText type="tiny" themeColor="mark">Retry</ThemedText>

@@ -19,14 +19,31 @@ async function fileUri(source: MediaRef): Promise<string> {
   return asset.localUri ?? asset.uri;
 }
 
+function shortName(uri: string): string {
+  return uri.split('/').pop()?.split('?')[0] ?? uri;
+}
+
+/** Decodes a photo for Skia. Reads the bytes through the file system, which copes with any local uri. */
 async function loadImage(source: MediaRef): Promise<SkImage> {
-  const image = Skia.Image.MakeImageFromEncoded(await Skia.Data.fromURI(await fileUri(source)));
-  if (!image) throw new Error('Could not decode image');
+  const uri = await fileUri(source);
+  let data;
+  try {
+    const file = new File(uri);
+    if (!file.exists) throw new Error(`${shortName(uri)} is missing`);
+    data = Skia.Data.fromBase64(await file.base64());
+  } catch (error) {
+    // Bundled assets and anything the File API refuses go through Skia's own loader.
+    if (error instanceof Error && error.message.endsWith('is missing')) throw error;
+    data = await Skia.Data.fromURI(uri);
+  }
+  const image = Skia.Image.MakeImageFromEncoded(data);
+  if (!image) throw new Error(`${shortName(uri)} could not be decoded`);
   return image;
 }
 
 function writeJpeg(image: SkImage, file: File): string {
   const base64 = image.encodeToBase64(ImageFormat.JPEG, 94);
+  if (!base64) throw new Error('the image could not be encoded');
   if (file.exists) file.delete();
   file.create();
   file.write(base64, { encoding: 'base64' });
@@ -63,7 +80,7 @@ export async function renderContactSheet({ frames, title, subtitle, font }: Shee
   const images: { top: SkImage; base: SkImage | null; strength: number }[] = [];
   for (const frame of frames) {
     images.push({
-      top: await loadImage(frame.thumbUri ?? frame.resultUri ?? frame.sourceUri),
+      top: await loadImage(frame.thumbUri ?? (await makeThumbnail(await fileUri(frame.resultUri ?? frame.sourceUri), `sheet-top-${frame.id}`, 720))),
       // Small copies only: a dozen full-size originals at once would run an older phone out of memory.
       base: frame.strength < 0.995 ? await loadImage(await makeThumbnail(await fileUri(frame.sourceUri), `sheet-base-${frame.id}`, 720)) : null,
       strength: frame.strength,
@@ -89,7 +106,12 @@ export async function renderContactSheet({ frames, title, subtitle, font }: Shee
       })}
     </Group>
   );
-  const out = await drawAsImage(element, { width, height });
-  if (!out) throw new Error('Render failed');
+  let out: SkImage | null = null;
+  try {
+    out = await drawAsImage(element, { width, height });
+  } catch (error) {
+    throw new Error(`drawing ${width}×${height} failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!out) throw new Error('drawing returned nothing');
   return writeJpeg(out, newMediaFile(`exposure-sheet-${Date.now()}`));
 }

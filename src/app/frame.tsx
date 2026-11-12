@@ -2,7 +2,8 @@ import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
-import { FlatList, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { Button } from '@/components/button';
 import { BeforeAfterSwitch } from '@/components/compare-photo';
@@ -12,7 +13,8 @@ import { Screen } from '@/components/screen';
 import { SliderRow } from '@/components/slider-row';
 import { ThemedText } from '@/components/themed-text';
 import { useToast } from '@/components/toast';
-import { Gutter, Spacing } from '@/constants/theme';
+import { Gutter, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
 import { saveToPhotos, shareFile } from '@/lib/media';
 import { dismiss } from '@/lib/navigation';
@@ -36,6 +38,9 @@ export default function FrameScreen() {
   const [strength, setStrength] = useState<number | null>(null);
   const [busy, setBusy] = useState<'save' | 'share' | null>(null);
   const list = useRef<FlatList<Frame>>(null);
+  const strip = useRef<ScrollView>(null);
+  const theme = useTheme();
+  const [swiped, setSwiped] = useState(false);
 
   if (!roll || frames.length === 0 || (!paid && !isSample)) {
     return (
@@ -48,11 +53,26 @@ export default function FrameScreen() {
   const current = frames[Math.min(index, frames.length - 1)];
   const shownStrength = strength ?? current.strength;
 
-  const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (size.width === 0) return;
-    setIndex(Math.round(event.nativeEvent.contentOffset.x / size.width));
+  const goTo = (next: number) => {
+    setIndex(next);
     setStrength(null);
     setPinnedBefore(false);
+    setSwiped(true);
+    strip.current?.scrollTo({ x: Math.max(0, next * (THUMB + THUMB_GAP) - size.width / 2 + THUMB / 2), animated: true });
+  };
+
+  const onScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (size.width === 0) return;
+    const next = Math.round(event.nativeEvent.contentOffset.x / size.width);
+    if (next !== index) goTo(next);
+    else setSwiped(true);
+  };
+
+  const jumpTo = (next: number) => {
+    if (next === index) return;
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    list.current?.scrollToIndex({ index: next, animated: true });
+    goTo(next);
   };
 
   const exportFrame = async (action: 'save' | 'share') => {
@@ -119,6 +139,15 @@ export default function FrameScreen() {
             }}
           />
         ) : null}
+        {frames.length > 1 && !swiped ? (
+          <Animated.View entering={FadeIn.delay(600).duration(400)} exiting={FadeOut.duration(250)} pointerEvents="none" style={styles.hint}>
+            <View style={[styles.hintPill, { backgroundColor: 'rgba(43,31,38,0.62)' }]}>
+              <ThemedText type="tiny" style={{ color: theme.onPhoto }}>
+                Swipe for the next photo →
+              </ThemedText>
+            </View>
+          </Animated.View>
+        ) : null}
         <View style={styles.switch} pointerEvents="box-none">
           <BeforeAfterSwitch
             showingBefore={comparing}
@@ -129,6 +158,22 @@ export default function FrameScreen() {
           />
         </View>
       </View>
+
+      {frames.length > 1 ? (
+        <ScrollView ref={strip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip} style={styles.stripWrap}>
+          {frames.map((frame, i) => (
+            <Pressable
+              key={frame.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Photo ${roll.frames.indexOf(frame) + 1}`}
+              accessibilityState={{ selected: i === index }}
+              onPress={() => jumpTo(i)}
+              style={[styles.thumb, { borderColor: i === index ? theme.brand : 'transparent', opacity: i === index ? 1 : 0.75 }]}>
+              <Image source={frame.thumbUri ?? frame.resultUri} style={StyleSheet.absoluteFill} contentFit="cover" />
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
 
       <View style={styles.controls}>
         <SliderRow
@@ -150,8 +195,16 @@ export default function FrameScreen() {
   );
 }
 
+const THUMB = 48;
+const THUMB_GAP = 6;
+
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 0, paddingBottom: Spacing.two },
+  hint: { position: 'absolute', top: 14, left: 0, right: 0, alignItems: 'center' },
+  hintPill: { height: 28, paddingHorizontal: 12, borderRadius: Radius.pill, justifyContent: 'center' },
+  stripWrap: { flexGrow: 0, marginTop: 10 },
+  strip: { paddingHorizontal: Gutter, gap: THUMB_GAP },
+  thumb: { width: THUMB, height: THUMB * 1.25, borderRadius: 8, borderWidth: 2, overflow: 'hidden' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, height: 52 },
   spacer: { width: 44 },
   stage: { flex: 1 },

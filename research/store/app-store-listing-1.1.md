@@ -14,10 +14,10 @@ Exposure turns your camera roll into a roll of film.
 Choose a look, add up to 12 photos from a night out or a trip, and Exposure develops them together on that one camera. You get back a matching set, and you can dial the look up or down for the whole roll.
 
 A SET, NOT A SINGLE PHOTO
-Frames are rendered by AI as that camera would have shot them. The first frame develops first, and the rest are rendered against it so the set belongs together.
+Photos are rendered by AI as that camera would have shot them. The first photo develops first, and the rest are rendered against it so the set belongs together.
 
 YOUR PHOTOS STAY YOURS
-Each frame is checked against your original. If something was added or moved, Exposure tries again, and if it still can't pass it returns a simple render of your original at no charge, so people and places stay as you shot them. Hold any frame to see the original, and slide the strength of the look from subtle to full, for one frame or the whole roll.
+Each photo is checked against your original. If something was added or moved, Exposure tries again, and if it still can't pass it returns a simple render of your original at no charge, so people and places stay as you shot them. Hold any photo to see the original, and slide the strength of the look from subtle to full, for one photo or the whole roll.
 
 TEN LOOKS
 Flash: Night Out, Noon Flash, Red Room
@@ -29,13 +29,13 @@ REAL PRINTS
 Order your roll as 4x6 prints on real silver-halide photo paper, mailed to your door. US only for now.
 
 TRY IT FIRST
-Your first frame develops for free on your own photo. A plan or pack unlocks it and develops the rest.
+Your first photo develops for free on your own photo. A plan or pack unlocks it and develops the rest.
 
 PRIVATE BY DESIGN
-No account needed. Your rolls live on your phone. Frames are developed with Google's Gemini AI, and Exposure asks before any photo leaves your device.
+No account needed. Your rolls live on your phone. Photos are developed with Google's Gemini AI, and Exposure asks before any photo leaves your device.
 
 PLANS
-Exposure Weekly gives you 5 frames a day and Exposure Yearly gives you 10 a day. Unused frames bank for up to three days. One-time packs are also available and never expire. Prints are paid separately.
+Exposure Weekly gives you 5 photos a day and Exposure Yearly gives you 10 a day. Unused photos bank for up to three days. One-time packs are also available and never expire. Prints are paid separately.
 
 Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period. Payment is charged to your Apple Account. Manage or cancel any time in your Apple Account settings.
 

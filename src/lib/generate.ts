@@ -19,7 +19,7 @@ const BUSY_RETRY_DELAY_MS = 3_000;
 /** Enough for a sharp 4x6 print; a request must also stay under the server's 4.5 MB body limit. */
 const UPLOAD_EDGE = 2048;
 const MATCH_EDGE = 640;
-/** Sharp in grids and on the contact sheet. */
+/** Sharp in grids and strips. */
 const THUMB_EDGE = 720;
 
 export type GenerateStage = 'preparing' | 'uploading' | 'generating' | 'retrying' | 'finishing';

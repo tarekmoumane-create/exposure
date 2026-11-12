@@ -1,6 +1,6 @@
 # Exposure
 
-Your camera roll as a roll of film. Choose one stock and up to 12 photos; Exposure develops them as a set, with a contact sheet, and can mail them as real prints.
+Your camera roll as a roll of film. Choose one stock and up to 12 photos; Exposure develops them as a set, and can mail them as real prints.
 
 ## Run
 

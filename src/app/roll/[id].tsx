@@ -23,11 +23,10 @@ import { getLook } from '@/data/looks';
 import { SAMPLE_ROLL, SAMPLE_ROLL_ID } from '@/data/sample-roll';
 import { useTheme } from '@/hooks/use-theme';
 import { confirm } from '@/lib/confirm';
-import { saveToPhotos, shareFile } from '@/lib/media';
+import { saveToPhotos } from '@/lib/media';
 import { dismiss } from '@/lib/navigation';
-import { blendFrame, renderContactSheet } from '@/lib/render';
+import { blendFrame } from '@/lib/render';
 import { countFrames } from '@/lib/roll';
-import { useSheetFont } from '@/lib/use-sheet-font';
 import { type Frame, useAppStore } from '@/store/app-store';
 
 /** Holds the screen on while frames develop; a locked phone would pause them. Phones only: browsers manage this themselves. */
@@ -42,15 +41,14 @@ function KeepAwake() {
 
 /**
  * A roll. Before paying it is one photo, big, developing on stage until a plan unlocks it.
- * After paying it is the contact sheet: every frame developing in place, and what to do with the set.
+ * After paying it is the whole roll: every frame developing in place, and what to do with the set.
  */
 export default function RollScreen() {
   const theme = useTheme();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { rolls, removeRoll, updateFrame, removeFrames, credits, plan, paid, aiConsent, setAiConsent, printConfig } = useAppStore();
-  const font = useSheetFont();
-  const [busy, setBusy] = useState<'save' | 'sheet' | null>(null);
+  const [busy, setBusy] = useState<'save' | null>(null);
   const [asking, setAsking] = useState(false);
   /** The look's strength while the meter is being dragged; the sample roll keeps it here. */
   const [liveStrength, setLiveStrength] = useState<number | null>(null);
@@ -124,20 +122,6 @@ export default function RollScreen() {
       toast.show(finished.length === 1 ? 'Saved to Photos' : `${finished.length} photos saved to Photos`);
     } catch {
       toast.show('Saving stopped. Try again.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const shareSheet = async () => {
-    setBusy('sheet');
-    try {
-      const uri = await renderContactSheet({ frames: finished, title: roll.name, subtitle: `Shot on ${look?.name ?? 'film'}`, font });
-      if (!(await shareFile(uri))) toast.show('Sharing is not available here');
-    } catch (error) {
-      const reason = error instanceof Error && error.message ? ` (${error.message})` : '';
-      console.warn('contact sheet', error);
-      toast.show(`The contact sheet did not render${reason}. Try again.`);
     } finally {
       setBusy(null);
     }
@@ -314,10 +298,7 @@ export default function RollScreen() {
           {printConfig.enabled && done >= printConfig.minPrints ? (
             <Button title="Order prints" onPress={() => router.push({ pathname: '/order-prints', params: { roll: roll.id } })} />
           ) : null}
-          <View style={styles.row}>
-            <Button title={done === 1 ? 'Save photo' : 'Save all'} variant="secondary" onPress={saveAll} loading={busy === 'save'} disabled={busy !== null} style={styles.grow} />
-            <Button title="Contact sheet" variant="secondary" onPress={shareSheet} loading={busy === 'sheet'} disabled={busy !== null} style={styles.grow} />
-          </View>
+          <Button title={done === 1 ? 'Save photo to Photos' : 'Save all to Photos'} variant="secondary" onPress={saveAll} loading={busy === 'save'} disabled={busy !== null} />
         </View>
       ) : null}
     </Screen>

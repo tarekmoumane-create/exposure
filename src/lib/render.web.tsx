@@ -2,7 +2,6 @@
 
 import { Image as RNImage } from 'react-native';
 
-import { sheetSize, SHEET } from '@/lib/sheet';
 import type { Frame, MediaRef } from '@/store/app-store';
 
 const resolve = (source: MediaRef): string => (typeof source === 'string' ? source : (RNImage.resolveAssetSource(source)?.uri ?? ''));
@@ -35,31 +34,4 @@ export async function blendFrame(frame: Frame): Promise<string> {
   ctx.globalAlpha = frame.strength;
   ctx.drawImage(top, 0, 0);
   return canvas.toDataURL('image/jpeg', 0.94);
-}
-
-export async function renderContactSheet({ frames, title, subtitle }: { frames: Frame[]; title: string; subtitle: string; font: unknown }): Promise<string> {
-  const { width, height, cellHeight } = sheetSize(frames.length);
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d')!;
-  ctx.fillStyle = '#FFFDFA';
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#342A26';
-  ctx.font = '700 40px "BricolageGrotesque_700Bold", system-ui';
-  ctx.fillText(title, SHEET.margin, 84);
-  ctx.globalAlpha = 0.65;
-  ctx.fillText(subtitle, SHEET.margin, 128);
-  ctx.globalAlpha = 1;
-  for (let index = 0; index < frames.length; index++) {
-    const x = SHEET.margin + (index % SHEET.columns) * (SHEET.cell + SHEET.gap);
-    const y = SHEET.header + Math.floor(index / SHEET.columns) * (cellHeight + SHEET.label + SHEET.gap);
-    const frame = frames[index];
-    if (frame.strength < 0.995) cover(ctx, await load(frame.sourceUri), x, y, SHEET.cell, cellHeight);
-    ctx.globalAlpha = frame.strength;
-    cover(ctx, await load(frame.resultUri ?? frame.sourceUri), x, y, SHEET.cell, cellHeight);
-    ctx.globalAlpha = 1;
-    ctx.fillText(String(index + 1), x, y + cellHeight + 42);
-  }
-  return canvas.toDataURL('image/jpeg', 0.92);
 }

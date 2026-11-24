@@ -44,3 +44,7 @@ example
 
 # local preview fixtures
 public/dev/
+
+# Competitor research stays out of the repo (backup in ~/Downloads/Xposure-competitor-research-backup)
+research/reference/
+research/boothie-teardown.md
